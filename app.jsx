@@ -11,12 +11,13 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "showFloatingStamps": true,
   "heroVariant": "Passport",
   "calibrateJourney": false,
-  "headerLogo": "Literacy"
+  "headerLogo": "Literacy",
+  "quizLayout": "Cards"
 }/*EDITMODE-END*/;
 
 function BootSplash() {
   // Full-viewport overlay so nothing partial (hero before its cards) ever paints
-  // while the 396-book dataset loads. Covers the nav too.
+  // while the 469-book dataset loads. Covers the nav too.
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 9999,
@@ -406,7 +407,7 @@ function App() {
       {booted && screen === "passport" && <PassportScreen onNavigate={navigate} gotoLevel={params.levelId} highlightBookId={params.highlightBookId} />}
       {booted && screen === "child"    && <ChildDashScreen onNavigate={navigate} />}
       {booted && screen === "library"  && <LibraryScreen onNavigate={navigate} initialLevel={params.levelId} />}
-      {booted && screen === "reader"   && <ReaderScreen bookCode={params.bookCode || params.bookId} onNavigate={navigate} />}
+      {booted && screen === "reader"   && <ReaderScreen bookCode={params.bookCode || params.bookId} onNavigate={navigate} quizLayout={tweaks.quizLayout} />}
       {booted && screen === "parent"   && <ParentDashScreen onNavigate={navigate} />}
       {booted && screen === "teacher"  && <TeacherDashScreen onNavigate={navigate} />}
       {booted && screen === "school"   && <SchoolAdminDashScreen onNavigate={navigate} />}
@@ -480,6 +481,14 @@ function App() {
             else   localStorage.removeItem("haaraya:cal");
             window.dispatchEvent(new Event("haaraya:cal"));
           }}
+        />
+
+        <TweakSection label="Reading check" />
+        <TweakRadio
+          label="Quiz layout"
+          value={tweaks.quizLayout}
+          options={["Cards", "Worksheet"]}
+          onChange={v => setTweak("quizLayout", v)}
         />
 
         <TweakSection label="Prototype role" />
