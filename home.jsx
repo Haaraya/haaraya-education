@@ -80,7 +80,7 @@ function Hero({ onNavigate }) {
 
           <div className="hero-trust-strip">
             {[
-              { num: "396",  lbl: "Books planned across the journey" },
+              { num: "469",  lbl: "Books planned across the journey" },
               { num: "12",   lbl: "Levels, first words to fluent" },
               { num: "10",   lbl: "Reading strands, interleaved" },
               { num: "100%", lbl: "Audio narration on every book" },
@@ -378,7 +378,7 @@ function JourneyPath({ onNavigate }) {
           ))}
           <div className="journey-legend-item" style={{ marginLeft: "auto" }}>
             <button className="btn btn-forest btn-sm" onClick={() => onNavigate("library")}>
-              Browse all 396 books →
+              Browse all 469 books →
             </button>
           </div>
         </div>
