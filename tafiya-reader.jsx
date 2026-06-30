@@ -405,13 +405,13 @@ function LibraryScreen({ onNavigate, initialLevel }) {
   const strandAvailable = (k) => { const m = TAFIYA_STRAND_MATCH[k]; return !!m && catalog.some(b => m(typeOf(b))); };
   const levelsPresent = React.useMemo(() => new Set(catalog.map(levelNum)), [catalog]);
 
-  const typeOrder = (t) => { t = (t || "").toLowerCase(); if (t.includes("concept")) return 1; if (t.includes("non")) return 4; if (t.includes("folktale")) return 3; if (t.includes("fiction")) return 2; return 9; };
+  const sequenceNum = (b) => { const m = codeOf(b).match(/-(\d+)$/); return m ? Number(m[1]) : 999999; };
 
   const filtered = catalog
     .filter(b => codeOf(b))
     .filter(b => levelFilter === "all" || levelNum(b) === levelFilter)
     .filter(b => { if (strandFilter === "all") return true; const m = TAFIYA_STRAND_MATCH[strandFilter]; return m ? m(typeOf(b)) : false; })
-    .sort((a, b) => (levelNum(a) - levelNum(b)) || (typeOrder(typeOf(a)) - typeOrder(typeOf(b))) || codeOf(a).localeCompare(codeOf(b)));
+    .sort((a, b) => (levelNum(a) - levelNum(b)) || (sequenceNum(a) - sequenceNum(b)) || codeOf(a).localeCompare(codeOf(b)));
 
   return (
     <main style={{ background: "var(--cream)", minHeight: "100vh" }}>

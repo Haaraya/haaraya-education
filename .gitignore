@@ -10,3 +10,10 @@ Thumbs.db
 
 # Local screenshots scratch folder
 screenshots/
+
+# Local secrets
+.env
+.env.local
+import_sources/
+*.backup-before-*.jsx
+__pycache__/
