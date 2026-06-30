@@ -1,0 +1,13 @@
+level_number,level_code,level_name,band,badge_color,sort_order,description
+1,L1,Tashi,Pink,green,1,Haaraya Level 1: Tashi (Pink band)
+2,L2,Mataki,Red,green,2,Haaraya Level 2: Mataki (Red band)
+3,L3,Hanya,Yellow,green,3,Haaraya Level 3: Hanya (Yellow band)
+4,L4,Tafiya,Blue,green,4,Haaraya Level 4: Tafiya (Blue band)
+5,L5,Kwararo,Green,lime,5,Haaraya Level 5: Kwararo (Green band)
+6,L6,Gada,Orange,lime,6,Haaraya Level 6: Gada (Orange band)
+7,L7,Kwari,Turquoise,purple,7,Haaraya Level 7: Kwari (Turquoise band)
+8,L8,Tudun,Purple,purple,8,Haaraya Level 8: Tudun (Purple band)
+9,L9,Kololuwa,Gold,purple,9,Haaraya Level 9: Kololuwa (Gold band)
+10,L10,Fage,White,purple,10,Haaraya Level 10: Fage (White band)
+11,L11,Sarari,Lime,purple,11,Haaraya Level 11: Sarari (Lime band)
+12,L12,Isa,Dark Red,purple,12,Haaraya Level 12: Isa (Dark Red band)

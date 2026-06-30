@@ -1,0 +1,83 @@
+[
+  {
+    "id": 1,
+    "name": "Soundables",
+    "slug": "soundables",
+    "color": "#1565C0",
+    "logoUrl": "/assets/logos/soundables.svg",
+    "description": "Decodable phonics readers",
+    "isActive": true
+  },
+  {
+    "id": 2,
+    "name": "Hafwas",
+    "slug": "hafwas",
+    "color": "#E65100",
+    "logoUrl": "/assets/logos/hafwas.svg",
+    "description": "High frequency word books",
+    "isActive": true
+  },
+  {
+    "id": 3,
+    "name": "Tafiya Fiction",
+    "slug": "tafiya-fiction",
+    "color": "#228B22",
+    "logoUrl": "/assets/logos/tafiya.svg",
+    "description": "Main levelled Nigerian fiction readers",
+    "isActive": true
+  },
+  {
+    "id": 4,
+    "name": "Tafiya Folktale",
+    "slug": "tafiya-folktale",
+    "color": "#228B22",
+    "logoUrl": "/assets/logos/folktales.svg",
+    "description": "Adapted Nigerian folktales",
+    "isActive": true
+  },
+  {
+    "id": 5,
+    "name": "Tafiya Non-Fiction",
+    "slug": "tafiya-non-fiction",
+    "color": "#228B22",
+    "logoUrl": "/assets/logos/tafiya-nonfiction.svg",
+    "description": "Everyday-life Nigerian non-fiction readers",
+    "isActive": true
+  },
+  {
+    "id": 6,
+    "name": "Tafiya Poetry",
+    "slug": "tafiya-poetry",
+    "color": "#8E44AD",
+    "logoUrl": "/assets/logos/poetry.svg",
+    "description": "Poems, rhymes, chants, and oral language books",
+    "isActive": true
+  },
+  {
+    "id": 7,
+    "name": "Soundables+",
+    "slug": "soundables-plus",
+    "color": "#1565C0",
+    "logoUrl": "/assets/logos/soundables-plus.svg",
+    "description": "Extended phonics and morphology readers",
+    "isActive": true
+  },
+  {
+    "id": 8,
+    "name": "Tafiya Duniya",
+    "slug": "tafiya-duniya",
+    "color": "#228B22",
+    "logoUrl": "/assets/logos/tafiya-duniya.svg",
+    "description": "World stories connected to the Tafiya reading journey",
+    "isActive": false
+  },
+  {
+    "id": 9,
+    "name": "Stamina",
+    "slug": "stamina",
+    "color": "#228B22",
+    "logoUrl": "/assets/logos/stamina.svg",
+    "description": "Longer books for fluent and advanced readers",
+    "isActive": false
+  }
+]

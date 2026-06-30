@@ -1,0 +1,110 @@
+[
+  {
+    "number": 1,
+    "code": "L1",
+    "name": "Tashi",
+    "band": "Pink",
+    "badgeColor": "green",
+    "sortOrder": 1,
+    "description": "Haaraya Level 1: Tashi (Pink band)"
+  },
+  {
+    "number": 2,
+    "code": "L2",
+    "name": "Mataki",
+    "band": "Red",
+    "badgeColor": "green",
+    "sortOrder": 2,
+    "description": "Haaraya Level 2: Mataki (Red band)"
+  },
+  {
+    "number": 3,
+    "code": "L3",
+    "name": "Hanya",
+    "band": "Yellow",
+    "badgeColor": "green",
+    "sortOrder": 3,
+    "description": "Haaraya Level 3: Hanya (Yellow band)"
+  },
+  {
+    "number": 4,
+    "code": "L4",
+    "name": "Tafiya",
+    "band": "Blue",
+    "badgeColor": "green",
+    "sortOrder": 4,
+    "description": "Haaraya Level 4: Tafiya (Blue band)"
+  },
+  {
+    "number": 5,
+    "code": "L5",
+    "name": "Kwararo",
+    "band": "Green",
+    "badgeColor": "lime",
+    "sortOrder": 5,
+    "description": "Haaraya Level 5: Kwararo (Green band)"
+  },
+  {
+    "number": 6,
+    "code": "L6",
+    "name": "Gada",
+    "band": "Orange",
+    "badgeColor": "lime",
+    "sortOrder": 6,
+    "description": "Haaraya Level 6: Gada (Orange band)"
+  },
+  {
+    "number": 7,
+    "code": "L7",
+    "name": "Kwari",
+    "band": "Turquoise",
+    "badgeColor": "purple",
+    "sortOrder": 7,
+    "description": "Haaraya Level 7: Kwari (Turquoise band)"
+  },
+  {
+    "number": 8,
+    "code": "L8",
+    "name": "Tudun",
+    "band": "Purple",
+    "badgeColor": "purple",
+    "sortOrder": 8,
+    "description": "Haaraya Level 8: Tudun (Purple band)"
+  },
+  {
+    "number": 9,
+    "code": "L9",
+    "name": "Kololuwa",
+    "band": "Gold",
+    "badgeColor": "purple",
+    "sortOrder": 9,
+    "description": "Haaraya Level 9: Kololuwa (Gold band)"
+  },
+  {
+    "number": 10,
+    "code": "L10",
+    "name": "Fage",
+    "band": "White",
+    "badgeColor": "purple",
+    "sortOrder": 10,
+    "description": "Haaraya Level 10: Fage (White band)"
+  },
+  {
+    "number": 11,
+    "code": "L11",
+    "name": "Sarari",
+    "band": "Lime",
+    "badgeColor": "purple",
+    "sortOrder": 11,
+    "description": "Haaraya Level 11: Sarari (Lime band)"
+  },
+  {
+    "number": 12,
+    "code": "L12",
+    "name": "Isa",
+    "band": "Dark Red",
+    "badgeColor": "purple",
+    "sortOrder": 12,
+    "description": "Haaraya Level 12: Isa (Dark Red band)"
+  }
+]

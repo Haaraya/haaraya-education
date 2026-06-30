@@ -1,0 +1,10 @@
+id,name,slug,color,logo_url,description,is_active
+1,Soundables,soundables,#1565C0,/assets/logos/soundables.svg,Decodable phonics readers,1
+2,Hafwas,hafwas,#E65100,/assets/logos/hafwas.svg,High frequency word books,1
+3,Tafiya Fiction,tafiya-fiction,#228B22,/assets/logos/tafiya.svg,Main levelled Nigerian fiction readers,1
+4,Tafiya Folktale,tafiya-folktale,#228B22,/assets/logos/folktales.svg,Adapted Nigerian folktales,1
+5,Tafiya Non-Fiction,tafiya-non-fiction,#228B22,/assets/logos/tafiya-nonfiction.svg,Everyday-life Nigerian non-fiction readers,1
+6,Tafiya Poetry,tafiya-poetry,#8E44AD,/assets/logos/poetry.svg,"Poems, rhymes, chants, and oral language books",1
+7,Soundables+,soundables-plus,#1565C0,/assets/logos/soundables-plus.svg,Extended phonics and morphology readers,1
+8,Tafiya Duniya,tafiya-duniya,#228B22,/assets/logos/tafiya-duniya.svg,World stories connected to the Tafiya reading journey,0
+9,Stamina,stamina,#228B22,/assets/logos/stamina.svg,Longer books for fluent and advanced readers,0

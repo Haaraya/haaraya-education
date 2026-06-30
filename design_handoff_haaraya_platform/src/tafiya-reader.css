@@ -1,0 +1,376 @@
+/* ============================================================================
+   Tafiya Reader — scoped for embedding inside the Haaraya app.
+   Ported from Haaraya/tafiya-web-reader-test reader.css. EVERY selector is
+   namespaced under .tfr so the reader's generic class names (.book, .btn,
+   .surface, .cover, .story…) cannot collide with the app's own styles.
+   Global resets / body rules from the original are intentionally omitted.
+   ============================================================================ */
+
+.tfr {
+  --tfr-surface:   #ffffff;
+  --tfr-ink:       #000000;
+  --tfr-ink-soft:  #000000;
+  --tfr-ink-faint: #6b6b6b;
+  --tfr-line:      #e7e0d2;
+  --tfr-accent:        #2f9e6e;
+  --tfr-accent-press:  #25855c;
+  --tfr-bg:        #F3F6F0;
+  --tfr-shadow-book: 0 24px 60px -28px rgba(50, 40, 24, 0.5),
+                     0 4px 14px -8px rgba(50, 40, 24, 0.25);
+  --tfr-shadow-btn:  0 6px 16px -8px rgba(47, 158, 110, 0.7);
+  --tfr-tap: 50px;
+  --tfr-book-ratio: 0.7048;
+  --tfr-font: "Andika", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  font-family: var(--tfr-font);
+  color: var(--tfr-ink);
+  background: var(--tfr-bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.tfr *, .tfr *::before, .tfr *::after { box-sizing: border-box; }
+
+.tfr .reader {
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+/* ---------- Top bar ---------- */
+.tfr .topbar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 12px clamp(14px, 3vw, 30px);
+}
+.tfr .running { text-align: center; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tfr .running-title {
+  font-weight: 700; font-size: clamp(0.95rem, 2vw, 1.2rem); color: var(--tfr-ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tfr .running-level {
+  font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--tfr-ink-faint);
+}
+.tfr .brand { justify-self: end; display: flex; align-items: center; gap: 10px; }
+.tfr .brand img { height: 28px; width: auto; display: block; }
+.tfr .brand .strand { font-weight: 700; font-size: 1rem; color: var(--tfr-ink); white-space: nowrap; }
+
+/* ---------- Buttons ---------- */
+.tfr .btn {
+  font-family: var(--tfr-font); font-weight: 700; font-size: 1rem;
+  border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  border-radius: 999px; min-height: var(--tfr-tap);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .12s ease, background .15s ease, box-shadow .15s ease, opacity .15s ease;
+  user-select: none;
+}
+.tfr .btn .ico { font-size: 1.5em; line-height: 0; margin-top: -2px; }
+.tfr .btn:active { transform: translateY(1px) scale(0.98); }
+.tfr .btn-ghost {
+  background: var(--tfr-surface); color: var(--tfr-ink);
+  border: 1.5px solid var(--tfr-line); padding: 0 18px 0 12px; justify-self: start;
+}
+.tfr .btn-ghost:hover { border-color: #d9cfba; }
+.tfr .btn-nav {
+  background: var(--tfr-surface); color: var(--tfr-ink);
+  border: 1.5px solid var(--tfr-line); padding: 0 22px; min-width: 116px; justify-content: center;
+}
+.tfr .btn-nav:hover:not(:disabled) { border-color: #d9cfba; }
+.tfr .btn-next {
+  background: var(--tfr-accent); color: #fff; border-color: transparent; box-shadow: var(--tfr-shadow-btn);
+}
+.tfr .btn-next:hover:not(:disabled) { background: var(--tfr-accent-press); }
+.tfr .btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
+
+/* ---------- Stage + fixed book frame ---------- */
+.tfr .stage {
+  display: flex; align-items: center; justify-content: center;
+  padding: 10px 16px; min-height: 0; overflow: hidden;
+}
+.tfr .book {
+  height: min(100%, calc((100vw - 36px) / var(--tfr-book-ratio)));
+  aspect-ratio: 148 / 210; width: auto;
+  background: var(--tfr-surface); border-radius: 16px;
+  box-shadow: var(--tfr-shadow-book); overflow: hidden; position: relative;
+  display: flex; flex-direction: column;
+  container-type: size; container-name: book;
+  animation: tfrPageIn .3s cubic-bezier(.2,.7,.3,1);
+}
+.tfr .surface { position: absolute; inset: 0; display: flex; flex-direction: column; }
+@keyframes tfrPageIn { from { transform: translateY(8px) scale(.994); } to { transform: none; } }
+.tfr .book::after {
+  content: ""; position: absolute; inset: 0; border-radius: 16px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04); pointer-events: none;
+}
+
+/* ===== COVER ===== */
+.tfr .cover { padding: 3.5cqh 6cqw; text-align: center; align-items: stretch; }
+.tfr .cover-top { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 1cqh; }
+.tfr .cover-top .logo-tafiya { height: 6.5cqh; }
+.tfr .cover-top .logo-literacy { height: 3cqh; }
+.tfr .cover-top img { width: auto; object-fit: contain; }
+.tfr .cover-hero {
+  flex: 1 1 auto; min-height: 0; width: 100%;
+  display: flex; align-items: center; justify-content: center; padding: 1.5cqh 0;
+}
+.tfr .cover-hero img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
+.tfr .cover-hero.ph { aspect-ratio: 1 / 1; width: auto; height: 100%; margin: 0 auto; }
+.tfr .cover-titles { flex: 0 0 auto; }
+.tfr .cover-title { font-weight: 700; font-size: 9.5cqw; line-height: 1.06; color: var(--tfr-ink); text-wrap: balance; }
+.tfr .cover-sub { margin-top: 1.6cqh; font-weight: 700; font-size: 4.2cqw; letter-spacing: 0.04em; color: var(--tfr-ink-soft); }
+.tfr .cover-bottom { flex: 0 0 auto; display: flex; justify-content: flex-end; align-items: flex-end; padding-top: 1.6cqh; }
+.tfr .cover-bottom .logo-haaraya { height: 12cqh; width: auto; object-fit: contain; }
+
+/* shared image placeholder */
+.tfr .ph {
+  border: 2px dashed #e2dac9; border-radius: 12px;
+  background: repeating-linear-gradient(135deg, #fbf8f1 0 16px, #f4efe4 16px 32px);
+  display: flex; align-items: center; justify-content: center;
+}
+.tfr .ph-note {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 2.6cqw;
+  color: #a79b85; background: rgba(255,255,255,0.82); padding: 1.4cqh 3cqw;
+  border-radius: 8px; letter-spacing: 0.02em; text-align: center;
+}
+
+/* ===== STORY PAGE ===== */
+.tfr .story { padding: 0; }
+.tfr .story-img {
+  position: absolute; left: 6cqw; top: 5cqh; width: 88cqw; height: 62cqh;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.tfr .story-img img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
+.tfr .story-text {
+  position: absolute; left: 7.35cqw; top: 71cqh; width: 86.65cqw;
+  font-weight: 700; font-size: 5.2cqw; line-height: 1.27; color: var(--tfr-ink);
+  text-align: left; text-wrap: pretty;
+}
+.tfr .story-text.is-empty { color: var(--tfr-ink-faint); font-style: italic; }
+
+/* ===== BACK COVER ===== */
+.tfr .back { padding: 3.2cqh 7.4cqw 2.8cqh; overflow: hidden; gap: 0; justify-content: flex-start; }
+.tfr .skills-block { width: 100%; border: 1px solid #000; margin-bottom: 1.55cqh; }
+.tfr .skills-header {
+  background: #000; color: #fff; font-weight: 700; font-size: 2.15cqw;
+  letter-spacing: 0.06em; text-align: center; padding: 0.72cqh 1.8cqw;
+}
+.tfr .skills-table { display: flex; flex-direction: column; }
+.tfr .skills-row { display: grid; grid-template-columns: 42% 58%; align-items: stretch; }
+.tfr .skills-row + .skills-row { border-top: 1px solid #000; }
+.tfr .skills-key {
+  font-weight: 700; font-size: 2.08cqw; color: #000; padding: 0.42cqh 1.75cqw;
+  border-right: 1px solid #000; display: flex; align-items: center;
+}
+.tfr .skills-val { font-weight: 400; font-size: 2.08cqw; color: #000; padding: 0.42cqh 1.9cqw; display: flex; align-items: center; }
+.tfr .back-section-title {
+  font-weight: 700; font-size: 2.05cqw; letter-spacing: 0.08em; text-transform: uppercase;
+  color: #000; margin: 0 0 0.35cqh;
+}
+.tfr .skills-block + .back-section-title,
+.tfr .skills-block + .back-section-title + .back-booktitle,
+.tfr .skills-block + .back-section-title + .back-booktitle + .back-about {
+  width: 84%; margin-left: 4.8cqw; margin-right: auto;
+}
+.tfr .back-booktitle { font-weight: 700; font-size: 2.75cqw; color: #000; margin-bottom: 0.45cqh; }
+.tfr .back-about { font-weight: 400; font-size: 2.25cqw; line-height: 1.36; color: #000; text-align: left; text-wrap: pretty; }
+.tfr .back-divider { width: 84%; margin: 1.05cqh 0 3.1cqh 4.8cqw; border-top: 1px solid var(--tfr-line); }
+.tfr .back-divider + .back-section-title {
+  width: 64%; margin-left: 4.8cqw; margin-right: auto; margin-bottom: 0.45cqh; font-size: 1.95cqw;
+}
+.tfr .level-block { width: 64%; margin-left: 4.8cqw; margin-right: auto; border: 1px solid #b9b9b9; }
+.tfr .level-row { display: grid; grid-template-columns: 47% 53%; align-items: stretch; }
+.tfr .level-row + .level-row { border-top: 1px solid #b9b9b9; }
+.tfr .level-key {
+  font-weight: 700; font-size: 1.82cqw; color: #000; padding: 0.34cqh 1.35cqw;
+  border-right: 1px solid #b9b9b9; display: flex; align-items: center;
+}
+.tfr .level-val { font-weight: 400; font-size: 1.82cqw; color: #000; padding: 0.34cqh 1.45cqw; white-space: nowrap; display: flex; align-items: center; }
+.tfr .back-website { margin-top: 0.75cqh; font-weight: 400; font-size: 2.05cqw; color: #000; text-align: right; }
+.tfr .back-bottom { margin-top: 2.2cqh; display: flex; flex-direction: column; }
+.tfr .back-series { margin-top: 0.7cqh; font-weight: 700; font-size: 2.24cqw; line-height: 1.38; color: #000; text-align: left; text-wrap: pretty; }
+.tfr .back-footer { display: grid; grid-template-columns: 1fr 1.3fr 1fr; align-items: center; gap: 3cqw; padding-top: 1cqh; }
+.tfr .back-footer .col-left { display: flex; justify-content: flex-start; align-items: center; }
+.tfr .back-footer .col-center { text-align: center; }
+.tfr .back-footer .col-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.8cqh; }
+.tfr .back-footer img { width: auto; object-fit: contain; }
+.tfr .back-footer .logo-haaraya { height: 8cqh; }
+.tfr .back-footer .logo-tafiya { height: 4.2cqh; }
+.tfr .back-footer .logo-literacy { height: 2.35cqh; }
+.tfr .back-imprint { font-weight: 700; font-size: 1.9cqw; line-height: 1.34; color: #000; }
+.tfr .cover-title.is-empty { color: var(--tfr-ink-faint); font-style: italic; }
+
+/* ---------- Bottom navigation ---------- */
+.tfr .navbar {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px;
+  padding: 12px clamp(14px, 3vw, 30px) max(12px, env(safe-area-inset-bottom));
+}
+.tfr .navbar .prev { justify-self: start; }
+.tfr .navbar .next { justify-self: end; }
+.tfr .progress { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.tfr .progress-text { font-weight: 700; font-size: 0.95rem; color: var(--tfr-ink-soft); white-space: nowrap; }
+.tfr .dots { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: center; max-width: 320px; }
+.tfr .dots .dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--tfr-line);
+  border: none; padding: 0; cursor: pointer;
+  transition: transform .2s ease, background .2s ease, width .2s ease;
+}
+.tfr .dots .dot.active { background: var(--tfr-accent); width: 22px; border-radius: 999px; }
+
+/* ---------- Loading / error status ---------- */
+.tfr .tfr-status {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 8cqw;
+}
+.tfr .tfr-status .t { font-weight: 700; font-size: 4.6cqw; color: var(--tfr-ink); }
+.tfr .tfr-status .d { font-weight: 400; font-size: 2.8cqw; color: var(--tfr-ink-faint); line-height: 1.35; }
+.tfr .tfr-spinner {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 3px solid rgba(47,158,110,.22); border-top-color: var(--tfr-accent);
+  animation: tfrSpin .8s linear infinite; margin-bottom: 6px;
+}
+@keyframes tfrSpin { to { transform: rotate(360deg); } }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 720px) {
+  .tfr .topbar { grid-template-columns: auto 1fr auto; gap: 10px; }
+  .tfr .brand img { height: 22px; }
+  .tfr .running-title { font-size: 0.95rem; }
+  .tfr .btn-nav { min-width: 0; padding: 0 16px; width: var(--tfr-tap); }
+  .tfr .btn-nav .nav-label { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tfr .book { animation: none; }
+  .tfr .btn { transition: none; }
+}
+
+/* ============================================================================
+   Library — Tafiya catalogue cards (app-level, not scoped under .tfr)
+   ============================================================================ */
+.tfl-grid {
+  margin-top: 32px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 22px;
+}
+.tfl-card {
+  text-align: left;
+  font: inherit;
+  background: #fff;
+  border: 1.5px solid var(--sand, #EEEAE2);
+  border-radius: 18px;
+  padding: 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 28px -24px rgba(20,42,20,.5);
+  transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.tfl-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--forest, #228B22);
+  box-shadow: 0 18px 34px -24px rgba(20,42,20,.55);
+}
+.tfl-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 148 / 210;
+  background: var(--cream, #FAFAF7);
+  border: 1px solid var(--sand, #EEEAE2);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+.tfl-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; background: #fff; }
+.tfl-thumb-ph {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px; font-weight: 700; color: var(--ink-mute, #9AB39A);
+}
+.tfl-tag {
+  position: absolute; top: 8px; right: 8px;
+  background: var(--forest, #228B22); color: #fff;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 4px 8px; border-radius: 999px;
+  box-shadow: 0 4px 10px -4px rgba(20,82,20,.6);
+}
+.tfl-tag--free { background: #2A6FDB; box-shadow: 0 4px 10px -4px rgba(42,111,219,.6); }
+.tfl-tag--done { background: var(--deep-forest, #145214); }
+.tfl-lock {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  background: rgba(250,250,247,.74);
+  backdrop-filter: saturate(0.6);
+}
+.tfl-card--locked { opacity: 0.82; }
+.tfl-card--locked .tfl-title { color: var(--ink-soft, #6B8A6B); }
+.tfl-card--locked:hover { border-color: #2A6FDB; }
+.tfl-code {
+  display: inline-flex; align-self: flex-start;
+  background: #eef7f2; color: #22734f;
+  font-weight: 800; font-size: 11px; letter-spacing: 0.04em;
+  padding: 4px 9px; border-radius: 999px; margin-bottom: 10px;
+}
+.tfl-title {
+  font-family: "Andika", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 700;
+  font-size: 18px; line-height: 1.18; color: var(--ink, #1A2A1A);
+  margin-bottom: 8px; text-wrap: pretty;
+}
+.tfl-meta { font-size: 12.5px; font-weight: 700; color: var(--ink-soft, #6B8A6B); line-height: 1.3; }
+.tfl-note {
+  margin-top: 40px; padding: 18px 22px;
+  background: var(--sand, #EEEAE2); border-radius: 16px;
+  font-size: 14px; color: var(--ink-mid, #3D5C3D); line-height: 1.5;
+}
+.tfl-note strong { color: var(--deep-forest, #145214); }
+
+/* Greyed-out / unavailable filter chips (strands & levels with no books) */
+.filter-chip.is-unavailable {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(1);
+  pointer-events: auto;
+}
+.filter-chip.is-unavailable:hover {
+  border-color: var(--sand-dk, #DDD9D0);
+  color: var(--ink-mid, #3D5C3D);
+  background: #fff;
+}
+
+/* Aligned filter grids — both rows share column tracks, so their right edges
+   line up. Chips stretch to fill each (content-sized) column. */
+.tfl-filter-grid {
+  display: grid;
+  gap: 12px;
+  justify-content: start;
+  align-items: stretch;
+  margin-top: 16px;
+}
+.tfl-strand-grid { grid-template-columns: repeat(6, max-content); }
+.tfl-level-grid  { grid-template-columns: repeat(7, max-content); }
+.tfl-filter-grid .filter-chip {
+  width: 100%;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+@media (max-width: 760px) {
+  /* Narrow screens: fall back to natural wrapping so chips don't overflow. */
+  .tfl-filter-grid { display: flex; flex-wrap: wrap; }
+  .tfl-filter-grid .filter-chip { width: auto; grid-column-start: auto !important; }
+}
+
+@media (max-width: 640px) {
+  .tfl-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+  .tfl-title { font-size: 16px; }
+}
