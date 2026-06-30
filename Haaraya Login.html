@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Haaraya — Auth Test</title>
+<style>
+  :root{
+    --green:#1f7a3d; --green-d:#155c2d; --ink:#1a2b1f; --muted:#5d6b60;
+    --line:#dfe6df; --bg:#f3f6f2; --card:#ffffff; --red:#b3261e; --amber:#9a6700;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+    background:var(--bg); color:var(--ink); min-height:100vh;
+    display:flex; align-items:flex-start; justify-content:center; padding:40px 20px;
+  }
+  .wrap{width:100%; max-width:460px}
+  .brand{display:flex; align-items:center; gap:10px; margin-bottom:6px}
+  .brand .dot{width:34px;height:34px;border-radius:9px;background:var(--green);
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:18px}
+  h1{font-size:21px;margin:0}
+  .sub{color:var(--muted); font-size:13.5px; margin:4px 0 22px}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:22px; box-shadow:0 1px 2px rgba(0,0,0,.04); margin-bottom:18px}
+  .tabs{display:flex; gap:6px; background:#eef2ee; padding:5px; border-radius:11px; margin-bottom:18px}
+  .tabs button{flex:1; border:0; background:transparent; padding:9px; border-radius:8px;
+    font-weight:600; font-size:14px; color:var(--muted); cursor:pointer}
+  .tabs button.active{background:#fff; color:var(--ink); box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  label{display:block; font-size:12.5px; font-weight:600; color:var(--muted); margin:0 0 5px}
+  input,select{width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:10px;
+    font-size:14.5px; margin-bottom:14px; background:#fff; color:var(--ink)}
+  input:focus,select:focus{outline:none; border-color:var(--green); box-shadow:0 0 0 3px rgba(31,122,61,.12)}
+  .btn{width:100%; border:0; background:var(--green); color:#fff; font-weight:700;
+    font-size:15px; padding:12px; border-radius:11px; cursor:pointer}
+  .btn:hover{background:var(--green-d)}
+  .btn[disabled]{opacity:.55; cursor:default}
+  .btn.ghost{background:#fff; color:var(--green); border:1px solid var(--green)}
+  .msg{font-size:13.5px; padding:11px 13px; border-radius:10px; margin-bottom:14px; display:none; line-height:1.45}
+  .msg.show{display:block}
+  .msg.err{background:#fdecea; color:var(--red); border:1px solid #f5c2bd}
+  .msg.ok{background:#e9f5ec; color:var(--green-d); border:1px solid #bfe2c8}
+  .msg.warn{background:#fdf6e3; color:var(--amber); border:1px solid #efe0b0}
+  .hint{font-size:12px; color:var(--muted); margin:-6px 0 14px}
+  .profile{font-size:14px}
+  .profile h2{font-size:15px; margin:0 0 14px}
+  .row{display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px dashed var(--line)}
+  .row:last-child{border-bottom:0}
+  .row .k{color:var(--muted); font-weight:600}
+  .row .v{text-align:right; word-break:break-all; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12.5px}
+  .pill{display:inline-block; background:#eef5ef; color:var(--green-d); font-weight:700;
+    padding:2px 9px; border-radius:999px; font-size:12px; text-transform:capitalize}
+  .foot{font-size:11.5px; color:var(--muted); text-align:center; margin-top:6px; line-height:1.5}
+  .spin{display:inline-block; width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;
+    border-radius:50%; animation:s .7s linear infinite; vertical-align:-2px; margin-right:7px}
+  @keyframes s{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">
+      <div class="dot">H</div>
+      <div>
+        <h1>Haaraya Auth Test</h1>
+      </div>
+    </div>
+    <p class="sub">Proving real signup → login → profile → row-level security against live Supabase. This page is a diagnostic, not the final UI.</p>
+
+    <!-- Logged-out view -->
+    <div class="card" id="authCard">
+      <div class="tabs">
+        <button id="tabSignup" class="active" onclick="showTab('signup')">Create account</button>
+        <button id="tabLogin" onclick="showTab('login')">Log in</button>
+      </div>
+
+      <div id="msg" class="msg"></div>
+
+      <!-- Signup -->
+      <form id="signupForm" onsubmit="return doSignup(event)">
+        <label>Full name</label>
+        <input id="su_name" type="text" placeholder="Ada Obi" autocomplete="name">
+        <label>Email</label>
+        <input id="su_email" type="email" placeholder="you@example.com" autocomplete="email" required>
+        <label>Password</label>
+        <input id="su_pass" type="password" placeholder="At least 6 characters" autocomplete="new-password" minlength="6" required>
+        <label>Role</label>
+        <select id="su_role">
+          <option value="parent">Parent</option>
+          <option value="teacher">Teacher</option>
+          <option value="school_admin">School admin</option>
+        </select>
+        <p class="hint">Tip: for testing, turn OFF email confirmation in Supabase → Authentication → Sign In / Providers, so accounts can log in immediately.</p>
+        <button class="btn" id="su_btn" type="submit">Create account</button>
+      </form>
+
+      <!-- Login -->
+      <form id="loginForm" style="display:none" onsubmit="return doLogin(event)">
+        <label>Email</label>
+        <input id="li_email" type="email" placeholder="you@example.com" autocomplete="email" required>
+        <label>Password</label>
+        <input id="li_pass" type="password" placeholder="Your password" autocomplete="current-password" required>
+        <button class="btn" id="li_btn" type="submit">Log in</button>
+      </form>
+    </div>
+
+    <!-- Logged-in view -->
+    <div class="card profile" id="profileCard" style="display:none">
+      <div class="msg ok show" style="margin-bottom:18px">✓ Signed in. Persistent session is active — refresh this page and you'll stay logged in.</div>
+      <h2>Your profile row <span style="font-weight:500;color:var(--muted)">(public.users)</span></h2>
+      <div id="profileBody"></div>
+      <div style="height:16px"></div>
+      <button class="btn ghost" onclick="doLogout()">Log out</button>
+    </div>
+
+    <p class="foot">
+      If a profile row shows below your sign-in, the trigger + RLS are working.<br>
+      Connected to <span id="proj"></span>
+    </p>
+  </div>
+
+  <!-- Supabase JS (UMD global `supabase`) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="supabase-client.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    document.getElementById("proj").textContent = "laihhrkxnxzohaiiisou.supabase.co";
+
+    function showTab(which){
+      var s = which === "signup";
+      document.getElementById("tabSignup").classList.toggle("active", s);
+      document.getElementById("tabLogin").classList.toggle("active", !s);
+      document.getElementById("signupForm").style.display = s ? "" : "none";
+      document.getElementById("loginForm").style.display = s ? "none" : "";
+      hideMsg();
+    }
+    function msg(text, kind){
+      var m = document.getElementById("msg");
+      m.textContent = text;
+      m.className = "msg show " + (kind||"err");
+    }
+    function hideMsg(){ document.getElementById("msg").className = "msg"; }
+    function busy(btnId, on, label){
+      var b = document.getElementById(btnId);
+      b.disabled = on;
+      b.innerHTML = on ? ('<span class="spin"></span>' + (label||"Working…")) : b.dataset.label;
+    }
+    ["su_btn","li_btn"].forEach(function(id){
+      var b = document.getElementById(id); b.dataset.label = b.textContent;
+    });
+
+    async function doSignup(e){
+      e.preventDefault(); hideMsg(); busy("su_btn", true, "Creating…");
+      try{
+        var data = await HaarayaAuth.signUp({
+          email: document.getElementById("su_email").value.trim(),
+          password: document.getElementById("su_pass").value,
+          fullName: document.getElementById("su_name").value.trim(),
+          role: document.getElementById("su_role").value,
+        });
+        if (data.session){
+          await render();                 // confirmation off → logged in now
+        } else {
+          busy("su_btn", false);
+          msg("Account created. Check your email to confirm, then come back and log in. (Or disable email confirmation in Supabase for instant testing.)", "warn");
+          showTab("login");
+        }
+      }catch(err){
+        busy("su_btn", false);
+        msg(err.message || String(err), "err");
+      }
+      return false;
+    }
+
+    async function doLogin(e){
+      e.preventDefault(); hideMsg(); busy("li_btn", true, "Logging in…");
+      try{
+        await HaarayaAuth.signIn({
+          email: document.getElementById("li_email").value.trim(),
+          password: document.getElementById("li_pass").value,
+        });
+        await render();
+      }catch(err){
+        busy("li_btn", false);
+        msg(err.message || String(err), "err");
+      }
+      return false;
+    }
+
+    async function doLogout(){
+      await HaarayaAuth.signOut();
+      await render();
+    }
+
+    function field(k, v){
+      return '<div class="row"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>';
+    }
+
+    async function render(){
+      var session = await HaarayaAuth.getSession();
+      var authed = !!session;
+      document.getElementById("authCard").style.display = authed ? "none" : "";
+      document.getElementById("profileCard").style.display = authed ? "" : "none";
+      ["su_btn","li_btn"].forEach(function(id){ busy(id, false); });
+      if (!authed) return;
+
+      var body = document.getElementById("profileBody");
+      try{
+        var p = await HaarayaAuth.getProfile();
+        if (!p){
+          body.innerHTML = '<div class="msg warn show">Signed in, but no profile row found. Did you run supabase-auth-setup.sql? (The trigger creates this row on signup.)</div>';
+          return;
+        }
+        body.innerHTML =
+          field("Name", p.full_name || "—") +
+          field("Email", p.email) +
+          field("Role", '<span class="pill">'+p.role+'</span>') +
+          field("Profile id", p.id) +
+          field("auth_uid", p.auth_uid) +
+          field("Created", new Date(p.created_at).toLocaleString());
+      }catch(err){
+        body.innerHTML = '<div class="msg err show">Could read session but profile query failed: '+(err.message||err)+'<br>Likely an RLS policy issue — re-check supabase-auth-setup.sql.</div>';
+      }
+    }
+
+    // React to auth changes (e.g. confirmation link) and paint initial state.
+    HaarayaAuth.onChange(function(){ render(); });
+    render();
+  </script>
+</body>
+</html>
