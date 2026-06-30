@@ -358,12 +358,23 @@ const TAFIYA_STRAND_ROWS = [
   ["hafwas", "soundables", "soundables-plus", "tafiya", "tafiya-nonfiction"],
   ["folktale", "poetry", "duniya", "stamina", "stamina-nonfiction"],
 ];
+const tflCodeOf = (b) => tfrText((b && (b.book_code || b.code)) || "");
+const tflNormType = (b) => tfrText(tfrTypeLabel(b && b.book_type)).toLowerCase();
+const tflNormStrand = (b) => tfrText(b && b.strand).toLowerCase();
+
 /* Which catalogue book_types each strand chip stands for. Chips with no entry
    here (or no matching books) are shown disabled. */
 const TAFIYA_STRAND_MATCH = {
-  tafiya: (t) => t === "Fiction" || t === "Concept",
-  "tafiya-nonfiction": (t) => t === "Non-Fiction",
-  folktale: (t) => t === "Folktale",
+  hafwas: (b) => tflCodeOf(b).startsWith("H-") || tflNormStrand(b).includes("hafwas") || tflNormType(b).includes("hafwas"),
+  soundables: (b) => tflCodeOf(b).startsWith("S-") || tflNormStrand(b).includes("soundables") && !tflNormStrand(b).includes("plus"),
+  "soundables-plus": (b) => tflCodeOf(b).startsWith("SP-") || tflNormStrand(b).includes("soundables+") || tflNormStrand(b).includes("soundables plus") || tflNormType(b).includes("soundables+"),
+  tafiya: (b) => tflCodeOf(b).startsWith("TF-") || tflNormType(b) === "fiction" || tflNormType(b) === "concept" || tflNormStrand(b).includes("tafiya fiction"),
+  "tafiya-nonfiction": (b) => tflCodeOf(b).startsWith("TN-") || tflNormType(b).includes("non-fiction") || tflNormType(b).includes("nonfiction") || tflNormStrand(b).includes("non-fiction"),
+  folktale: (b) => tflCodeOf(b).startsWith("TFT-") || tflNormType(b).includes("folktale") || tflNormStrand(b).includes("folktale"),
+  poetry: (b) => tflCodeOf(b).startsWith("TP-") || tflNormType(b).includes("poetry") || tflNormStrand(b).includes("poetry"),
+  duniya: (b) => tflCodeOf(b).startsWith("TD-") || tflNormType(b).includes("duniya") || tflNormStrand(b).includes("duniya"),
+  stamina: (b) => tflCodeOf(b).startsWith("SF-") || tflNormType(b).includes("stamina fiction") || tflNormStrand(b).includes("stamina fiction"),
+  "stamina-nonfiction": (b) => tflCodeOf(b).startsWith("SN-") || tflNormType(b).includes("stamina non-fiction") || tflNormType(b).includes("stamina nonfiction") || tflNormStrand(b).includes("stamina non-fiction"),
 };
 
 function LibraryScreen({ onNavigate, initialLevel }) {
@@ -397,12 +408,12 @@ function LibraryScreen({ onNavigate, initialLevel }) {
     [catalog]
   );
 
-  const codeOf = (b) => b.book_code || b.code;
+  const codeOf = (b) => b.book_code || b.code || "";
   const levelNum = (b) => { const m = tfrText(b.level).match(/\d+/); return m ? Number(m[0]) : (typeof b.level === "number" ? b.level : 999); };
   const typeOf = (b) => tfrTypeLabel(b.book_type);
 
   // Availability — drives which chips are live vs greyed.
-  const strandAvailable = (k) => { const m = TAFIYA_STRAND_MATCH[k]; return !!m && catalog.some(b => m(typeOf(b))); };
+  const strandAvailable = (k) => { const m = TAFIYA_STRAND_MATCH[k]; return !!m && catalog.some(b => m(b)); };
   const levelsPresent = React.useMemo(() => new Set(catalog.map(levelNum)), [catalog]);
 
   const sequenceNum = (b) => { const m = codeOf(b).match(/-(\d+)$/); return m ? Number(m[1]) : 999999; };
@@ -410,7 +421,7 @@ function LibraryScreen({ onNavigate, initialLevel }) {
   const filtered = catalog
     .filter(b => codeOf(b))
     .filter(b => levelFilter === "all" || levelNum(b) === levelFilter)
-    .filter(b => { if (strandFilter === "all") return true; const m = TAFIYA_STRAND_MATCH[strandFilter]; return m ? m(typeOf(b)) : false; })
+    .filter(b => { if (strandFilter === "all") return true; const m = TAFIYA_STRAND_MATCH[strandFilter]; return m ? m(b) : false; })
     .sort((a, b) => (levelNum(a) - levelNum(b)) || (sequenceNum(a) - sequenceNum(b)) || codeOf(a).localeCompare(codeOf(b)));
 
   return (
