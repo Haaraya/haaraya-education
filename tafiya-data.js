@@ -537,10 +537,32 @@
   // ---- Free samples: first N books in catalogue order ----
   var SAMPLE_LIMIT = 6;
   function levelNum(b) { var m = String(b.level || "").match(/\d+/); return m ? +m[0] : (typeof b.level === "number" ? b.level : 999); }
-  function typeOrder(t) { t = String(t || "").toLowerCase(); if (t.indexOf("concept") >= 0) return 1; if (t.indexOf("non") >= 0) return 4; if (t.indexOf("folktale") >= 0) return 3; if (t.indexOf("fiction") >= 0) return 2; return 9; }
+  // Strand taxonomy — resolve a book to its UI strand key, and rank strands in
+  // pedagogical reading order so the catalogue sequences sensibly.
+  var STRAND_UI_ORDER = ["hafwas", "soundables", "soundables-plus", "tafiya", "tafiya-nonfiction", "folktale", "poetry", "duniya", "stamina", "stamina-nonfiction"];
+  var STRAND_UI_BY_NAME = {
+    "Hafwas": "hafwas", "Soundables": "soundables", "Soundables+": "soundables-plus",
+    "Tafiya Fiction": "tafiya", "Tafiya Non-Fiction": "tafiya-nonfiction", "Tafiya Folktale": "folktale",
+    "Tafiya Poetry": "poetry", "Tafiya Duniya": "duniya", "Stamina Fiction": "stamina", "Stamina Non-Fiction": "stamina-nonfiction",
+  };
+  function strandKeyOf(b) {
+    var name = String((b && b.strand) || "").trim();
+    if (STRAND_UI_BY_NAME[name]) return STRAND_UI_BY_NAME[name];
+    var t = String((b && b.book_type) || "").toLowerCase();
+    if (t.indexOf("hafwas") >= 0) return "hafwas";
+    if (t.indexOf("soundables+") >= 0 || t.indexOf("soundables plus") >= 0) return "soundables-plus";
+    if (t.indexOf("soundable") >= 0) return "soundables";
+    if (t.indexOf("stamina") >= 0) return t.indexOf("non") >= 0 ? "stamina-nonfiction" : "stamina";
+    if (t.indexOf("duniya") >= 0) return "duniya";
+    if (t.indexOf("poet") >= 0) return "poetry";
+    if (t.indexOf("folktale") >= 0) return "folktale";
+    if (t.indexOf("non") >= 0) return "tafiya-nonfiction";
+    return "tafiya";
+  }
+  function strandRank(b) { var i = STRAND_UI_ORDER.indexOf(strandKeyOf(b)); return i < 0 ? 99 : i; }
   function sortedCatalog(list) {
     return (list || getCatalog()).filter(function (b) { return codeOf(b); }).slice().sort(function (a, b) {
-      return (levelNum(a) - levelNum(b)) || (typeOrder(a.book_type) - typeOrder(b.book_type)) || codeOf(a).localeCompare(codeOf(b));
+      return (levelNum(a) - levelNum(b)) || (strandRank(a) - strandRank(b)) || codeOf(a).localeCompare(codeOf(b), undefined, { numeric: true });
     });
   }
   function freeCodes(list) { return sortedCatalog(list).slice(0, SAMPLE_LIMIT).map(codeOf); }
@@ -580,6 +602,8 @@
     getPackage: getPackage,
     assetUrl: assetUrl,
     sortedCatalog: sortedCatalog,
+    strandKeyOf: strandKeyOf,
+    strandRank: strandRank,
     freeCodes: freeCodes,
     isFree: isFree,
     levelNum: levelNum,

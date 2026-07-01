@@ -8,11 +8,19 @@
   "use strict";
   const T = window.TafiyaData;
 
+  // Resolve a book to its UI strand key. Uses the shared taxonomy in
+  // tafiya-data.js so home/dashboards match the library across all 10 strands.
   function strandUiOf(b) {
-    const t = String(b.book_type || "").toLowerCase();
-    if (t.indexOf("non") >= 0) return "tafiya-nonfiction";
-    if (t.indexOf("folktale") >= 0) return "folktale";
+    if (T && T.strandKeyOf) return T.strandKeyOf(b);
+    var t = String(b.book_type || "").toLowerCase();
+    if (t.indexOf("hafwas") >= 0) return "hafwas";
+    if (t.indexOf("soundables+") >= 0 || t.indexOf("soundables plus") >= 0) return "soundables-plus";
+    if (t.indexOf("soundable") >= 0) return "soundables";
+    if (t.indexOf("stamina") >= 0) return t.indexOf("non") >= 0 ? "stamina-nonfiction" : "stamina";
+    if (t.indexOf("duniya") >= 0) return "duniya";
     if (t.indexOf("poet") >= 0) return "poetry";
+    if (t.indexOf("folktale") >= 0) return "folktale";
+    if (t.indexOf("non") >= 0) return "tafiya-nonfiction";
     return "tafiya";
   }
   function levelNum(b) { const m = String(b.level || "").match(/\d+/); return m ? +m[0] : 999; }

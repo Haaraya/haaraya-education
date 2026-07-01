@@ -573,7 +573,9 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
             </button>
             <div className="progress">
               <span className="progress-text">{progressText}</span>
-              {total > 0 && total <= 16 && (
+              {/* +2 trailing screens (quiz + up-next) don't get dots, so the
+                  threshold counts only the book itself (cover + pages + back). */}
+              {total > 0 && total <= 18 && (
                 <div className="dots" aria-hidden="true">
                   {screens.map((sc, i) => (
                     (sc.type === "quiz" || sc.type === "nextup") ? null :
@@ -596,19 +598,43 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
    LIBRARY SCREEN — real Tafiya catalogue with cover thumbnails
    ============================================================ */
 
-/* The original app's strand chips, in their two rows. Only some are covered by
-   the current Tafiya catalogue; the rest render greyed-out (see availability). */
+/* The original app's strand chips, in their two rows. The live catalogue now
+   carries all ten strands, so every chip is real. */
 const TAFIYA_STRAND_ROWS = [
   ["hafwas", "soundables", "soundables-plus", "tafiya", "tafiya-nonfiction"],
   ["folktale", "poetry", "duniya", "stamina", "stamina-nonfiction"],
 ];
-/* Which catalogue book_types each strand chip stands for. Chips with no entry
-   here (or no matching books) are shown disabled. */
-const TAFIYA_STRAND_MATCH = {
-  tafiya: (t) => t === "Fiction" || t === "Concept",
-  "tafiya-nonfiction": (t) => t === "Non-Fiction",
-  folktale: (t) => t === "Folktale",
+const TAFIYA_STRAND_ORDER = TAFIYA_STRAND_ROWS.flat();
+/* Supabase `strand` value → UI strand key (matches STRANDS in shared.jsx). */
+const TAFIYA_STRAND_BY_NAME = {
+  "Hafwas": "hafwas",
+  "Soundables": "soundables",
+  "Soundables+": "soundables-plus",
+  "Tafiya Fiction": "tafiya",
+  "Tafiya Non-Fiction": "tafiya-nonfiction",
+  "Tafiya Folktale": "folktale",
+  "Tafiya Poetry": "poetry",
+  "Tafiya Duniya": "duniya",
+  "Stamina Fiction": "stamina",
+  "Stamina Non-Fiction": "stamina-nonfiction",
 };
+/* Resolve a book to its UI strand key. Prefer the clean `strand` field; fall
+   back to inferring from book_type so nothing ever drops out of the grid. */
+function tfrStrandUi(b) {
+  if (window.TafiyaData && window.TafiyaData.strandKeyOf) return window.TafiyaData.strandKeyOf(b);
+  const name = tfrText(b.strand);
+  if (TAFIYA_STRAND_BY_NAME[name]) return TAFIYA_STRAND_BY_NAME[name];
+  const t = tfrText(b.book_type).toLowerCase();
+  if (t.indexOf("hafwas") >= 0) return "hafwas";
+  if (t.indexOf("soundables+") >= 0 || t.indexOf("soundables plus") >= 0) return "soundables-plus";
+  if (t.indexOf("soundable") >= 0) return "soundables";
+  if (t.indexOf("stamina") >= 0) return t.indexOf("non") >= 0 ? "stamina-nonfiction" : "stamina";
+  if (t.indexOf("duniya") >= 0) return "duniya";
+  if (t.indexOf("poet") >= 0) return "poetry";
+  if (t.indexOf("folktale") >= 0) return "folktale";
+  if (t.indexOf("non") >= 0) return "tafiya-nonfiction";
+  return "tafiya";
+}
 
 function LibraryScreen({ onNavigate, initialLevel }) {
   const [catalog, setCatalog] = useStateTfr(() => (window.TafiyaData ? window.TafiyaData.getCatalog() : []));
@@ -643,19 +669,20 @@ function LibraryScreen({ onNavigate, initialLevel }) {
 
   const codeOf = (b) => b.book_code || b.code;
   const levelNum = (b) => { const m = tfrText(b.level).match(/\d+/); return m ? Number(m[0]) : (typeof b.level === "number" ? b.level : 999); };
-  const typeOf = (b) => tfrTypeLabel(b.book_type);
+  const strandUi = (b) => tfrStrandUi(b);
 
-  // Availability — drives which chips are live vs greyed.
-  const strandAvailable = (k) => { const m = TAFIYA_STRAND_MATCH[k]; return !!m && catalog.some(b => m(typeOf(b))); };
+  // Availability — a chip is live if the catalogue has any book in that strand.
+  const availableStrands = React.useMemo(() => new Set(catalog.map(tfrStrandUi)), [catalog]);
+  const strandAvailable = (k) => availableStrands.has(k);
   const levelsPresent = React.useMemo(() => new Set(catalog.map(levelNum)), [catalog]);
 
-  const typeOrder = (t) => { t = (t || "").toLowerCase(); if (t.includes("concept")) return 1; if (t.includes("non")) return 4; if (t.includes("folktale")) return 3; if (t.includes("fiction")) return 2; return 9; };
+  const strandRank = (b) => { const i = TAFIYA_STRAND_ORDER.indexOf(tfrStrandUi(b)); return i < 0 ? 99 : i; };
 
   const filtered = catalog
     .filter(b => codeOf(b))
     .filter(b => levelFilter === "all" || levelNum(b) === levelFilter)
-    .filter(b => { if (strandFilter === "all") return true; const m = TAFIYA_STRAND_MATCH[strandFilter]; return m ? m(typeOf(b)) : false; })
-    .sort((a, b) => (levelNum(a) - levelNum(b)) || (typeOrder(typeOf(a)) - typeOrder(typeOf(b))) || codeOf(a).localeCompare(codeOf(b)));
+    .filter(b => strandFilter === "all" || tfrStrandUi(b) === strandFilter)
+    .sort((a, b) => (levelNum(a) - levelNum(b)) || (strandRank(a) - strandRank(b)) || codeOf(a).localeCompare(codeOf(b)));
 
   return (
     <main style={{ background: "var(--cream)", minHeight: "100vh" }}>
