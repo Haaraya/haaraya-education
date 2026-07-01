@@ -242,7 +242,7 @@ function TfrQuizCards({ questions, write, retryNote, alreadyPassed, onPass, onCo
   const [qi, setQi] = useStateTfr(0);
   const [sel, setSel] = useStateTfr(-1);
   const [st, setSt] = useStateTfr("idle"); // idle | correct | wrong
-  const [done, setDone] = useStateTfr(!!alreadyPassed);
+  const [done, setDone] = useStateTfr(false);
   if (done) return <TfrQuizDone total={n} write={write} onContinue={onContinue} />;
   const q = questions[qi];
   const pick = (oi) => { if (st === "correct") return; setSel(oi); setSt("idle"); };
@@ -275,7 +275,7 @@ function TfrQuizSheet({ questions, write, retryNote, alreadyPassed, onPass, onCo
   const [ans, setAns] = useStateTfr(() => questions.map(() => -1));
   const [locked, setLocked] = useStateTfr(() => questions.map(() => false));
   const [checked, setChecked] = useStateTfr(false);
-  const [done, setDone] = useStateTfr(!!alreadyPassed);
+  const [done, setDone] = useStateTfr(false);
   if (done) return <TfrQuizDone total={n} write={write} onContinue={onContinue} />;
   const pick = (qi, oi) => { if (locked[qi]) return; setAns(a => { const c = a.slice(); c[qi] = oi; return c; }); };
   const allAnswered = ans.every(a => a >= 0);
@@ -379,9 +379,11 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
     return [{ type: "cover" }, ...pages.map(p => ({ type: "page", page: p })), { type: "back" }, { type: "quiz" }, { type: "nextup" }];
   }, [pkg]);
 
-  // Catalogue (for "next book") + whether this book's check has been passed.
+  // Catalogue (for "next book"). The reading check is always presented fresh
+  // when the child reaches it — a previously-completed book still shows its
+  // questions and must be passed again to advance past the check.
   useEffectTfr(() => {
-    setQuizPassed(!!(window.TafiyaData && window.TafiyaData.isCompleted(code)));
+    setQuizPassed(false);
     if (window.TafiyaData && window.TafiyaData.loadCatalog) {
       let alive = true;
       window.TafiyaData.loadCatalog().then(list => { if (alive && list && list.length) setCatalog(list); });
