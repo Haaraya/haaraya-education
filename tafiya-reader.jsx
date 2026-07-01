@@ -510,9 +510,12 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
             <span className="running-level">{pkg ? tfrMeta(b) : ""}</span>
           </div>
           <div className="brand" aria-hidden="true">
-            {logos.haaraya_literacy
-              ? <img src={tfrSrc(logos.haaraya_literacy, !!(pkg && pkg._local))} alt="" />
-              : <span className="strand">{tfrText(b.strand)}</span>}
+            {logos.haaraya_literacy && <img src={tfrSrc(logos.haaraya_literacy, !!(pkg && pkg._local))} alt="" />}
+            {window.StrandLogo && pkg && (
+              <span className="brand-strand-logo">
+                <window.StrandLogo strand={tfrStrandUi(b)} height={26} />
+              </span>
+            )}
           </div>
         </header>
 
@@ -573,10 +576,10 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
             </button>
             <div className="progress">
               <span className="progress-text">{progressText}</span>
-              {/* +2 trailing screens (quiz + up-next) don't get dots, so the
-                  threshold counts only the book itself (cover + pages + back). */}
-              {total > 0 && total <= 18 && (
-                <div className="dots" aria-hidden="true">
+              {/* Page-picker dots on every book. Quiz + up-next screens are
+                  excluded; many-page books wrap to a second row. */}
+              {total > 0 && (
+                <div className={"dots" + (total > 18 ? " dots-dense" : "")} aria-hidden="true">
                   {screens.map((sc, i) => (
                     (sc.type === "quiz" || sc.type === "nextup") ? null :
                     <button key={i} type="button" className={"dot" + (i === index ? " active" : "")} onClick={() => go(i)} />
