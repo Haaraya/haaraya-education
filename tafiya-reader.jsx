@@ -680,12 +680,15 @@ function LibraryScreen({ onNavigate, initialLevel }) {
   const levelsPresent = React.useMemo(() => new Set(catalog.map(levelNum)), [catalog]);
 
   const strandRank = (b) => { const i = TAFIYA_STRAND_ORDER.indexOf(tfrStrandUi(b)); return i < 0 ? 99 : i; };
+  // Programme order within a level = the code's numeric suffix (interleaves strands
+  // in the intended teaching sequence, e.g. S-01-010, H-01-040, TF-01-080, …).
+  const seqNum = (b) => { const m = String(codeOf(b)).split("-").pop(); const n = parseInt(m, 10); return isNaN(n) ? 999999 : n; };
 
   const filtered = catalog
     .filter(b => codeOf(b))
     .filter(b => levelFilter === "all" || levelNum(b) === levelFilter)
     .filter(b => strandFilter === "all" || tfrStrandUi(b) === strandFilter)
-    .sort((a, b) => (levelNum(a) - levelNum(b)) || (strandRank(a) - strandRank(b)) || codeOf(a).localeCompare(codeOf(b)));
+    .sort((a, b) => (levelNum(a) - levelNum(b)) || (seqNum(a) - seqNum(b)) || codeOf(a).localeCompare(codeOf(b)));
 
   return (
     <main style={{ background: "var(--cream)", minHeight: "100vh" }}>

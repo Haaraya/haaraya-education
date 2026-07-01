@@ -560,9 +560,12 @@
     return "tafiya";
   }
   function strandRank(b) { var i = STRAND_UI_ORDER.indexOf(strandKeyOf(b)); return i < 0 ? 99 : i; }
+  // Programme sequence = the numeric suffix of the book code (e.g. S-01-010 → 10,
+  // H-01-040 → 40). Within a level this interleaves the strands in teaching order.
+  function seqNum(b) { var m = String(codeOf(b)).split("-").pop(); var n = parseInt(m, 10); return isNaN(n) ? 999999 : n; }
   function sortedCatalog(list) {
     return (list || getCatalog()).filter(function (b) { return codeOf(b); }).slice().sort(function (a, b) {
-      return (levelNum(a) - levelNum(b)) || (strandRank(a) - strandRank(b)) || codeOf(a).localeCompare(codeOf(b), undefined, { numeric: true });
+      return (levelNum(a) - levelNum(b)) || (seqNum(a) - seqNum(b)) || codeOf(a).localeCompare(codeOf(b), undefined, { numeric: true });
     });
   }
   function freeCodes(list) { return sortedCatalog(list).slice(0, SAMPLE_LIMIT).map(codeOf); }
