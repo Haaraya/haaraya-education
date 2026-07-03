@@ -4,6 +4,9 @@
 
 const { useState: useStateHome } = React;
 
+/* Haaraya level names, L1→L12 (index 0 = Level 1). */
+const HAARAYA_LEVEL_NAMES = ["Tashi", "Mataki", "Hanya", "Tafiya", "Kwararo", "Gada", "Kwari", "Tudun", "Kololuwa", "Fage", "Sarari", "Isa"];
+
 function Hero({ onNavigate }) {
   return (
     <React.Fragment>
@@ -429,19 +432,6 @@ const STRAND_ROWS = [
 /* Two curated shelves — Path (recommended for the reader now) and Fun (free reads).
    `tag` is subtle content metadata, never a navigation category.
    `level` drives which passport seal (stamp-lN.png) is stamped on the cover. */
-const PATH_BOOKS = [
-  { id: "p1", title: "Mama's Market Morning", strand: "tafiya-nonfiction", level: 5, tag: "everyday life" },
-  { id: "p2", title: "Grandma's Compound",    strand: "tafiya",            level: 4, tag: "family story" },
-  { id: "p3", title: "Rain on the Iroko",     strand: "poetry",            level: 4, tag: "everyday life" },
-  { id: "p4", title: "Bisi and the Bell",     strand: "soundables",        level: 5, tag: "funny story" },
-];
-const FUN_BOOKS = [
-  { id: "f1", title: "Anansi's Quiet Trick",  strand: "folktale",          level: 6, tag: "animal story" },
-  { id: "f2", title: "Lagos by Lamplight",    strand: "stamina",           level: 8, tag: "adventure story" },
-  { id: "f3", title: "The Whole Street Helps",strand: "tafiya",            level: 3, tag: "community story" },
-  { id: "f4", title: "The Snow Hare's Gift",  strand: "duniya",            level: 7, tag: "animal story" },
-];
-
 function CatalogueCard({ book, onOpen }) {
   const s = STRANDS[book.strand];
   return (
@@ -551,21 +541,55 @@ function DashboardsPreview({ onNavigate }) {
 }
 
 function DashChildPreview({ onNavigate }) {
-  // Real catalogue books (with cover thumbnails) for the “Keep reading” preview.
-  const keepReading = React.useMemo(() => {
-    const T = window.TafiyaData;
-    const list = T ? T.sortedCatalog() : [];
-    return list.slice(0, 3).map(b => {
-      const code = b.book_code || b.code;
-      const uiKey = window.TafiyaBooks ? TafiyaBooks.strandUiOf(b) : "tafiya";
-      const s = (window.STRANDS && window.STRANDS[uiKey]) || {};
-      return {
-        id: code, title: b.title, author: b.book_type || "",
-        strand: uiKey, level: window.TafiyaBooks ? TafiyaBooks.levelNum(b) : b.level,
-        c: s.color, bg: s.bg, thumb: b.thumbnail_image_path || "",
-      };
-    });
+  // Live figures, derived from the reader's real local progress (same source as
+  // the Reading Passport + Child dashboard). Re-renders when a book is finished
+  // or the catalogue finishes loading.
+  const [tick, setTick] = useStateHome(0);
+  React.useEffect(() => {
+    let alive = true;
+    const bump = () => { if (alive) setTick(t => t + 1); };
+    if (window.TafiyaData && window.TafiyaData.loadCatalog) window.TafiyaData.loadCatalog().then(bump);
+    window.addEventListener("haaraya:reading", bump);
+    window.addEventListener("haaraya:session", bump);
+    return () => { alive = false; window.removeEventListener("haaraya:reading", bump); window.removeEventListener("haaraya:session", bump); };
   }, []);
+
+  const T = window.TafiyaData;
+  const catalog = T ? T.getCatalog() : [];
+  const byCode = React.useMemo(() => { const m = {}; catalog.forEach(b => { m[b.book_code || b.code] = b; }); return m; }, [catalog.length, tick]);
+  const cardOf = (b) => {
+    const code = b.book_code || b.code;
+    const uiKey = window.TafiyaBooks ? TafiyaBooks.strandUiOf(b) : "tafiya";
+    const s = (window.STRANDS && window.STRANDS[uiKey]) || {};
+    return { id: code, title: b.title, author: b.book_type || "", strand: uiKey, level: window.TafiyaBooks ? TafiyaBooks.levelNum(b) : b.level, c: s.color, bg: s.bg, thumb: b.thumbnail_image_path || "" };
+  };
+
+  // Signed-in reader's name + avatar colour (friendly demo fallback for visitors).
+  const sess = window.HaarayaSession ? HaarayaSession.get() : null;
+  const rawName = (sess && sess.role === "child" && sess.displayName) ? sess.displayName.trim() : "";
+  const NAME = (rawName && rawName !== "Demo Child") ? rawName.split(/\s+/)[0] : "Kaha";
+  const avatarColor = (sess && sess.color) || "#E65100";
+
+  // Progress figures.
+  const completedByLvl = window.TafiyaBooks ? TafiyaBooks.completedByLevel() : {};
+  const stampsEarned = T ? T.completedCodes().length : 0;
+  const currentLevel = (() => { const ls = Object.keys(completedByLvl).map(Number); return ls.length ? Math.max(...ls) : 1; })();
+  const levelDone = completedByLvl[currentLevel] || 0;
+  const levelName = HAARAYA_LEVEL_NAMES[currentLevel - 1] || "";
+
+  // Keep reading — books in progress, else a few suggested books.
+  const ipSet = new Set(T ? T.inProgressCodes() : []);
+  let keep = catalog.filter(b => ipSet.has(b.book_code || b.code));
+  if (!keep.length) keep = (T ? T.sortedCatalog(catalog) : catalog).slice(0, 3);
+  const keepReading = keep.slice(0, 3).map(cardOf);
+
+  // Suggested for you — next unread books in programme order (skip in-progress too).
+  const doneSet = new Set(T ? T.completedCodes() : []);
+  const ordered = T ? T.sortedCatalog(catalog) : catalog;
+  let suggest = ordered.filter(b => { const c = b.book_code || b.code; return !doneSet.has(c) && !ipSet.has(c); });
+  if (!suggest.length) suggest = ordered.slice(0, 3);
+  const suggested = suggest.slice(0, 3).map(cardOf);
+
   return (
     <div className="dash">
       <aside className="dash-sidebar">
@@ -575,22 +599,22 @@ function DashChildPreview({ onNavigate }) {
         </div>
         <nav className="dash-nav">
           <a className="active"><span className="nav-icon" /> My Books</a>
-          <a><span className="nav-icon" /> My Passport</a>
-          <a><span className="nav-icon" /> Library</a>
+          <a onClick={() => onNavigate("passport")}><span className="nav-icon" /> My Passport</a>
+          <a onClick={() => onNavigate("library")}><span className="nav-icon" /> Library</a>
           <a><span className="nav-icon" /> Assignments</a>
           <a><span className="nav-icon" /> Audio</a>
         </nav>
       </aside>
       <div className="dash-main">
         <div className="dash-child-hero">
-          <Avatar name="Kaha" color="#E65100" size={72} />
+          <Avatar name={NAME} color={avatarColor} size={72} />
           <div className="greet">
-            <h4>Hi there, Kaha!</h4>
-            <div className="level">Level 7 · Kwari</div>
-            <div className="sub" style={{ fontSize: 13, color: "var(--ink-soft)", fontWeight: 600, marginTop: 4 }}>14 books completed</div>
+            <h4>Hi there, {NAME}!</h4>
+            <div className="level">Level {currentLevel} · {levelName}</div>
+            <div className="sub" style={{ fontSize: 13, color: "var(--ink-soft)", fontWeight: 600, marginTop: 4 }}>{levelDone} {levelDone === 1 ? "book" : "books"} completed</div>
           </div>
           <div className="stat">
-            <div className="num">36</div>
+            <div className="num">{stampsEarned}</div>
             <div className="lbl">Stamps earned</div>
           </div>
         </div>
@@ -602,14 +626,9 @@ function DashChildPreview({ onNavigate }) {
             </div>
           </div>
           <div className="dash-card">
-            <h5>Recent stamps</h5>
-            <div className="dash-passport-mini">
-              <Stamp strand="tafiya"     title="Market" rotate={-3} />
-              <Stamp strand="hafwas"     title="Bus"    rotate={3} />
-              <Stamp strand="soundables" title="Run"    rotate={-2} />
-              <Stamp strand="poetry"     title="Drum"   rotate={4} />
-              <Stamp strand="tafiya"     title="Yams"   rotate={-4} />
-              <Stamp strand="locked"     title="?" rotate={2} locked />
+            <h5>Suggested for you</h5>
+            <div className="dash-mini-books">
+              {suggested.map(b => <Book key={b.id} book={b} onClick={() => onNavigate("reader", { bookCode: b.id })} />)}
             </div>
           </div>
         </div>
@@ -674,13 +693,29 @@ function DashParentPreview({ onNavigate }) {
 }
 
 function DashTeacherPreview() {
-  const rows = [
-    { name: "Mama's Market Morning",   strand: "tafiya",     level: 5, status: "done", pct: "28 / 28" },
-    { name: "The Big Big Bus",          strand: "hafwas",     level: 2, status: "progress", pct: "21 / 28" },
-    { name: "Ade and the Lost Slipper", strand: "soundables", level: 3, status: "progress", pct: "18 / 28" },
-    { name: "Anansi's Quiet Trick",     strand: "tafiya",     level: 6, status: "notstarted", pct: "0 / 28" },
-    { name: "Rain on the Iroko",        strand: "poetry",     level: 4, status: "done", pct: "28 / 28" },
-  ];
+  // Real catalogue titles across a spread of strands (illustrative statuses —
+  // this is the public marketing preview, not a live class register).
+  const [, bump] = useStateHome(0);
+  React.useEffect(() => {
+    let alive = true;
+    if (window.TafiyaData && window.TafiyaData.loadCatalog) window.TafiyaData.loadCatalog().then(() => { if (alive) bump(x => x + 1); });
+    return () => { alive = false; };
+  }, []);
+  const T = window.TafiyaData;
+  const cat = T ? T.sortedCatalog() : [];
+  const strandOf = (b) => (T && T.strandKeyOf) ? T.strandKeyOf(b) : "tafiya";
+  const statuses = ["done", "progress", "progress", "notstarted", "done"];
+  const pcts = ["28 / 28", "21 / 28", "18 / 28", "0 / 28", "28 / 28"];
+  const chosen = [];
+  ["tafiya", "hafwas", "soundables", "folktale", "poetry"].forEach(k => {
+    const b = cat.find(x => strandOf(x) === k && chosen.indexOf(x) < 0);
+    if (b) chosen.push(b);
+  });
+  for (let i = 0; i < cat.length && chosen.length < 5; i++) { if (chosen.indexOf(cat[i]) < 0) chosen.push(cat[i]); }
+  const rows = chosen.slice(0, 5).map((b, i) => ({
+    name: b.title, strand: strandOf(b), level: T ? T.levelNum(b) : b.level,
+    status: statuses[i], pct: pcts[i],
+  }));
   return (
     <div className="dash">
       <aside className="dash-sidebar">
