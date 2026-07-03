@@ -24,6 +24,15 @@ function tfrLevelLabel(lvl) {
   if (!s) return "";
   return /^level\b/i.test(s) ? s.replace(/\s+/g, " ") : "Level " + s;
 }
+// Resolve the strand wordmark shown on the cover / back cover. Keyed to the
+// book's own strand (so a Hafwas book shows the Hafwas mark, not the generic
+// Tafiya one). Falls back to the package's bundled tafiya logo if STRANDS is
+// unavailable or the strand has no logo.
+function tfrStrandLogo(book, logos) {
+  const s = (window.STRANDS && window.STRANDS[tfrStrandUi(book)]) || null;
+  if (s && s.logo) return { src: s.logo, alt: s.name || "" };
+  return { src: (logos && logos.tafiya) || "", alt: "" };
+}
 function tfrTypeLabel(v) {
   const s = tfrText(v);
   if (!s) return "";
@@ -62,10 +71,11 @@ function TfrCover({ pkg }) {
   const b = pkg.book || {};
   const local = !!pkg._local;
   const logos = (pkg.assets && pkg.assets.logos) || {};
+  const strandLogo = tfrStrandLogo(b, logos);
   return (
     <div className="surface cover">
       <div className="cover-top">
-        {logos.tafiya && <img className="logo-tafiya" src={tfrSrc(logos.tafiya, local)} alt="" />}
+        {strandLogo.src && <img className="logo-tafiya" src={tfrSrc(strandLogo.src, local)} alt={strandLogo.alt} />}
         {logos.haaraya_literacy && <img className="logo-literacy" src={tfrSrc(logos.haaraya_literacy, local)} alt="" />}
       </div>
       <TfrImage className="cover-hero" path={b.cover_image_path} local={local} label="cover image" />
@@ -162,7 +172,7 @@ function TfrBack({ pkg }) {
             <div className="back-imprint">ISBN: [National Library No]</div>
           </div>
           <div className="col-right">
-            {logos.tafiya && <img className="logo-tafiya" src={tfrSrc(logos.tafiya, local)} alt="" />}
+            {(() => { const sl = tfrStrandLogo(b, logos); return sl.src && <img className="logo-tafiya" src={tfrSrc(sl.src, local)} alt={sl.alt} />; })()}
             {logos.haaraya_literacy && <img className="logo-literacy" src={tfrSrc(logos.haaraya_literacy, local)} alt="" />}
           </div>
         </div>
@@ -643,6 +653,7 @@ function LibraryScreen({ onNavigate, initialLevel }) {
   const [catalog, setCatalog] = useStateTfr(() => (window.TafiyaData ? window.TafiyaData.getCatalog() : []));
   const [strandFilter, setStrandFilter] = useStateTfr("all");
   const [levelFilter, setLevelFilter] = useStateTfr(initialLevel ? Number(initialLevel) : "all");
+  const [query, setQuery] = useStateTfr("");
 
   // Role gates which books open; visitors get the free samples only.
   const [role, setRole] = useStateTfr(() => (window.HaarayaSession ? HaarayaSession.role() : "visitor"));
@@ -684,8 +695,15 @@ function LibraryScreen({ onNavigate, initialLevel }) {
   // in the intended teaching sequence, e.g. S-01-010, H-01-040, TF-01-080, …).
   const seqNum = (b) => { const m = String(codeOf(b)).split("-").pop(); const n = parseInt(m, 10); return isNaN(n) ? 999999 : n; };
 
+  const q = query.trim().toLowerCase();
+  const matchesQuery = (b) => {
+    if (!q) return true;
+    return tfrText(b.title).toLowerCase().includes(q) || String(codeOf(b)).toLowerCase().includes(q);
+  };
+
   const filtered = catalog
     .filter(b => codeOf(b))
+    .filter(matchesQuery)
     .filter(b => levelFilter === "all" || levelNum(b) === levelFilter)
     .filter(b => strandFilter === "all" || tfrStrandUi(b) === strandFilter)
     .sort((a, b) => (levelNum(a) - levelNum(b)) || (seqNum(a) - seqNum(b)) || codeOf(a).localeCompare(codeOf(b)));
@@ -698,6 +716,22 @@ function LibraryScreen({ onNavigate, initialLevel }) {
           title="Explore the Haaraya reading journey."
           lede="Tap any book to open it in the Tafiya reader — cover, story pages, and reading notes."
         />
+
+        {/* Search by book name or code */}
+        <div className="tfl-search">
+          <span className="tfl-search-icon" aria-hidden="true">⌕</span>
+          <input
+            type="search"
+            className="tfl-search-input"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Search by book name or code…"
+            aria-label="Search books by name or code"
+          />
+          {query && (
+            <button className="tfl-search-clear" onClick={() => setQuery("")} aria-label="Clear search">×</button>
+          )}
+        </div>
 
         {/* Strand filter — one shared 6-col grid so both rows align on the right.
            Row 1: All strands + 5 logos. Row 2: 5 logos offset one column. */}

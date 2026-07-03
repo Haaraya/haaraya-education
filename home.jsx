@@ -912,6 +912,7 @@ function HomePage({ onNavigate }) {
       <HowItWorks />
       <StrandsSection />
       <PassportFeature onNavigate={onNavigate} />
+      <OdysseySection onNavigate={onNavigate} />
       <LibraryTeaser onNavigate={onNavigate} />
       <DashboardsPreview onNavigate={onNavigate} />
       <Pricing />

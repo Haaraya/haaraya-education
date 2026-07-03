@@ -352,6 +352,54 @@
   background: #fff;
 }
 
+/* Search by book name / code */
+.tfl-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  max-width: 460px;
+  margin-top: 24px;
+}
+.tfl-search-icon {
+  position: absolute;
+  left: 16px;
+  font-size: 18px;
+  color: var(--ink-mid, #3D5C3D);
+  pointer-events: none;
+}
+.tfl-search-input {
+  width: 100%;
+  padding: 14px 44px 14px 44px;
+  font: inherit;
+  font-size: 16px;
+  color: var(--ink, #22351F);
+  background: #fff;
+  border: 1.5px solid var(--sand-dk, #DDD9D0);
+  border-radius: 999px;
+  outline: none;
+  transition: border-color .15s ease;
+}
+.tfl-search-input::placeholder { color: var(--ink-mid, #7A8A78); }
+.tfl-search-input:focus { border-color: var(--forest, #2E9D4F); }
+.tfl-search-input::-webkit-search-cancel-button { display: none; }
+.tfl-search-clear {
+  position: absolute;
+  right: 12px;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: var(--sand, #EFEBE2);
+  color: var(--ink-mid, #3D5C3D);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tfl-search-clear:hover { background: var(--sand-dk, #DDD9D0); }
+
 /* Aligned filter grids — both rows share column tracks, so their right edges
    line up. Chips stretch to fill each (content-sized) column. */
 .tfl-filter-grid {
