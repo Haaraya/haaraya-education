@@ -512,9 +512,14 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
       <div className="reader">
         {/* Top bar */}
         <header className="topbar">
-          <button className="btn btn-ghost" type="button" onClick={() => onNavigate("library")}>
-            <span className="ico" aria-hidden="true">‹</span><span>Library</span>
-          </button>
+          <div className="topbar-nav">
+            <button className="btn btn-ghost" type="button" onClick={() => onNavigate("home")}>
+              <span className="ico" aria-hidden="true">⌂</span><span>Home</span>
+            </button>
+            <button className="btn btn-ghost" type="button" onClick={() => onNavigate("library")}>
+              <span className="ico" aria-hidden="true">‹</span><span>Library</span>
+            </button>
+          </div>
           <div className="running">
             <span className="running-title">{tfrText(b.title) || "\u00a0"}</span>
             <span className="running-level">{pkg ? tfrMeta(b) : ""}</span>

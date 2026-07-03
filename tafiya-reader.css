@@ -49,6 +49,7 @@
   gap: 16px;
   padding: 12px clamp(14px, 3vw, 30px);
 }
+.tfr .topbar-nav { justify-self: start; display: flex; align-items: center; gap: 8px; }
 .tfr .running { text-align: center; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .tfr .running-title {
   font-weight: 700; font-size: clamp(0.95rem, 2vw, 1.2rem); color: var(--tfr-ink);
