@@ -342,7 +342,7 @@ function SectionHeader({ eyebrow, title, lede, center, children }) {
 const NAV_LABELS = {
   home: "Home", library: "Library", passport: "Passport",
   child: "Child", parent: "Parent", teacher: "Teacher",
-  school: "School", admin: "Admin",
+  school: "School", admin: "Admin", odyssey: "Odyssey",
 };
 
 function Nav({ current, onNavigate, session, navKeys, homeScreen, onSignIn, onSignOut, onWaitlist }) {
