@@ -370,6 +370,98 @@ function TfrNextUp({ book, nextBook, onStartNext, onLibrary }) {
 }
 
 /* ============================================================
+   PAGE REVIEW (QA) PANEL
+   One per screen (front cover, story page, back cover). Records
+   whether the TEXT and the IMAGE are OK or need an edit, plus a
+   note describing the fix. Writes straight to Supabase.
+   ============================================================ */
+function TfrReviewPanel({ screenKey, screenLabel, review, onSave }) {
+  const [note, setNote] = useStateTfr((review && review.note) || "");
+  const [status, setStatus] = useStateTfr("idle"); // idle | saving | saved | error
+  const noteTimer = useRefTfr(null);
+
+  const textOk = review ? review.text_ok : null;
+  const imageOk = review ? review.image_ok : null;
+
+  // Reset the note field when moving to another screen or when a fresh
+  // server row arrives (updated_at bumps). Won't clobber mid-typing since
+  // toggles don't change the note and the value stays equal.
+  useEffectTfr(() => {
+    setNote((review && review.note) || "");
+    setStatus("idle");
+  }, [screenKey, review && review.updated_at]);
+
+  const commit = (vals) => {
+    setStatus("saving");
+    return Promise.resolve(onSave(vals))
+      .then(() => setStatus("saved"))
+      .catch(() => setStatus("error"));
+  };
+
+  const toggle = (field, cur, val) =>
+    commit({ text_ok: textOk, image_ok: imageOk, note, [field]: cur === val ? null : val });
+
+  const onNote = (e) => {
+    const v = e.target.value;
+    setNote(v);
+    setStatus("saving");
+    if (noteTimer.current) clearTimeout(noteTimer.current);
+    noteTimer.current = setTimeout(() => {
+      Promise.resolve(onSave({ text_ok: textOk, image_ok: imageOk, note: v }))
+        .then(() => setStatus("saved")).catch(() => setStatus("error"));
+    }, 700);
+  };
+
+  const statusText = { idle: "", saving: "Saving…", saved: "Saved ✓", error: "Save failed" }[status];
+  const reviewerName = window.HaarayaReview ? window.HaarayaReview.reviewer() : "";
+  const flagged = textOk === false || imageOk === false;
+
+  const Item = ({ label, value, field }) => (
+    <div className={"tfr-rv-item" + (value === false ? " is-flagged" : "")}>
+      <span className="tfr-rv-label">{label}</span>
+      <div className="tfr-rv-seg" role="group" aria-label={label + " status"}>
+        <button
+          type="button"
+          className={"tfr-rv-btn ok" + (value === true ? " on" : "")}
+          onClick={() => toggle(field, value, true)}
+        >OK</button>
+        <button
+          type="button"
+          className={"tfr-rv-btn bad" + (value === false ? " on" : "")}
+          onClick={() => toggle(field, value, false)}
+        >Needs edit</button>
+      </div>
+    </div>
+  );
+
+  return (
+    <aside className={"tfr-review" + (flagged ? " has-flag" : "")}>
+      <div className="tfr-rv-head">
+        <span className="tfr-rv-title">Page review</span>
+        <span className={"tfr-rv-status is-" + status}>{statusText}</span>
+      </div>
+      <div className="tfr-rv-screen">{screenLabel}</div>
+
+      <Item label="Text" value={textOk} field="text_ok" />
+      <Item label="Image" value={imageOk} field="image_ok" />
+
+      <label className="tfr-rv-note-label">
+        What edit is required?
+        <textarea
+          className="tfr-rv-note"
+          value={note}
+          onChange={onNote}
+          placeholder="Describe the fix needed on this page…"
+          rows={5}
+        ></textarea>
+      </label>
+
+      {reviewerName && <div className="tfr-rv-by">Reviewing as <strong>{reviewerName}</strong></div>}
+    </aside>
+  );
+}
+
+/* ============================================================
    READER SCREEN
    ============================================================ */
 function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
@@ -381,6 +473,38 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
   const [catalog, setCatalog] = useStateTfr(() => (window.TafiyaData ? window.TafiyaData.getCatalog() : []));
   const [quizPassed, setQuizPassed] = useStateTfr(false);
   const bookRef = useRefTfr(null);
+
+  // ---- Page review (QA) mode ----
+  const [reviewMode, setReviewMode] = useStateTfr(() => {
+    try { return localStorage.getItem("tafiya-reader:reviewMode") === "1"; } catch (e) { return false; }
+  });
+  const [reviews, setReviews] = useStateTfr({});
+  useEffectTfr(() => {
+    try { localStorage.setItem("tafiya-reader:reviewMode", reviewMode ? "1" : "0"); } catch (e) { /* ignore */ }
+  }, [reviewMode]);
+  // Load any saved reviews for this book (so ticks + notes reload).
+  useEffectTfr(() => {
+    if (!window.HaarayaReview) return;
+    let alive = true;
+    window.HaarayaReview.load(code).then(map => { if (alive) setReviews(map || {}); });
+    return () => { alive = false; };
+  }, [code]);
+  const saveReview = (screenKey, pageNumber, vals) => {
+    if (!window.HaarayaReview) return Promise.reject(new Error("review layer unavailable"));
+    const merged = {
+      book_code: code,
+      screen_key: screenKey,
+      page_number: pageNumber == null ? null : pageNumber,
+      text_ok: vals.text_ok == null ? null : vals.text_ok,
+      image_ok: vals.image_ok == null ? null : vals.image_ok,
+      note: vals.note || "",
+    };
+    setReviews(r => ({ ...r, [screenKey]: { ...(r[screenKey] || {}), ...merged } }));
+    return window.HaarayaReview.save(merged).then(saved => {
+      if (saved) setReviews(r => ({ ...r, [screenKey]: saved }));
+      return saved;
+    });
+  };
 
   // Build the screen list once a package is loaded.
   const screens = React.useMemo(() => {
@@ -507,9 +631,16 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
     }
   }
 
+  // Which screen the review panel targets (cover, story page, back cover only).
+  let reviewTarget = null;
+  if (cur && cur.type === "cover") reviewTarget = { key: "cover", page: null, label: "Front cover" };
+  else if (cur && cur.type === "back") reviewTarget = { key: "back", page: null, label: "Back cover" };
+  else if (cur && cur.type === "page") reviewTarget = { key: "page-" + cur.page.page_number, page: cur.page.page_number, label: "Page " + cur.page.page_number };
+  const reviewActive = reviewMode && reviewTarget && status === "ready";
+
   return (
     <div className="tfr">
-      <div className="reader">
+      <div className={"reader" + (reviewActive ? " review-on" : "")}>
         {/* Top bar */}
         <header className="topbar">
           <div className="topbar-nav">
@@ -518,6 +649,15 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
             </button>
             <button className="btn btn-ghost" type="button" onClick={() => onNavigate("library")}>
               <span className="ico" aria-hidden="true">‹</span><span>Library</span>
+            </button>
+            <button
+              className={"btn btn-ghost tfr-review-toggle" + (reviewMode ? " is-on" : "")}
+              type="button"
+              onClick={() => setReviewMode(v => !v)}
+              title="Toggle page review mode"
+              aria-pressed={reviewMode}
+            >
+              <span className="ico" aria-hidden="true">✓</span><span>{reviewMode ? "Reviewing" : "Review"}</span>
             </button>
           </div>
           <div className="running">
@@ -581,6 +721,15 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
               />
             )}
           </article>
+          {reviewActive && (
+            <TfrReviewPanel
+              key={reviewTarget.key}
+              screenKey={reviewTarget.key}
+              screenLabel={reviewTarget.label}
+              review={reviews[reviewTarget.key]}
+              onSave={(vals) => saveReview(reviewTarget.key, reviewTarget.page, vals)}
+            />
+          )}
         </main>
 
         {/* Bottom nav — hidden on the celebratory "up next" page */}
