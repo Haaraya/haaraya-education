@@ -410,7 +410,7 @@ function Nav({ current, onNavigate, session, navKeys, homeScreen, onSignIn, onSi
             </React.Fragment>
           ) : (
             <React.Fragment>
-              <a className="signin" href="#" onClick={handleSignIn}>DEMO Sign-in</a>
+              <a className="signin" href="#" onClick={handleSignIn}>Sign in</a>
               <button className="btn btn-primary btn-sm" onClick={handleWaitlist}>
                 Join the waitlist
               </button>
@@ -458,7 +458,7 @@ function Nav({ current, onNavigate, session, navKeys, homeScreen, onSignIn, onSi
             </React.Fragment>
           ) : (
             <React.Fragment>
-              <a className="signin" href="#" onClick={handleSignIn}>DEMO Sign-in</a>
+              <a className="signin" href="#" onClick={handleSignIn}>Sign in</a>
               <button className="btn btn-primary" onClick={handleWaitlist}>
                 Join the waitlist
               </button>
