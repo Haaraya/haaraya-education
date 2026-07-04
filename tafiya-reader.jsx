@@ -230,6 +230,35 @@ function tfrSampleQuestions(pkg, catalog) {
     { q: "What is a good thing to do when you finish a book?", options: q3, answer: q3.indexOf(hc) },
   ];
 }
+/* Read text aloud with the device voice (no audio files yet). Phoneme
+   notation like "/s/" is de-slashed so TTS doesn't say "slash". The word
+   options carry the true pronunciation, which is what the child needs. */
+function tfrSpeakText(raw) {
+  try {
+    if (!window.speechSynthesis) return;
+    let t = String(raw || "").replace(/\/([^/]+)\//g, "$1").trim();
+    if (!t) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(t);
+    u.rate = 0.82; u.pitch = 1.05; u.lang = "en-GB";
+    window.speechSynthesis.speak(u);
+  } catch (e) { /* ignore */ }
+}
+function TfrSpeaker({ text, label, size }) {
+  return (
+    <span
+      role="button"
+      tabIndex={0}
+      className={"quiz-speak" + (size === "sm" ? " sm" : "")}
+      aria-label={label || ("Hear " + text)}
+      onClick={(e) => { e.stopPropagation(); tfrSpeakText(text); }}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); tfrSpeakText(text); } }}
+    >
+      <svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7"></path><path d="M18.5 5.5a9 9 0 0 1 0 13"></path></svg>
+    </span>
+  );
+}
+
 function tfrGetCheck(pkg, catalog) {
   const b = (pkg && pkg.book) || {};
   const code = tfrText(b.book_code) || tfrText(b.code);
@@ -264,10 +293,12 @@ function TfrQuizDone({ total, write, onContinue }) {
 
 function TfrQuizCards({ questions, write, retryNote, alreadyPassed, onPass, onContinue }) {
   const n = questions.length;
-  const [qi, setQi] = useStateTfr(0);
-  const [sel, setSel] = useStateTfr(-1);
+  const [qi, setQi] = useStateTfr(0);  const [sel, setSel] = useStateTfr(-1);
   const [st, setSt] = useStateTfr("idle"); // idle | correct | wrong
   const [done, setDone] = useStateTfr(false);
+  // Auto-read each question aloud when it appears (best-effort; browsers
+  // permit speechSynthesis once the child has interacted with the page).
+  useEffectTfr(() => { if (!done && questions[qi]) tfrSpeakText(questions[qi].q); }, [qi, done]);
   if (done) return <TfrQuizDone total={n} write={write} onContinue={onContinue} />;
   const q = questions[qi];
   const pick = (oi) => { if (st === "correct") return; setSel(oi); setSt("idle"); };
@@ -279,9 +310,9 @@ function TfrQuizCards({ questions, write, retryNote, alreadyPassed, onPass, onCo
       <div className="quiz-eyebrow">Reading check</div>
       <div className="quiz-title">A few quick questions</div>
       <div className="quiz-pips">{questions.map((_, i) => <span key={i} className={"quiz-pip" + (i < qi ? " done" : i === qi ? " current" : "")} />)}</div>
-      <div className="quiz-q"><span className="quiz-num">Question {qi + 1} of {n}</span>{q.q}</div>
+      <div className="quiz-q"><span className="quiz-num">Question {qi + 1} of {n}</span>{q.q}<TfrSpeaker text={q.q} label="Hear the question" /></div>
       <div className="quiz-options">
-        {q.options.map((o, oi) => { const cls = stateOf(oi); const tok = cls.split(" ")[0]; const mk = tok === "correct" ? "✓" : tok === "wrong" ? "✕" : ("ABC"[oi] || "•"); return <button key={oi} type="button" className={"quiz-opt " + cls} onClick={() => pick(oi)}><span className="mark">{mk}</span><span className="quiz-opt-text">{o}</span></button>; })}
+        {q.options.map((o, oi) => { const cls = stateOf(oi); const tok = cls.split(" ")[0]; const mk = tok === "correct" ? "✓" : tok === "wrong" ? "✕" : ("ABC"[oi] || "•"); return <button key={oi} type="button" className={"quiz-opt " + cls} onClick={() => pick(oi)}><span className="mark">{mk}</span><span className="quiz-opt-text">{o}</span><TfrSpeaker text={o} size="sm" label={"Hear " + o} /></button>; })}
       </div>
       <div className={"quiz-feedback " + (st === "correct" ? "ok" : st === "wrong" ? "no" : "")}>
         {st === "correct" ? "That’s right!" : st === "wrong" ? (retryNote || "Not quite — try again.") : "\u00a0"}
@@ -318,9 +349,9 @@ function TfrQuizSheet({ questions, write, retryNote, alreadyPassed, onPass, onCo
       <div className="quiz-blocks">
         {questions.map((q, qi) => (
           <div className="quiz-block" key={qi}>
-            <div className="quiz-q"><span className="quiz-num">Question {qi + 1}</span>{q.q}</div>
+            <div className="quiz-q"><span className="quiz-num">Question {qi + 1}</span>{q.q}<TfrSpeaker text={q.q} label="Hear the question" /></div>
             <div className="quiz-options">
-              {q.options.map((o, oi) => { const cls = stateOf(qi, oi); const tok = cls.split(" ")[0]; const mk = tok === "correct" ? "✓" : tok === "wrong" ? "✕" : ("ABC"[oi] || "•"); return <button key={oi} type="button" className={"quiz-opt " + cls} onClick={() => pick(qi, oi)}><span className="mark">{mk}</span><span className="quiz-opt-text">{o}</span></button>; })}
+              {q.options.map((o, oi) => { const cls = stateOf(qi, oi); const tok = cls.split(" ")[0]; const mk = tok === "correct" ? "✓" : tok === "wrong" ? "✕" : ("ABC"[oi] || "•"); return <button key={oi} type="button" className={"quiz-opt " + cls} onClick={() => pick(qi, oi)}><span className="mark">{mk}</span><span className="quiz-opt-text">{o}</span><TfrSpeaker text={o} size="sm" label={"Hear " + o} /></button>; })}
             </div>
           </div>
         ))}

@@ -443,7 +443,6 @@ function Nav({ current, onNavigate, session, navKeys, homeScreen, onSignIn, onSi
             )
           ))}
         </div>
-        <div className="nav-spacer" />
         <a
           href="#odyssey"
           className={"nav-odyssey " + (current === "odyssey" ? "active" : "")}
@@ -453,6 +452,7 @@ function Nav({ current, onNavigate, session, navKeys, homeScreen, onSignIn, onSi
         >
           <img src="assets/odyssey-logo-white-trim.png" alt="The Odyssey" />
         </a>
+        <div className="nav-spacer" />
         <div className="nav-actions">
           {signedIn ? (
             <React.Fragment>
