@@ -61,7 +61,7 @@ function PublisherMark() {
       tabIndex={0}
     >
       <div className="publisher-mark-seal">
-        <img src="assets/logo-haaraya-education.png" alt="Haaraya Education" />
+        <img src="assets/logo-haaraya-education-white.png" alt="Haaraya Education" />
       </div>
       <div className="publisher-mark-caption">
         <span className="by">Published by</span>
