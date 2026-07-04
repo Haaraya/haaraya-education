@@ -77,7 +77,7 @@ function OdysseySection({ onNavigate }) {
               <button className="btn btn-gold" onClick={() => onNavigate("odyssey")}>
                 Start the Odyssey <span aria-hidden="true">→</span>
               </button>
-              <button className="btn btn-ghost-light" onClick={() => onNavigate("odyssey")}>
+              <button className="btn btn-ghost-light" onClick={() => onNavigate("odyssey-library")}>
                 Browse the 100 Books
               </button>
             </div>
@@ -126,10 +126,10 @@ function OdysseyHero({ onNavigate }) {
               path you chart yourself. Time to set sail.
             </p>
             <div className="ody-hero-actions">
-              <button className="btn btn-gold btn-lg" onClick={() => onNavigate("library")}>
+              <button className="btn btn-gold btn-lg" onClick={() => onNavigate("odyssey-library")}>
                 Start the Odyssey <span aria-hidden="true">→</span>
               </button>
-              <button className="btn btn-ghost-light btn-lg" onClick={() => onNavigate("library")}>
+              <button className="btn btn-ghost-light btn-lg" onClick={() => onNavigate("odyssey-library")}>
                 Explore the Library
               </button>
             </div>
@@ -408,7 +408,7 @@ function OdysseyCTA({ onNavigate }) {
         <h2>Your <span className="gold">odyssey</span> is waiting.</h2>
         <p>One hundred books. A lifetime of reading. It begins with a single page.</p>
         <div className="ody-cta-actions">
-          <button className="btn btn-gold btn-lg" onClick={() => onNavigate("library")}>
+          <button className="btn btn-gold btn-lg" onClick={() => onNavigate("odyssey-library")}>
             Start the Odyssey <span aria-hidden="true">→</span>
           </button>
           <button className="btn btn-ghost-light btn-lg" onClick={() => onNavigate("home")}>

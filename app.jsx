@@ -78,22 +78,22 @@ function PublisherMark() {
 
 // Which screens each role may navigate to.
 const ROLE_ACCESS = {
-  visitor:      ["home", "library", "passport", "reader", "odyssey"],
-  child:        ["home", "child", "passport", "library", "reader", "odyssey"],
-  parent:       ["home", "parent", "child", "passport", "library", "reader", "odyssey"],
-  teacher:      ["home", "teacher", "library", "reader", "passport", "odyssey"],
-  school_admin: ["home", "school", "library", "reader", "passport", "odyssey"],
-  admin:        ["home", "library", "passport", "child", "reader", "parent", "teacher", "school", "admin", "odyssey"],
+  visitor:      ["home", "library", "passport", "reader", "odyssey", "odyssey-library", "odyssey-reader"],
+  child:        ["home", "child", "passport", "library", "reader", "odyssey", "odyssey-library", "odyssey-reader"],
+  parent:       ["home", "parent", "child", "passport", "library", "reader", "odyssey", "odyssey-library", "odyssey-reader"],
+  teacher:      ["home", "teacher", "library", "reader", "passport", "odyssey", "odyssey-library", "odyssey-reader"],
+  school_admin: ["home", "school", "library", "reader", "passport", "odyssey", "odyssey-library", "odyssey-reader"],
+  admin:        ["home", "library", "passport", "child", "reader", "parent", "teacher", "school", "admin", "odyssey", "odyssey-library", "odyssey-reader"],
 };
 
 // Which links appear in the nav for each role (a subset of access, in order).
 const ROLE_NAV = {
-  visitor:      ["home", "library", "odyssey", "passport"],
-  child:        ["home", "child", "passport", "library", "odyssey"],
-  parent:       ["home", "parent", "child", "passport", "library", "odyssey"],
-  teacher:      ["home", "teacher", "library", "odyssey"],
-  school_admin: ["home", "school", "library", "odyssey"],
-  admin:        ["home", "library", "odyssey", "passport", "child", "parent", "teacher", "school", "admin"],
+  visitor:      ["home", "libraries", "passport"],
+  child:        ["home", "child", "passport", "libraries"],
+  parent:       ["home", "parent", "child", "passport", "libraries"],
+  teacher:      ["home", "teacher", "libraries"],
+  school_admin: ["home", "school", "libraries"],
+  admin:        ["home", "libraries", "passport", "child", "parent", "teacher", "school", "admin"],
 };
 
 // The landing screen for each role (post sign-in + redirect target).
@@ -297,7 +297,7 @@ function App() {
   }, []);
 
   // Hash-based router (access-gated)
-  const validScreens = ["home","passport","child","parent","library","reader","teacher","school","admin","odyssey"];
+  const validScreens = ["home","passport","child","parent","library","reader","teacher","school","admin","odyssey","odyssey-library","odyssey-reader"];
   const [screen, setScreen] = useStateApp(() => {
     // Default: always open on Home (accessible to every role) so a downloaded /
     // shared copy lands predictably regardless of the last session role.
@@ -414,6 +414,8 @@ function App() {
       {booted && screen === "school"   && <SchoolAdminDashScreen onNavigate={navigate} />}
       {booted && screen === "admin"    && <HaarayaAdminDashScreen onNavigate={navigate} />}
       {booted && screen === "odyssey"  && <OdysseyScreen onNavigate={navigate} />}
+      {booted && screen === "odyssey-library" && <OdysseyLibraryScreen onNavigate={navigate} initialLevel={params.levelId} initialStream={params.stream} />}
+      {booted && screen === "odyssey-reader"  && <OdysseyBookReader code={params.bookCode} onNavigate={navigate} />}
 
       <PublisherMark />
 

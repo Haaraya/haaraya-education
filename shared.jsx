@@ -340,15 +340,32 @@ function SectionHeader({ eyebrow, title, lede, center, children }) {
 /* ------------ Nav ------------ */
 
 const NAV_LABELS = {
-  home: "Home", library: "Library", passport: "Passport",
+  home: "Home", library: "Tafiya Library", "odyssey-library": "Odyssey Library", passport: "Passport",
   child: "Child", parent: "Parent", teacher: "Teacher",
-  school: "School", admin: "Admin", odyssey: "Odyssey",
+  school: "School", admin: "Admin", odyssey: "Odyssey", libraries: "Library",
+};
+
+// Nav dropdown groups: a key that expands to a menu of child screens.
+const NAV_GROUPS = {
+  libraries: { label: "Library", children: ["library", "odyssey-library"] },
 };
 
 function Nav({ current, onNavigate, session, navKeys, homeScreen, onSignIn, onSignOut, onWaitlist }) {
-  const items = (navKeys || ["home", "library", "passport"]).map(key => ({ key, label: NAV_LABELS[key] || key }));
+  const items = (navKeys || ["home", "libraries", "passport"]).map(key => ({ key, label: NAV_LABELS[key] || key, group: NAV_GROUPS[key] || null }));
   const [menuOpen, setMenuOpen] = React.useState(false);
-  const go = (key) => { setMenuOpen(false); onNavigate(key); };
+  const [openGroup, setOpenGroup] = React.useState(null);
+  const go = (key) => { setMenuOpen(false); setOpenGroup(null); onNavigate(key); };
+  const groupActive = (group) => group && group.children.indexOf(current) >= 0;
+
+  // Close any open desktop dropdown on outside click / Esc.
+  React.useEffect(() => {
+    if (!openGroup) return;
+    const onDoc = (e) => { if (!e.target.closest(".nav-group")) setOpenGroup(null); };
+    const onKey = (e) => { if (e.key === "Escape") setOpenGroup(null); };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("mousedown", onDoc); document.removeEventListener("keydown", onKey); };
+  }, [openGroup]);
   const signedIn = session && session.role !== "visitor";
   const roleLabel = window.HaarayaSession ? window.HaarayaSession.roleLabel(session && session.role) : "";
 
@@ -383,19 +400,59 @@ function Nav({ current, onNavigate, session, navKeys, homeScreen, onSignIn, onSi
         </button>
         <div className="nav-links">
           {items.map(it => (
-            <a
-              key={it.key}
-              onClick={e => { e.preventDefault(); go(it.key); }}
-              href={`#${it.key}`}
-              style={{
-                borderColor: current === it.key ? "var(--yellow)" : "transparent",
-              }}
-            >
-              {it.label}
-            </a>
+            it.group ? (
+              <div
+                key={it.key}
+                className={`nav-group ${openGroup === it.key ? "open" : ""}`}
+              >
+                <a
+                  href="#"
+                  className="nav-group-trigger"
+                  aria-haspopup="true"
+                  aria-expanded={openGroup === it.key}
+                  onClick={e => { e.preventDefault(); setOpenGroup(g => g === it.key ? null : it.key); }}
+                  style={{ borderColor: groupActive(it.group) ? "var(--yellow)" : "transparent" }}
+                >
+                  {it.label}<span className="nav-caret" aria-hidden="true">▾</span>
+                </a>
+                <div className="nav-dropdown" role="menu">
+                  {it.group.children.map(ck => (
+                    <a
+                      key={ck}
+                      href={`#${ck}`}
+                      role="menuitem"
+                      className={current === ck ? "active" : ""}
+                      onClick={e => { e.preventDefault(); go(ck); }}
+                    >
+                      {NAV_LABELS[ck] || ck}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <a
+                key={it.key}
+                onClick={e => { e.preventDefault(); go(it.key); }}
+                href={`#${it.key}`}
+                style={{
+                  borderColor: current === it.key ? "var(--yellow)" : "transparent",
+                }}
+              >
+                {it.label}
+              </a>
+            )
           ))}
         </div>
         <div className="nav-spacer" />
+        <a
+          href="#odyssey"
+          className={"nav-odyssey " + (current === "odyssey" ? "active" : "")}
+          onClick={e => { e.preventDefault(); go("odyssey"); }}
+          title="The 100 Book Odyssey"
+          aria-label="The Odyssey"
+        >
+          <img src="assets/odyssey-logo-white-trim.png" alt="The Odyssey" />
+        </a>
         <div className="nav-actions">
           {signedIn ? (
             <React.Fragment>
@@ -438,16 +495,41 @@ function Nav({ current, onNavigate, session, navKeys, homeScreen, onSignIn, onSi
           </div>
         )}
         <div className="nav-mobile-links">
+          <a
+            className={"nav-mobile-odyssey " + (current === "odyssey" ? "active" : "")}
+            onClick={e => { e.preventDefault(); go("odyssey"); }}
+            href="#odyssey"
+          >
+            <img src="assets/odyssey-logo-white-trim.png" alt="The Odyssey" />
+            <span aria-hidden="true">→</span>
+          </a>
           {items.map(it => (
-            <a
-              key={it.key}
-              className={current === it.key ? "active" : ""}
-              onClick={e => { e.preventDefault(); go(it.key); }}
-              href={`#${it.key}`}
-            >
-              {it.label}
-              <span aria-hidden="true">→</span>
-            </a>
+            it.group ? (
+              <div key={it.key} className="nav-mobile-group">
+                <div className="nav-mobile-group-label">{it.label}</div>
+                {it.group.children.map(ck => (
+                  <a
+                    key={ck}
+                    className={"nav-mobile-sub " + (current === ck ? "active" : "")}
+                    onClick={e => { e.preventDefault(); go(ck); }}
+                    href={`#${ck}`}
+                  >
+                    {NAV_LABELS[ck] || ck}
+                    <span aria-hidden="true">→</span>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <a
+                key={it.key}
+                className={current === it.key ? "active" : ""}
+                onClick={e => { e.preventDefault(); go(it.key); }}
+                href={`#${it.key}`}
+              >
+                {it.label}
+                <span aria-hidden="true">→</span>
+              </a>
+            )
           ))}
         </div>
         <div className="nav-mobile-actions">

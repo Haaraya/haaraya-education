@@ -1,49 +1,128 @@
 /* ============================================================
    Haaraya — Odyssey book registry
    ------------------------------------------------------------
-   The 100 Book Odyssey is a curated selection. Only books listed
-   here show the "Write your Captain's Log" (Shipmate Scribe) step
-   when a child finishes them in the reader — so ordinary Tafiya /
-   Hafwas / Soundables books are NOT mixed into the Odyssey.
+   The 100 Book Odyssey selection. Books listed here:
+     • appear in the Odyssey Library,
+     • show the "Write your Captain's Log" (Shipmate Scribe) step
+       when finished, so ordinary Tafiya / Hafwas / Soundables
+       books are never mixed into the Odyssey.
 
-   HOW TO ADD A BOOK TO THE ODYSSEY
-   --------------------------------
-   Put the book's CODE (exactly as it appears in the library, e.g.
-   "H-01-04", "TF-12-210", "S-1-01") into ODYSSEY_BOOKS below.
-   Optionally give it its Odyssey number (1..100) so the log reads
-   "Book 12". Add books here as they're ready — nothing else needed.
-
-   Example:
-     var ODYSSEY_BOOKS = {
-       "H-01-04": 1,
-       "TF-12-210": 2,
-       "S-1-01": 3,
-     };
+   code → Odyssey number (1..100). Generated from
+   HAARAYA_ODYSSEY_CONSOLIDATED. Edit as the selection changes.
    ============================================================ */
 (function () {
   "use strict";
 
-  // code → Odyssey number (or true if you don't want a number yet).
-  // EMPTY for now: the Captain's Log will not appear in the reader
-  // until you add the books that are ready for the Odyssey.
   var ODYSSEY_BOOKS = {
-    // "H-01-04": 1,
-    // "TF-12-210": 2,
+    "KN-13-010": 1,
+    "KN-13-020": 2,
+    "KN-13-030": 3,
+    "KN-13-040": 4,
+    "KN-13-050": 5,
+    "KN-13-060": 6,
+    "KN-13-070": 7,
+    "KN-13-080": 8,
+    "KN-13-090": 9,
+    "KN-13-100": 10,
+    "KN-13-110": 11,
+    "KN-13-120": 12,
+    "KN-13-130": 13,
+    "KN-13-140": 14,
+    "KN-13-150": 15,
+    "KN-13-160": 16,
+    "KN-13-170": 17,
+    "KN-13-180": 18,
+    "CL-13-010": 19,
+    "CL-13-020": 20,
+    "CL-13-030": 21,
+    "CL-13-040": 22,
+    "CL-13-050": 23,
+    "CL-13-060": 24,
+    "CL-13-070": 25,
+    "CL-13-080": 26,
+    "CL-13-090": 27,
+    "CL-13-100": 28,
+    "ST-13-010": 29,
+    "ST-13-020": 30,
+    "ST-13-030": 31,
+    "ST-13-040": 32,
+    "ST-13-050": 33,
+    "ST-13-060": 34,
+    "KN-14-010": 35,
+    "KN-14-020": 36,
+    "KN-14-030": 37,
+    "KN-14-040": 38,
+    "KN-14-050": 39,
+    "CL-14-010": 40,
+    "CL-14-020": 41,
+    "CL-14-030": 42,
+    "CL-14-040": 43,
+    "CL-14-060": 44,
+    "CL-14-100": 45,
+    "CL-14-070": 46,
+    "CL-14-080": 47,
+    "CL-14-090": 48,
+    "ST-14-010": 49,
+    "ST-14-020": 50,
+    "ST-14-030": 51,
+    "ST-14-040": 52,
+    "ST-14-050": 53,
+    "KN-14-060": 54,
+    "KN-14-070": 55,
+    "KN-14-080": 56,
+    "KN-14-090": 57,
+    "KN-14-100": 58,
+    "KN-14-110": 59,
+    "KN-14-120": 60,
+    "KN-14-130": 61,
+    "KN-14-140": 62,
+    "KN-14-150": 63,
+    "KN-14-160": 64,
+    "KN-14-170": 65,
+    "KN-14-180": 66,
+    "KN-15-01": 67,
+    "KN-15-02": 68,
+    "KN-15-03": 69,
+    "KN-15-04": 70,
+    "KN-15-05": 71,
+    "KN-15-06": 72,
+    "KN-15-07": 73,
+    "KN-15-08": 74,
+    "KN-15-09": 75,
+    "KN-15-10": 76,
+    "KN-15-11": 77,
+    "KN-15-12": 78,
+    "KN-15-13": 79,
+    "KN-15-14": 80,
+    "KN-15-15": 81,
+    "KN-15-16": 82,
+    "KN-15-17": 83,
+    "KN-15-18": 84,
+    "CL-15-01": 85,
+    "CL-15-02": 86,
+    "CL-15-03": 87,
+    "CL-15-04": 88,
+    "CL-15-05": 89,
+    "CL-15-06": 90,
+    "CL-15-07": 91,
+    "CL-15-08": 92,
+    "CL-15-09": 93,
+    "CL-15-10": 94,
+    "ST-15-01": 95,
+    "ST-15-02": 96,
+    "ST-15-03": 97,
+    "ST-15-04": 98,
+    "ST-15-05": 99,
+    "CL-15-11": 100,
   };
 
   function norm(code) { return String(code || "").trim().toUpperCase(); }
-
   var INDEX = {};
   Object.keys(ODYSSEY_BOOKS).forEach(function (k) { INDEX[norm(k)] = ODYSSEY_BOOKS[k]; });
 
   window.HaarayaOdyssey = {
-    // Is this book part of the Odyssey?
     has: function (code) { return Object.prototype.hasOwnProperty.call(INDEX, norm(code)); },
-    // Its Odyssey number (1..100), or null.
-    number: function (code) {
-      var v = INDEX[norm(code)];
-      return typeof v === "number" ? v : null;
-    },
+    number: function (code) { var v = INDEX[norm(code)]; return typeof v === "number" ? v : null; },
     count: function () { return Object.keys(INDEX).length; },
     codes: function () { return Object.keys(INDEX); },
   };
