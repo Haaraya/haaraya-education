@@ -344,11 +344,14 @@ function TfrNextUp({ book, nextBook, onStartNext, onLibrary }) {
   })), []);
   const nextCode = nextBook ? (nextBook.book_code || nextBook.code) : null;
   const [scribeOpen, setScribeOpen] = useStateTfr(false);
-  const ScribeUI = window.ShipmateScribeUI;
+  const bookCodeForScribe = book.book_code || book.code;
+  const isOdysseyBook = !!(window.HaarayaOdyssey && window.HaarayaOdyssey.has(bookCodeForScribe));
+  // Captain's Log only appears for designated Odyssey books (see odyssey-books.js).
+  const ScribeUI = isOdysseyBook ? window.ShipmateScribeUI : null;
   const scribeBook = {
-    book_code: book.book_code || book.code,
+    book_code: bookCodeForScribe,
     book_title: tfrText(book.title),
-    book_number: book.odyssey_number || book.book_number || null,
+    book_number: (window.HaarayaOdyssey && window.HaarayaOdyssey.number(bookCodeForScribe)) || book.odyssey_number || book.book_number || null,
     level: book.level,
   };
   return (
