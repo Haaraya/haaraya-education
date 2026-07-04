@@ -375,6 +375,32 @@ function OdysseyParentsTeachers() {
   );
 }
 
+function OdysseyShipmateScribe() {
+  const [open, setOpen] = useStateOdy(false);
+  const ScribeUI = window.ShipmateScribeUI;
+  const demoBook = { book_code: "book_012", book_title: "The Red Cap", book_number: 12, level: "Level 3" };
+  return (
+    <section className="ody-section ody-band-deep">
+      <div className="wrap">
+        <SectionHeader
+          center
+          eyebrow="Shipmate Scribe"
+          title="The Captain speaks. The Shipmate writes."
+          lede="After every book, jot a few Captain’s Notes. Your loyal Shipmate Scribe spins them into a short adventure log for your Odyssey — in your own words, never invented."
+        />
+        <div className="ody-scribe-cta">
+          {ScribeUI ? (
+            <button className="ody-scribe-demo" type="button" onClick={() => setOpen(true)}>
+              <span aria-hidden="true">&#x1F58B;</span> Try the Captain’s Log
+            </button>
+          ) : null}
+        </div>
+      </div>
+      {open && ScribeUI ? <ScribeUI book={demoBook} onClose={() => setOpen(false)} /> : null}
+    </section>
+  );
+}
+
 function OdysseyCTA({ onNavigate }) {
   return (
     <section className="ody-cta">
@@ -406,6 +432,7 @@ function OdysseyScreen({ onNavigate }) {
       <OdysseyAchievements />
       <OdysseyCertificates />
       <OdysseyParentsTeachers />
+      <OdysseyShipmateScribe />
       <OdysseyCTA onNavigate={onNavigate} />
       {Footer ? <Footer /> : null}
     </main>

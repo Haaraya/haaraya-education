@@ -51,6 +51,8 @@ create index if not exists page_reviews_needs_edit_idx
 
 -- ------------------------------------------------------------
 --  Who counts as a reviewer? (checks the caller's profile role)
+--  Reviewers self-register through the Reviewer Access page, which
+--  sets role = 'reviewer' at sign-up — so no manual promotion needed.
 -- ------------------------------------------------------------
 create or replace function public.is_reviewer()
 returns boolean

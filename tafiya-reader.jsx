@@ -343,6 +343,14 @@ function TfrNextUp({ book, nextBook, onStartNext, onLibrary }) {
     left: (i * 6.1 + 3) % 100, delay: (i % 5) * 0.12, color: ["#2f9e6e", "#f5c518", "#2a6fdb", "#e0653f", "#8a5fc0"][i % 5],
   })), []);
   const nextCode = nextBook ? (nextBook.book_code || nextBook.code) : null;
+  const [scribeOpen, setScribeOpen] = useStateTfr(false);
+  const ScribeUI = window.ShipmateScribeUI;
+  const scribeBook = {
+    book_code: book.book_code || book.code,
+    book_title: tfrText(book.title),
+    book_number: book.odyssey_number || book.book_number || null,
+    level: book.level,
+  };
   return (
     <div className="surface nextup">
       <div className="confetti" aria-hidden="true">
@@ -368,6 +376,7 @@ function TfrNextUp({ book, nextBook, onStartNext, onLibrary }) {
             </div>
           </div>
           <div className="nextup-actions">
+            {ScribeUI ? <button className="nextup-scribe" type="button" onClick={() => setScribeOpen(true)}><span className="q" aria-hidden="true">&#x1F58B;</span> Write your Captain’s Log</button> : null}
             <button className="quiz-btn" type="button" onClick={onStartNext}>Start “{tfrText(nextBook.title) || nextCode}” →</button>
             <button className="quiz-btn ghost" type="button" onClick={onLibrary}>Back to library</button>
           </div>
@@ -376,10 +385,12 @@ function TfrNextUp({ book, nextBook, onStartNext, onLibrary }) {
         <React.Fragment>
           <div className="nextup-meta" style={{ marginTop: "4cqh", fontSize: "3cqw" }}>You’ve reached the end of the journey for now. New books appear here as they’re published.</div>
           <div className="nextup-actions">
+            {ScribeUI ? <button className="nextup-scribe" type="button" onClick={() => setScribeOpen(true)}><span className="q" aria-hidden="true">&#x1F58B;</span> Write your Captain’s Log</button> : null}
             <button className="quiz-btn" type="button" onClick={onLibrary}>Back to library</button>
           </div>
         </React.Fragment>
       )}
+      {scribeOpen && ScribeUI ? <ScribeUI book={scribeBook} onClose={() => setScribeOpen(false)} /> : null}
     </div>
   );
 }

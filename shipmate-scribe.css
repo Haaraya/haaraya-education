@@ -1,0 +1,234 @@
+/* ============================================================
+   Haaraya Odyssey — Shipmate Scribe  ·  styles
+   Premium "ship's log" aesthetic, built on the Odyssey tokens
+   (deep navy grounds, gold foil, warm parchment for the log).
+   ============================================================ */
+.sc-panel {
+  --sc-deep: #0f2233;
+  --sc-deep-2: #16324a;
+  --sc-gold: #f5c518;
+  --sc-gold-soft: #e7b53f;
+  --sc-parch: #f7efdd;
+  --sc-parch-line: #e4d6b5;
+  --sc-ink: #2a2013;
+  --sc-cream: #fbf7ee;
+
+  font-family: var(--font-body, "Nunito", system-ui, sans-serif);
+  color: var(--sc-cream);
+  background:
+    radial-gradient(120% 90% at 12% -10%, #1c3b56 0%, rgba(28,59,86,0) 55%),
+    linear-gradient(160deg, var(--sc-deep-2) 0%, var(--sc-deep) 70%);
+  border: 1px solid rgba(245,197,24,.28);
+  border-radius: 20px;
+  box-shadow: 0 26px 70px rgba(6,14,22,.5);
+  padding: 26px 26px 22px;
+  width: min(680px, 100%);
+  max-height: 92vh; overflow: auto;
+}
+
+/* ---- overlay ---- */
+.sc-overlay {
+  position: fixed; inset: 0; z-index: 1200;
+  display: grid; place-items: center; padding: 22px;
+  background: rgba(6,14,22,.62); backdrop-filter: blur(5px);
+  animation: sc-fade .2s ease;
+}
+@keyframes sc-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---- brand mark ---- */
+.sc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.sc-mark { display: flex; align-items: center; gap: 12px; }
+.sc-mark-quill {
+  font-size: 26px; line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.4));
+}
+.sc-mark-txt { display: flex; flex-direction: column; }
+.sc-mark-name {
+  font-family: var(--font-display, "DM Serif Display", serif);
+  font-size: 22px; color: var(--sc-gold); letter-spacing: .01em; line-height: 1.05;
+}
+.sc-mark-tag { font-size: 12px; color: rgba(251,247,238,.62); font-style: italic; }
+.sc-close {
+  background: rgba(255,255,255,.08); color: var(--sc-cream); border: 0;
+  width: 34px; height: 34px; border-radius: 50%; font-size: 22px; line-height: 1; cursor: pointer;
+  transition: background .15s ease;
+}
+.sc-close:hover { background: rgba(255,255,255,.18); }
+
+/* ---- book strip ---- */
+.sc-book-strip {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 16px 0 6px; padding-bottom: 14px;
+  border-bottom: 1px solid rgba(245,197,24,.18);
+}
+.sc-book-badge {
+  font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--sc-deep); background: var(--sc-gold);
+  padding: 4px 10px; border-radius: 999px;
+}
+.sc-book-title {
+  font-family: var(--font-display, serif); font-size: 19px; color: var(--sc-cream);
+}
+.sc-saved-pill {
+  margin-left: auto; font-size: 11px; font-weight: 800; letter-spacing: .04em;
+  color: #8ef0c0; background: rgba(46,158,110,.16); border: 1px solid rgba(46,158,110,.4);
+  padding: 3px 10px; border-radius: 999px;
+}
+
+.sc-lede { color: rgba(251,247,238,.82); font-size: 14.5px; line-height: 1.55; margin: 14px 0 16px; }
+
+/* ---- voice/person toggles ---- */
+.sc-voice { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+.sc-seg { display: inline-flex; background: rgba(255,255,255,.06); border: 1px solid rgba(245,197,24,.22); border-radius: 999px; padding: 3px; }
+.sc-seg button {
+  border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: 12.5px; font-weight: 700; color: rgba(251,247,238,.72);
+  padding: 6px 14px; border-radius: 999px; transition: all .15s ease;
+}
+.sc-seg button.on { background: var(--sc-gold); color: var(--sc-deep); }
+
+.sc-section-label {
+  font-size: 12px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--sc-gold-soft); margin: 6px 0 12px;
+}
+
+/* ---- notes form ---- */
+.sc-notes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.sc-note { display: flex; flex-direction: column; gap: 7px; }
+.sc-note--big { grid-column: span 2; }
+.sc-note-head { display: flex; align-items: center; gap: 8px; }
+.sc-note-ic { font-size: 15px; width: 20px; text-align: center; }
+.sc-note-label { font-size: 13.5px; font-weight: 800; color: var(--sc-cream); }
+.sc-note-input {
+  font: inherit; font-size: 14px; color: var(--sc-ink);
+  background: var(--sc-parch);
+  border: 1px solid var(--sc-parch-line); border-radius: 11px;
+  padding: 10px 12px; resize: vertical; width: 100%;
+  box-shadow: inset 0 1px 3px rgba(42,32,19,.08);
+}
+.sc-note-input::placeholder { color: #a8977a; }
+.sc-note-input:focus { outline: 2px solid var(--sc-gold); outline-offset: 1px; border-color: transparent; }
+
+/* ---- spin button ---- */
+.sc-spin-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 20px; }
+.sc-btn {
+  font: inherit; font-weight: 800; cursor: pointer; border: 0; border-radius: 999px;
+  padding: 12px 20px; min-height: 48px; transition: transform .12s ease, box-shadow .2s ease, background .15s ease;
+}
+.sc-btn.spin {
+  font-size: 16px; color: var(--sc-deep);
+  background: linear-gradient(135deg, #ffd84a, var(--sc-gold) 55%, var(--sc-gold-soft));
+  box-shadow: 0 10px 26px rgba(245,197,24,.34);
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.sc-btn.spin:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 14px 32px rgba(245,197,24,.44); }
+.sc-btn.spin:disabled { opacity: .5; cursor: default; box-shadow: none; }
+.sc-btn-star { font-size: 17px; }
+.sc-btn.ghost {
+  background: rgba(255,255,255,.07); color: var(--sc-cream);
+  border: 1px solid rgba(245,197,24,.3); font-size: 13.5px; min-height: 42px; padding: 9px 16px;
+}
+.sc-btn.ghost:hover:not(:disabled) { background: rgba(255,255,255,.14); }
+.sc-hint { font-size: 12.5px; color: rgba(251,247,238,.6); font-style: italic; }
+
+/* ---- the spun log (parchment) ---- */
+.sc-log {
+  position: relative; margin-top: 4px;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 30px, rgba(180,150,90,.09) 30px 31px),
+    linear-gradient(180deg, #fbf4e3, var(--sc-parch));
+  color: var(--sc-ink);
+  border: 1px solid var(--sc-parch-line);
+  border-radius: 14px;
+  padding: 30px 28px 24px;
+  box-shadow: 0 16px 40px rgba(6,14,22,.4), inset 0 0 60px rgba(200,170,110,.14);
+}
+.sc-log-wax {
+  position: absolute; top: -14px; right: 22px;
+  width: 42px; height: 42px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 18px; color: #fff2c2;
+  background: radial-gradient(circle at 35% 30%, #d0432f, #9c1f1a);
+  box-shadow: 0 4px 10px rgba(120,20,15,.5);
+}
+.sc-log-book { font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: #b08a3c; }
+.sc-log-title {
+  font-family: var(--font-display, serif); font-size: 27px; line-height: 1.12;
+  color: #23303a; margin: 4px 0 0;
+}
+.sc-log-rule { height: 2px; width: 60px; background: linear-gradient(90deg, var(--sc-gold-soft), transparent); margin: 12px 0 16px; }
+.sc-log-text {
+  font-size: 17px; line-height: 1.72; color: #3a2f1f;
+  font-family: var(--font-display, Georgia, serif); font-weight: 400;
+}
+.sc-log-note {
+  display: flex; gap: 10px; align-items: flex-start;
+  margin-top: 18px; padding: 12px 14px;
+  background: rgba(245,197,24,.14); border: 1px solid rgba(200,150,40,.3); border-radius: 10px;
+  font-size: 14px; font-style: italic; color: #6a5626;
+}
+.sc-log-note-q { font-style: normal; }
+.sc-log-actions { display: flex; gap: 10px; margin-top: 20px; }
+
+.sc-complete {
+  text-align: center; font-family: var(--font-display, serif); font-size: 16px;
+  color: var(--sc-gold); margin: 18px 0 6px; letter-spacing: .01em;
+}
+
+/* ---- teacher panel ---- */
+.sc-teacher {
+  margin-top: 18px; border: 1px solid rgba(245,197,24,.2); border-radius: 12px;
+  background: rgba(255,255,255,.04); overflow: hidden;
+}
+.sc-teacher > summary {
+  list-style: none; cursor: pointer; padding: 12px 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.sc-teacher > summary::-webkit-details-marker { display: none; }
+.sc-teacher-title { font-size: 13px; font-weight: 800; color: var(--sc-cream); letter-spacing: .02em; }
+.sc-teacher-sig { font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; }
+.sig-strong  { color: #8ef0c0; background: rgba(46,158,110,.16); }
+.sig-adequate{ color: #ffe08a; background: rgba(245,197,24,.16); }
+.sig-thin    { color: #ffb199; background: rgba(224,101,63,.18); }
+.sig-unknown { color: rgba(251,247,238,.6); background: rgba(255,255,255,.08); }
+.sc-teacher-body { padding: 4px 16px 16px; border-top: 1px solid rgba(245,197,24,.14); }
+.sc-teacher-lede { font-size: 12.5px; color: rgba(251,247,238,.62); font-style: italic; margin: 10px 0 12px; }
+.sc-teacher-notes { display: grid; gap: 8px; margin: 0; }
+.sc-teacher-row { display: grid; grid-template-columns: 180px 1fr; gap: 12px; font-size: 13px; }
+.sc-teacher-row dt { color: var(--sc-gold-soft); font-weight: 700; }
+.sc-teacher-row dd { margin: 0; color: var(--sc-cream); }
+.sc-teacher-row dd .empty { color: rgba(251,247,238,.4); }
+.sc-teacher-meta { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(245,197,24,.14); font-size: 12.5px; color: rgba(251,247,238,.7); }
+.sc-teacher-meta strong { color: var(--sc-cream); }
+
+/* ---- reader finish-screen entry button ---- */
+.nextup-scribe {
+  display: inline-flex; align-items: center; gap: 10px;
+  font: inherit; font-weight: 800; font-size: 15px; cursor: pointer;
+  color: #0f2233; border: 0; border-radius: 999px; padding: 12px 22px; min-height: 48px;
+  background: linear-gradient(135deg, #ffd84a, #f5c518 55%, #e7b53f);
+  box-shadow: 0 10px 26px rgba(245,197,24,.32);
+  transition: transform .12s ease, box-shadow .2s ease;
+}
+.nextup-scribe:hover { transform: translateY(-1px); box-shadow: 0 14px 32px rgba(245,197,24,.42); }
+.nextup-scribe .q { font-size: 17px; }
+
+/* ---- Odyssey page: Captain's Log section ---- */
+.ody-scribe-cta {
+  display: flex; align-items: center; gap: 22px; flex-wrap: wrap; justify-content: center;
+  text-align: center; max-width: 720px; margin: 0 auto;
+}
+.ody-scribe-demo {
+  font: inherit; font-weight: 800; font-size: 15px; cursor: pointer;
+  color: #0f2233; border: 0; border-radius: 999px; padding: 13px 24px; min-height: 50px;
+  background: linear-gradient(135deg, #ffd84a, #f5c518 55%, #e7b53f);
+  box-shadow: 0 10px 26px rgba(245,197,24,.3);
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.ody-scribe-demo:hover { transform: translateY(-1px); }
+
+@media (max-width: 640px) {
+  .sc-notes { grid-template-columns: 1fr; }
+  .sc-note--big { grid-column: auto; }
+  .sc-teacher-row { grid-template-columns: 1fr; gap: 2px; }
+  .sc-panel { padding: 20px 16px; }
+}

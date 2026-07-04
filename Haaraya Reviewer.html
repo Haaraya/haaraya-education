@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Haaraya — Reviewer Access</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Lora:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --forest:#1f7a34; --forest-d:#155c27; --ink:#142a14; --muted:#5d6b60;
+    --line:#e2e0d6; --bg:#faf9f5; --card:#ffffff; --gold:#c9922b;
+    --red:#b3261e; --amber:#8a6400; --cream:#f7f2e7;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:"Nunito",system-ui,-apple-system,sans-serif;
+    background:
+      radial-gradient(120% 70% at 90% -10%, #eef4ec 0%, rgba(238,244,236,0) 55%),
+      var(--bg);
+    color:var(--ink); min-height:100vh;
+    display:flex; align-items:flex-start; justify-content:center; padding:44px 20px;
+  }
+  .wrap{width:100%; max-width:480px}
+  .brand{display:flex; align-items:center; gap:12px; margin-bottom:20px}
+  .brand .seal{width:46px;height:46px;border-radius:12px;background:var(--forest);
+    display:grid;place-items:center;color:#fff;font-weight:900;font-size:22px;
+    font-family:"Lora",serif; box-shadow:0 6px 16px rgba(31,122,52,.28)}
+  .brand h1{font-size:20px;margin:0;letter-spacing:-.01em}
+  .brand .k{font-size:12.5px;color:var(--muted);font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+
+  .lede{background:var(--cream); border:1px solid #ece2c8; border-radius:14px;
+    padding:15px 17px; font-size:14px; line-height:1.55; color:#5b5330; margin-bottom:20px}
+  .lede strong{color:var(--ink)}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:18px;
+    padding:24px; box-shadow:0 10px 30px rgba(20,42,20,.06)}
+  .tabs{display:flex; gap:6px; background:#eef2ee; padding:5px; border-radius:12px; margin-bottom:20px}
+  .tabs button{flex:1; border:0; background:transparent; padding:10px; border-radius:9px;
+    font-weight:800; font-size:14px; color:var(--muted); cursor:pointer; font-family:inherit}
+  .tabs button.active{background:#fff; color:var(--forest); box-shadow:0 1px 3px rgba(0,0,0,.1)}
+  label{display:block; font-size:12.5px; font-weight:800; color:var(--muted); margin:0 0 6px}
+  input{width:100%; padding:12px 13px; border:1px solid var(--line); border-radius:11px;
+    font-size:15px; margin-bottom:15px; background:#fff; color:var(--ink); font-family:inherit}
+  input:focus{outline:none; border-color:var(--forest); box-shadow:0 0 0 3px rgba(31,122,52,.13)}
+  .btn{width:100%; border:0; background:var(--forest); color:#fff; font-weight:800;
+    font-size:15.5px; padding:13px; border-radius:12px; cursor:pointer; font-family:inherit}
+  .btn:hover{background:var(--forest-d)}
+  .btn[disabled]{opacity:.55; cursor:default}
+  .btn.ghost{background:#fff; color:var(--forest); border:1.5px solid var(--forest)}
+  .btn.gold{background:var(--gold)} .btn.gold:hover{background:#b07f1f}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:0 12px}
+  .msg{font-size:13.5px; padding:12px 14px; border-radius:11px; margin-bottom:15px; display:none; line-height:1.5}
+  .msg.show{display:block}
+  .msg.err{background:#fdecea; color:var(--red); border:1px solid #f5c2bd}
+  .msg.ok{background:#e9f5ec; color:var(--forest-d); border:1px solid #bfe2c8}
+  .msg.warn{background:#fdf6e3; color:var(--amber); border:1px solid #efe0b0}
+  .hint{font-size:12px; color:var(--muted); margin:-7px 0 15px; line-height:1.5}
+  .spin{display:inline-block; width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;
+    border-radius:50%; animation:s .7s linear infinite; vertical-align:-2px; margin-right:7px}
+  @keyframes s{to{transform:rotate(360deg)}}
+
+  /* signed-in / instructions */
+  .who{display:flex; align-items:center; gap:12px; margin-bottom:20px}
+  .who .av{width:44px;height:44px;border-radius:50%;background:var(--forest);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:18px}
+  .who .nm{font-weight:800;font-size:16px} .who .em{font-size:13px;color:var(--muted)}
+  .who .pill{margin-left:auto;background:#eef5ef;color:var(--forest-d);font-weight:800;
+    padding:3px 11px;border-radius:999px;font-size:12px}
+  .steps{counter-reset:st; margin:6px 0 20px; padding:0; list-style:none}
+  .steps li{position:relative; padding:12px 0 12px 44px; border-bottom:1px dashed var(--line); font-size:14.5px; line-height:1.5}
+  .steps li:last-child{border-bottom:0}
+  .steps li::before{counter-increment:st; content:counter(st);
+    position:absolute; left:0; top:11px; width:28px;height:28px;border-radius:50%;
+    background:var(--forest); color:#fff; font-weight:800; font-size:14px;
+    display:grid; place-items:center}
+  .steps b{color:var(--ink)}
+  .tag{display:inline-block;background:#eef5ef;border:1px solid #cfe6d3;border-radius:7px;
+    padding:1px 7px;font-weight:800;font-size:12.5px;color:var(--forest-d);white-space:nowrap}
+  .warn-note{color:#b3261e;font-weight:800}
+  .foot{font-size:12px; color:var(--muted); text-align:center; margin-top:18px; line-height:1.6}
+  .foot a{color:var(--forest); font-weight:700}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">
+      <div class="seal">H</div>
+      <div>
+        <div class="k">Haaraya</div>
+        <h1>Reviewer Access</h1>
+      </div>
+    </div>
+
+    <div class="lede">
+      Welcome, reviewer. This is your private door into Haaraya. Create an account here (or log in),
+      then open any book to check the <strong>words and pictures</strong> page by page and leave notes for the team.
+    </div>
+
+    <!-- Logged-out -->
+    <div class="card" id="authCard">
+      <div class="tabs">
+        <button id="tabSignup" class="active" type="button" onclick="showTab('signup')">Create account</button>
+        <button id="tabLogin" type="button" onclick="showTab('login')">Log in</button>
+      </div>
+
+      <div id="msg" class="msg"></div>
+
+      <form id="signupForm" onsubmit="return doSignup(event)">
+        <div class="row2">
+          <div><label>First name</label><input id="su_first" type="text" placeholder="Ada" autocomplete="given-name" required></div>
+          <div><label>Last name</label><input id="su_last" type="text" placeholder="Obi" autocomplete="family-name" required></div>
+        </div>
+        <label>Email</label>
+        <input id="su_email" type="email" placeholder="you@example.com" autocomplete="email" required>
+        <label>Password</label>
+        <input id="su_pass" type="password" placeholder="At least 6 characters" autocomplete="new-password" minlength="6" required>
+        <button class="btn" id="su_btn" type="submit">Create reviewer account</button>
+        <p class="hint" style="margin-top:13px">Your name is stamped on every note you leave, so the team knows who found what.</p>
+      </form>
+
+      <form id="loginForm" style="display:none" onsubmit="return doLogin(event)">
+        <label>Email</label>
+        <input id="li_email" type="email" placeholder="you@example.com" autocomplete="email" required>
+        <label>Password</label>
+        <input id="li_pass" type="password" placeholder="Your password" autocomplete="current-password" required>
+        <button class="btn" id="li_btn" type="submit">Log in</button>
+      </form>
+    </div>
+
+    <!-- Logged-in -->
+    <div class="card" id="doneCard" style="display:none">
+      <div class="who">
+        <div class="av" id="avatar">R</div>
+        <div>
+          <div class="nm" id="who_name">Reviewer</div>
+          <div class="em" id="who_email"></div>
+        </div>
+        <span class="pill" id="who_role">reviewer</span>
+      </div>
+
+      <div class="msg ok show" style="margin-bottom:18px">✓ You’re signed in. Your session stays active, so you can close this page and come back.</div>
+
+      <div id="notReviewer" class="msg warn" style="margin-bottom:18px">
+        This account isn’t marked as a reviewer yet. Tell the Haaraya team the email above and they’ll switch it on.
+      </div>
+
+      <h2 style="font-size:15px;margin:2px 0 8px">How to review a book</h2>
+      <ol class="steps">
+        <li>Click <b>Open the Library</b> below and pick any book to open the reader.</li>
+        <li>Turn on <span class="tag">✓ Review</span> in the top bar of the reader.</li>
+        <li>On each page, compare the <b>picture</b> with the <b>words</b>. Mark <span class="tag">Text</span>, <span class="tag">Image</span>, <span class="tag">Page order</span> and <span class="tag">Layout</span> as <b>OK</b> or <b>Needs edit</b>.</li>
+        <li>Pick an <b>Issue type</b> and set a <b>Status</b> (open / fixed / ignored) if needed.</li>
+        <li>Type exactly what needs fixing in <b>Notes</b>. It saves on its own — you’ll see <b>Saved ✓</b>.</li>
+        <li>Move through every page, including the <b>front and back cover</b>.</li>
+      </ol>
+
+      <a class="btn gold" href="Haaraya Home.html#library" style="text-decoration:none;display:block;text-align:center;margin-bottom:10px">Open the Library →</a>
+      <button class="btn ghost" type="button" onclick="doLogout()">Log out</button>
+    </div>
+
+    <p class="foot">
+      Trouble getting in? Contact the Haaraya team.<br>
+      <a href="Haaraya Home.html">← Back to Haaraya home</a>
+    </p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="supabase-client.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    var REVIEWER_ROLES = ["reviewer","admin","staff"];
+
+    function showTab(which){
+      var s = which === "signup";
+      document.getElementById("tabSignup").classList.toggle("active", s);
+      document.getElementById("tabLogin").classList.toggle("active", !s);
+      document.getElementById("signupForm").style.display = s ? "" : "none";
+      document.getElementById("loginForm").style.display = s ? "none" : "";
+      hideMsg();
+    }
+    function msg(text, kind){ var m=document.getElementById("msg"); m.textContent=text; m.className="msg show "+(kind||"err"); }
+    function hideMsg(){ document.getElementById("msg").className="msg"; }
+    function busy(btnId,on,label){ var b=document.getElementById(btnId); b.disabled=on;
+      b.innerHTML = on ? ('<span class="spin"></span>'+(label||"Working…")) : b.dataset.label; }
+    ["su_btn","li_btn"].forEach(function(id){ var b=document.getElementById(id); b.dataset.label=b.textContent; });
+
+    async function doSignup(e){
+      e.preventDefault(); hideMsg(); busy("su_btn", true, "Creating…");
+      try{
+        var data = await HaarayaAuth.signUp({
+          email: document.getElementById("su_email").value.trim(),
+          password: document.getElementById("su_pass").value,
+          firstName: document.getElementById("su_first").value.trim(),
+          lastName: document.getElementById("su_last").value.trim(),
+          role: "reviewer",                         // ← testers become reviewers automatically
+        });
+        if (data.session){ await render(); }
+        else {
+          busy("su_btn", false);
+          msg("Account created! Check your email to confirm, then come back and log in.", "warn");
+          showTab("login");
+        }
+      }catch(err){ busy("su_btn", false); msg(err.message || String(err), "err"); }
+      return false;
+    }
+    async function doLogin(e){
+      e.preventDefault(); hideMsg(); busy("li_btn", true, "Logging in…");
+      try{
+        await HaarayaAuth.signIn({
+          email: document.getElementById("li_email").value.trim(),
+          password: document.getElementById("li_pass").value,
+        });
+        await render();
+      }catch(err){ busy("li_btn", false); msg(err.message || String(err), "err"); }
+      return false;
+    }
+    async function doLogout(){ await HaarayaAuth.signOut(); await render(); }
+
+    async function render(){
+      var session = await HaarayaAuth.getSession();
+      var authed = !!session;
+      document.getElementById("authCard").style.display = authed ? "none" : "";
+      document.getElementById("doneCard").style.display = authed ? "" : "none";
+      ["su_btn","li_btn"].forEach(function(id){ busy(id, false); });
+      if (!authed) return;
+
+      var user = await HaarayaAuth.getUser();
+      var p = null; try { p = await HaarayaAuth.getProfile(); } catch(e){}
+      var name = (p && p.full_name) || (user && user.email) || "Reviewer";
+      var role = (p && p.role) || "—";
+      document.getElementById("who_name").textContent = name;
+      document.getElementById("who_email").textContent = (user && user.email) || "";
+      document.getElementById("who_role").textContent = role;
+      document.getElementById("avatar").textContent = (name[0] || "R").toUpperCase();
+      document.getElementById("notReviewer").classList.toggle("show", REVIEWER_ROLES.indexOf(role) < 0);
+    }
+
+    HaarayaAuth.onChange(function(){ render(); });
+    render();
+  </script>
+</body>
+</html>
