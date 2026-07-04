@@ -1,83 +1,142 @@
 -- ============================================================
---  Haaraya — Page Review (QA) table
+--  Haaraya — Page Review (QA) table  ·  REAL-AUTH edition
 --  Run this once in the Supabase SQL editor.
---  Stores one review verdict per book screen (front cover,
---  each story page, back cover): is the TEXT ok, is the IMAGE
---  ok, and a free-text note describing the edit required.
 --
---  text_ok / image_ok semantics:
---     NULL  = not reviewed yet
---     true  = OK
---     false = NEEDS EDIT   ← the thing we care about
+--  Only signed-in users whose profile role is a REVIEWER role
+--  ('reviewer' / 'admin' / 'staff') can read or write reviews.
+--  Public/anon and ordinary parent/child accounts get NOTHING —
+--  the notes are not queryable by normal readers.
+--
+--  Reviewer identity (who reviewed what) is stamped server-side
+--  from the JWT, so it can't be spoofed by the client.
+--
+--  Requires the auth setup in supabase-auth-setup.sql (public.users
+--  with an auth_uid + role column, auto-created on signup).
+--
+--  text_ok / image_ok / page_order_ok / layout_ok:
+--     NULL = unreviewed, true = OK, false = NEEDS EDIT
 -- ============================================================
 
 create table if not exists public.page_reviews (
-  id           uuid primary key default gen_random_uuid(),
-  book_code    text not null,
-  screen_key   text not null,          -- 'cover' | 'back' | 'page-<n>'
-  page_number  int,                    -- null for cover/back
-  text_ok      boolean,                -- null = unreviewed, false = needs edit
-  image_ok     boolean,                -- null = unreviewed, false = needs edit
-  note         text default '',        -- the edit required
-  reviewer     text,                   -- signed-in demo user's name
-  updated_at   timestamptz not null default now(),
-  -- one row per screen of a book; re-reviewing updates it in place
+  id             uuid primary key default gen_random_uuid(),
+  book_code      text not null,
+  screen_key     text not null,          -- 'cover' | 'back' | 'page-<n>'
+  page_number    int,                    -- null for cover/back
+  -- verdict fields
+  text_ok        boolean,
+  image_ok       boolean,
+  page_order_ok  boolean,
+  layout_ok      boolean,
+  issue_type     text,                   -- image_mismatch | bad_cover | ...
+  review_status  text not null default 'open',   -- open | fixed | ignored
+  note           text default '',
+  -- context (denormalised for traceable reporting)
+  book_title     text,
+  strand         text,
+  level          int,
+  -- identity (stamped by trigger from the JWT)
+  reviewer       text,                   -- display name (client-supplied)
+  reviewer_id    uuid,                   -- auth.uid()
+  reviewer_email text,
+  updated_at     timestamptz not null default now(),
   unique (book_code, screen_key)
 );
 
--- Fast lookups when a book is opened.
 create index if not exists page_reviews_book_idx on public.page_reviews (book_code);
--- Quick filter for "everything still flagged as needing an edit".
+create index if not exists page_reviews_status_idx on public.page_reviews (review_status);
 create index if not exists page_reviews_needs_edit_idx
   on public.page_reviews (book_code)
-  where text_ok is false or image_ok is false;
+  where text_ok is false or image_ok is false
+     or page_order_ok is false or layout_ok is false;
 
--- Keep updated_at fresh on every write.
-create or replace function public.page_reviews_touch()
-returns trigger language plpgsql as $$
+-- ------------------------------------------------------------
+--  Who counts as a reviewer? (checks the caller's profile role)
+-- ------------------------------------------------------------
+create or replace function public.is_reviewer()
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select exists (
+    select 1 from public.users u
+    where u.auth_uid = auth.uid()
+      and u.role in ('reviewer', 'admin', 'staff')
+  );
+$$;
+
+-- ------------------------------------------------------------
+--  Stamp identity + updated_at on every write (anti-spoof).
+-- ------------------------------------------------------------
+create or replace function public.page_reviews_stamp()
+returns trigger
+language plpgsql security definer set search_path = public
+as $$
 begin
-  new.updated_at = now();
+  new.reviewer_id    := auth.uid();
+  new.reviewer_email := (select email from auth.users where id = auth.uid());
+  new.updated_at     := now();
   return new;
 end $$;
 
-drop trigger if exists page_reviews_touch on public.page_reviews;
-create trigger page_reviews_touch
-  before update on public.page_reviews
-  for each row execute function public.page_reviews_touch();
+drop trigger if exists page_reviews_stamp on public.page_reviews;
+create trigger page_reviews_stamp
+  before insert or update on public.page_reviews
+  for each row execute function public.page_reviews_stamp();
 
 -- ------------------------------------------------------------
---  Row-Level Security
---  The app talks to Supabase with the publishable (anon) key and
---  no real auth, so we allow the anon role to read/write reviews.
---  (This is a QA/review tool — tighten later if it goes public.)
+--  Row-Level Security — reviewers only, no anon access.
 -- ------------------------------------------------------------
 alter table public.page_reviews enable row level security;
 
+-- Remove any earlier public policies from the first version.
 drop policy if exists "page_reviews read"   on public.page_reviews;
 drop policy if exists "page_reviews insert"  on public.page_reviews;
 drop policy if exists "page_reviews update"  on public.page_reviews;
+drop policy if exists "page_reviews reviewer read"   on public.page_reviews;
+drop policy if exists "page_reviews reviewer insert" on public.page_reviews;
+drop policy if exists "page_reviews reviewer update" on public.page_reviews;
 
-create policy "page_reviews read"
+create policy "page_reviews reviewer read"
   on public.page_reviews for select
-  to anon, authenticated
-  using (true);
+  to authenticated
+  using (public.is_reviewer());
 
-create policy "page_reviews insert"
+create policy "page_reviews reviewer insert"
   on public.page_reviews for insert
-  to anon, authenticated
-  with check (true);
+  to authenticated
+  with check (public.is_reviewer());
 
-create policy "page_reviews update"
+create policy "page_reviews reviewer update"
   on public.page_reviews for update
-  to anon, authenticated
-  using (true) with check (true);
+  to authenticated
+  using (public.is_reviewer())
+  with check (public.is_reviewer());
 
 -- ------------------------------------------------------------
---  Handy view: everything a reviewer flagged as needing an edit.
+--  Reporting view: everything still flagged as needing an edit.
+--  security_invoker => the same reviewer-only RLS applies here.
 -- ------------------------------------------------------------
-create or replace view public.page_reviews_todo as
-  select book_code, screen_key, page_number,
-         text_ok, image_ok, note, reviewer, updated_at
+drop view if exists public.page_reviews_todo;
+create view public.page_reviews_todo
+  with (security_invoker = on)
+as
+  select book_code, book_title, strand, level, screen_key, page_number,
+         text_ok, image_ok, page_order_ok, layout_ok,
+         issue_type, review_status, note,
+         reviewer, reviewer_email, updated_at
   from public.page_reviews
-  where text_ok is false or image_ok is false
-  order by book_code, page_number nulls first;
+  where review_status <> 'fixed'
+    and (text_ok is false or image_ok is false
+         or page_order_ok is false or layout_ok is false
+         or issue_type is not null);
+
+-- ============================================================
+--  ONBOARDING A REVIEWER
+--  1. They self-register on the Haaraya Registration page
+--     (creates a public.users row with role = 'parent').
+--  2. You promote them to a reviewer here:
+--
+--       update public.users set role = 'reviewer'
+--       where email = 'them@example.com';
+--
+--     (roles that can review: 'reviewer', 'admin', 'staff')
+-- ============================================================

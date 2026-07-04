@@ -92,10 +92,25 @@ function TfrCover({ pkg }) {
 
 function TfrPage({ page, local }) {
   const text = tfrText(page.page_text);
+  const textRef = useRefTfr(null);
+  const [single, setSingle] = useStateTfr(false);
+  // Detect whether the text lands on a single visual line; if so we centre
+  // it and size it up (helps the sparse lower-level pages read big & bold).
+  useEffectTfr(() => {
+    const measure = () => {
+      const el = textRef.current;
+      if (!el) return;
+      const lh = parseFloat(getComputedStyle(el).lineHeight) || 0;
+      setSingle(!!text && lh > 0 && el.scrollHeight <= lh * 1.6);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [text]);
   return (
     <div className="surface story">
       <TfrImage className="story-img" path={page.image_path} local={local} label={"illustration · page " + page.page_number} />
-      <p className={"story-text" + (text ? "" : " is-empty")}>{text || "Story text will appear here"}</p>
+      <p ref={textRef} className={"story-text" + (text ? "" : " is-empty") + (single ? " is-single" : "") + (single && text.trim().split(/\s+/).length <= 2 ? " is-xl" : "")}>{text || "Story text will appear here"}</p>
     </div>
   );
 }
@@ -370,93 +385,183 @@ function TfrNextUp({ book, nextBook, onStartNext, onLibrary }) {
 }
 
 /* ============================================================
-   PAGE REVIEW (QA) PANEL
-   One per screen (front cover, story page, back cover). Records
-   whether the TEXT and the IMAGE are OK or need an edit, plus a
-   note describing the fix. Writes straight to Supabase.
+   PAGE REVIEW (QA) PANEL  ·  real-auth, reviewer-only
+   Sign-in gate → per-screen review form. Records Text / Image /
+   Page-order / Layout verdicts, an issue type, a status and a
+   note, all keyed to book_code + page_number in Supabase.
    ============================================================ */
-function TfrReviewPanel({ screenKey, screenLabel, review, onSave }) {
-  const [note, setNote] = useStateTfr((review && review.note) || "");
+const TFR_ISSUE_TYPES = [
+  ["", "— Issue type —"],
+  ["image_mismatch", "Image mismatch"],
+  ["bad_cover", "Bad cover"],
+  ["wrong_page_order", "Wrong page order"],
+  ["broken_image", "Broken image"],
+  ["text_issue", "Text issue"],
+  ["layout_issue", "Layout issue"],
+  ["transparency_checkerboard", "Transparency / checkerboard"],
+  ["other", "Other"],
+];
+const TFR_STATUSES = [["open", "Open"], ["fixed", "Fixed"], ["ignored", "Ignored"]];
+
+function tfrReviewDraft(review) {
+  return {
+    text_ok: review && review.text_ok != null ? review.text_ok : null,
+    image_ok: review && review.image_ok != null ? review.image_ok : null,
+    page_order_ok: review && review.page_order_ok != null ? review.page_order_ok : null,
+    layout_ok: review && review.layout_ok != null ? review.layout_ok : null,
+    issue_type: (review && review.issue_type) || "",
+    review_status: (review && review.review_status) || "open",
+    note: (review && review.note) || "",
+  };
+}
+
+function TfrReviewSignIn({ onSignIn }) {
+  const [email, setEmail] = useStateTfr("");
+  const [pw, setPw] = useStateTfr("");
+  const [busy, setBusy] = useStateTfr(false);
+  const [err, setErr] = useStateTfr("");
+  const submit = (e) => {
+    e.preventDefault();
+    if (busy) return;
+    setBusy(true); setErr("");
+    Promise.resolve(onSignIn(email.trim(), pw))
+      .catch(er => setErr((er && er.message) || "Sign in failed"))
+      .finally(() => setBusy(false));
+  };
+  return (
+    <form className="tfr-rv-signin" onSubmit={submit}>
+      <p className="tfr-rv-signin-lede">Sign in to review this book.</p>
+      <input type="email" className="tfr-rv-input" placeholder="Email" value={email}
+        onChange={e => setEmail(e.target.value)} autoComplete="username" required />
+      <input type="password" className="tfr-rv-input" placeholder="Password" value={pw}
+        onChange={e => setPw(e.target.value)} autoComplete="current-password" required />
+      {err && <div className="tfr-rv-error">{err}</div>}
+      <button type="submit" className="tfr-rv-signin-btn" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button>
+      <p className="tfr-rv-signin-hint">Register on the Haaraya sign-up page, then ask an admin for reviewer access.</p>
+    </form>
+  );
+}
+
+function TfrReviewForm({ bookCode, bookTitle, strandName, level, screenLabel, review, reviewerName, onSave, onSignOut }) {
+  const [draft, setDraft] = useStateTfr(() => tfrReviewDraft(review));
   const [status, setStatus] = useStateTfr("idle"); // idle | saving | saved | error
   const noteTimer = useRefTfr(null);
+  const pendingRef = useRefTfr(null);
 
-  const textOk = review ? review.text_ok : null;
-  const imageOk = review ? review.image_ok : null;
+  // Re-seed the form when a fresh server row arrives for this screen.
+  useEffectTfr(() => { setDraft(tfrReviewDraft(review)); setStatus("idle"); }, [review && review.updated_at]);
 
-  // Reset the note field when moving to another screen or when a fresh
-  // server row arrives (updated_at bumps). Won't clobber mid-typing since
-  // toggles don't change the note and the value stays equal.
-  useEffectTfr(() => {
-    setNote((review && review.note) || "");
-    setStatus("idle");
-  }, [screenKey, review && review.updated_at]);
-
-  const commit = (vals) => {
-    setStatus("saving");
-    return Promise.resolve(onSave(vals))
-      .then(() => setStatus("saved"))
-      .catch(() => setStatus("error"));
-  };
-
-  const toggle = (field, cur, val) =>
-    commit({ text_ok: textOk, image_ok: imageOk, note, [field]: cur === val ? null : val });
-
-  const onNote = (e) => {
-    const v = e.target.value;
-    setNote(v);
-    setStatus("saving");
+  // Flush any pending (debounced) note before this screen's panel unmounts —
+  // the panel is keyed per screen, so navigating away runs this cleanup.
+  useEffectTfr(() => () => {
     if (noteTimer.current) clearTimeout(noteTimer.current);
-    noteTimer.current = setTimeout(() => {
-      Promise.resolve(onSave({ text_ok: textOk, image_ok: imageOk, note: v }))
-        .then(() => setStatus("saved")).catch(() => setStatus("error"));
-    }, 700);
+    if (pendingRef.current) { const p = pendingRef.current; pendingRef.current = null; Promise.resolve(onSave(p)).catch(() => {}); }
+  }, []);
+
+  const commit = (next, debounce) => {
+    setDraft(next);
+    setStatus("saving");
+    pendingRef.current = next;
+    const run = () => Promise.resolve(onSave(next))
+      .then(() => { if (pendingRef.current === next) { pendingRef.current = null; setStatus("saved"); } })
+      .catch(() => setStatus("error"));
+    if (debounce) { if (noteTimer.current) clearTimeout(noteTimer.current); noteTimer.current = setTimeout(run, 700); }
+    else { if (noteTimer.current) { clearTimeout(noteTimer.current); noteTimer.current = null; } run(); }
   };
+  const setTri = (field, val) => commit({ ...draft, [field]: draft[field] === val ? null : val }, false);
+  const setVal = (field, val) => commit({ ...draft, [field]: val }, false);
+  const onNote = (e) => commit({ ...draft, note: e.target.value }, true);
 
   const statusText = { idle: "", saving: "Saving…", saved: "Saved ✓", error: "Save failed" }[status];
-  const reviewerName = window.HaarayaReview ? window.HaarayaReview.reviewer() : "";
-  const flagged = textOk === false || imageOk === false;
 
-  const Item = ({ label, value, field }) => (
-    <div className={"tfr-rv-item" + (value === false ? " is-flagged" : "")}>
-      <span className="tfr-rv-label">{label}</span>
-      <div className="tfr-rv-seg" role="group" aria-label={label + " status"}>
-        <button
-          type="button"
-          className={"tfr-rv-btn ok" + (value === true ? " on" : "")}
-          onClick={() => toggle(field, value, true)}
-        >OK</button>
-        <button
-          type="button"
-          className={"tfr-rv-btn bad" + (value === false ? " on" : "")}
-          onClick={() => toggle(field, value, false)}
-        >Needs edit</button>
+  const Item = ({ label, field }) => {
+    const value = draft[field];
+    return (
+      <div className={"tfr-rv-item" + (value === false ? " is-flagged" : "")}>
+        <span className="tfr-rv-label">{label}</span>
+        <div className="tfr-rv-seg" role="group" aria-label={label + " status"}>
+          <button type="button" className={"tfr-rv-btn ok" + (value === true ? " on" : "")} onClick={() => setTri(field, true)}>OK</button>
+          <button type="button" className={"tfr-rv-btn bad" + (value === false ? " on" : "")} onClick={() => setTri(field, false)}>Needs edit</button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="tfr-rv-form">
+      <div className={"tfr-rv-statusline is-" + status}>{statusText}</div>
+
+      <div className="tfr-rv-context">
+        <div className="tfr-rv-ctx-code">{bookCode}</div>
+        {bookTitle && <div className="tfr-rv-ctx-title">{bookTitle}</div>}
+        <div className="tfr-rv-ctx-meta">
+          {strandName && <span>{strandName}</span>}
+          {level != null && <span>Level {level}</span>}
+          <span>{screenLabel}</span>
+        </div>
+      </div>
+
+      <Item label="Text" field="text_ok" />
+      <Item label="Image" field="image_ok" />
+      <Item label="Page order" field="page_order_ok" />
+      <Item label="Layout" field="layout_ok" />
+
+      <label className="tfr-rv-field">
+        <span className="tfr-rv-field-label">Issue type</span>
+        <select className="tfr-rv-select" value={draft.issue_type} onChange={e => setVal("issue_type", e.target.value)}>
+          {TFR_ISSUE_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+        </select>
+      </label>
+
+      <label className="tfr-rv-field">
+        <span className="tfr-rv-field-label">Status</span>
+        <select className="tfr-rv-select" value={draft.review_status} onChange={e => setVal("review_status", e.target.value)}>
+          {TFR_STATUSES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+        </select>
+      </label>
+
+      <label className="tfr-rv-note-label">
+        Notes
+        <textarea className="tfr-rv-note" value={draft.note} onChange={onNote}
+          placeholder="Describe exactly what needs fixing on this page…" rows={5}></textarea>
+      </label>
+
+      <div className="tfr-rv-by">
+        Reviewing as <strong>{reviewerName}</strong>
+        <button type="button" className="tfr-rv-textbtn" onClick={onSignOut}>Sign out</button>
       </div>
     </div>
   );
+}
+
+function TfrReviewPanel(props) {
+  const { reviewer, reviewerLoaded, review, onSignIn, onSignOut } = props;
+  const flagged = review && (review.text_ok === false || review.image_ok === false
+    || review.page_order_ok === false || review.layout_ok === false);
+
+  let body;
+  if (!reviewerLoaded) {
+    body = <div className="tfr-rv-msg">Checking access…</div>;
+  } else if (!reviewer) {
+    body = <TfrReviewSignIn onSignIn={onSignIn} />;
+  } else if (!reviewer.isReviewer) {
+    body = (
+      <div className="tfr-rv-msg">
+        <p>Signed in as <strong>{reviewer.name}</strong>.</p>
+        <p className="tfr-rv-msg-dim">This account doesn’t have reviewer access yet. Ask an admin to enable it.</p>
+        <button type="button" className="tfr-rv-textbtn" onClick={onSignOut}>Sign out</button>
+      </div>
+    );
+  } else {
+    body = <TfrReviewForm key={props.screenKey} {...props} reviewerName={reviewer.name} />;
+  }
 
   return (
     <aside className={"tfr-review" + (flagged ? " has-flag" : "")}>
       <div className="tfr-rv-head">
         <span className="tfr-rv-title">Page review</span>
-        <span className={"tfr-rv-status is-" + status}>{statusText}</span>
       </div>
-      <div className="tfr-rv-screen">{screenLabel}</div>
-
-      <Item label="Text" value={textOk} field="text_ok" />
-      <Item label="Image" value={imageOk} field="image_ok" />
-
-      <label className="tfr-rv-note-label">
-        What edit is required?
-        <textarea
-          className="tfr-rv-note"
-          value={note}
-          onChange={onNote}
-          placeholder="Describe the fix needed on this page…"
-          rows={5}
-        ></textarea>
-      </label>
-
-      {reviewerName && <div className="tfr-rv-by">Reviewing as <strong>{reviewerName}</strong></div>}
+      {body}
     </aside>
   );
 }
@@ -479,28 +584,70 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
     try { return localStorage.getItem("tafiya-reader:reviewMode") === "1"; } catch (e) { return false; }
   });
   const [reviews, setReviews] = useStateTfr({});
+  const [reviewer, setReviewer] = useStateTfr(null);
+  const [reviewerLoaded, setReviewerLoaded] = useStateTfr(false);
+  const isReviewer = !!(reviewer && reviewer.isReviewer);
+
   useEffectTfr(() => {
     try { localStorage.setItem("tafiya-reader:reviewMode", reviewMode ? "1" : "0"); } catch (e) { /* ignore */ }
   }, [reviewMode]);
-  // Load any saved reviews for this book (so ticks + notes reload).
+
+  // Track the signed-in reviewer (real Supabase auth), refresh on auth change.
   useEffectTfr(() => {
-    if (!window.HaarayaReview) return;
+    let alive = true;
+    const refresh = () => {
+      if (!window.HaarayaReview) { setReviewerLoaded(true); return; }
+      window.HaarayaReview.currentReviewer().then(r => {
+        if (alive) { setReviewer(r); setReviewerLoaded(true); }
+      });
+    };
+    refresh();
+    let sub = null;
+    if (window.HaarayaReview && window.HaarayaReview.onAuthChange) {
+      sub = window.HaarayaReview.onAuthChange(() => refresh());
+    }
+    return () => {
+      alive = false;
+      try { sub && sub.data && sub.data.subscription && sub.data.subscription.unsubscribe(); } catch (e) { /* ignore */ }
+    };
+  }, []);
+
+  // Load saved reviews for this book — reviewers only (RLS blocks others).
+  useEffectTfr(() => {
+    if (!window.HaarayaReview || !isReviewer) { setReviews({}); return; }
     let alive = true;
     window.HaarayaReview.load(code).then(map => { if (alive) setReviews(map || {}); });
     return () => { alive = false; };
-  }, [code]);
+  }, [code, isReviewer]);
+
+  const handleSignIn = (email, password) =>
+    window.HaarayaReview ? window.HaarayaReview.signIn(email, password) : Promise.reject(new Error("unavailable"));
+  const handleSignOut = () => {
+    if (window.HaarayaReview) window.HaarayaReview.signOut();
+  };
+
   const saveReview = (screenKey, pageNumber, vals) => {
     if (!window.HaarayaReview) return Promise.reject(new Error("review layer unavailable"));
-    const merged = {
+    const bk = (pkg && pkg.book) || {};
+    const lvlMatch = String(bk.level || "").match(/\d+/);
+    const row = {
       book_code: code,
       screen_key: screenKey,
       page_number: pageNumber == null ? null : pageNumber,
       text_ok: vals.text_ok == null ? null : vals.text_ok,
       image_ok: vals.image_ok == null ? null : vals.image_ok,
+      page_order_ok: vals.page_order_ok == null ? null : vals.page_order_ok,
+      layout_ok: vals.layout_ok == null ? null : vals.layout_ok,
+      issue_type: vals.issue_type || null,
+      review_status: vals.review_status || "open",
       note: vals.note || "",
+      book_title: tfrText(bk.title) || null,
+      strand: tfrText(bk.strand) || null,
+      level: lvlMatch ? Number(lvlMatch[0]) : null,
+      reviewer: reviewer ? reviewer.name : null,
     };
-    setReviews(r => ({ ...r, [screenKey]: { ...(r[screenKey] || {}), ...merged } }));
-    return window.HaarayaReview.save(merged).then(saved => {
+    setReviews(r => ({ ...r, [screenKey]: { ...(r[screenKey] || {}), ...row } }));
+    return window.HaarayaReview.save(row).then(saved => {
       if (saved) setReviews(r => ({ ...r, [screenKey]: saved }));
       return saved;
     });
@@ -723,11 +870,18 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
           </article>
           {reviewActive && (
             <TfrReviewPanel
-              key={reviewTarget.key}
               screenKey={reviewTarget.key}
               screenLabel={reviewTarget.label}
+              bookCode={code}
+              bookTitle={tfrText(b.title)}
+              strandName={tfrText(b.strand)}
+              level={(() => { const m = String(b.level || "").match(/\d+/); return m ? Number(m[0]) : null; })()}
               review={reviews[reviewTarget.key]}
+              reviewer={reviewer}
+              reviewerLoaded={reviewerLoaded}
               onSave={(vals) => saveReview(reviewTarget.key, reviewTarget.page, vals)}
+              onSignIn={handleSignIn}
+              onSignOut={handleSignOut}
             />
           )}
         </main>

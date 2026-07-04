@@ -144,7 +144,7 @@
 }
 
 /* ===== STORY PAGE ===== */
-.tfr .story { padding: 4cqh 8.5cqw; justify-content: center; gap: 4cqh; overflow: hidden; }
+.tfr .story { padding: 4cqh 8.5cqw; justify-content: flex-start; gap: 4cqh; overflow: hidden; }
 .tfr .story-img {
   position: relative; width: 100%; height: 58cqh; flex: 0 1 auto; min-height: 0;
   display: flex; align-items: center; justify-content: center; overflow: hidden;
@@ -152,10 +152,16 @@
 .tfr .story-img img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
 .tfr .story-text {
   position: relative; width: 100%; flex: 0 0 auto;
-  font-weight: 700; font-size: 5.2cqw; line-height: 1.27; color: var(--tfr-ink);
+  font-weight: 700; font-size: 6cqw; line-height: 1.27; color: var(--tfr-ink);
   text-align: left; text-wrap: pretty;
 }
+.tfr .story-text.is-single { text-align: center; font-size: 8cqw; line-height: 1.15; }
+.tfr .story-text.is-single.is-xl { font-size: 14cqw; }
 .tfr .story-text.is-empty { color: var(--tfr-ink-faint); font-style: italic; }
+
+/* Keep the reader's own typography (Andika) on titles — the host app's
+   global `h1..h4` rule otherwise forces a serif display face here. */
+.tfr h1, .tfr h2, .tfr h3, .tfr h4 { font-family: var(--tfr-font); }
 
 /* ===== BACK COVER ===== */
 .tfr .back { padding: 3.2cqh 7.4cqw 2.8cqh; overflow: hidden; gap: 0; justify-content: flex-start; }
@@ -307,6 +313,60 @@
 .tfr-rv-note:focus { outline: 2px solid var(--forest, #1f7a34); outline-offset: 1px; border-color: transparent; }
 .tfr-rv-by { margin-top: auto; font-size: 12px; color: var(--tfr-ink-faint, #9AB39A); }
 .tfr-rv-by strong { color: var(--tfr-ink-soft, #5b6b5b); font-weight: 800; }
+
+/* expanded review form: status line, context, dropdowns, sign-in */
+.tfr-rv-form { display: flex; flex-direction: column; gap: 13px; min-height: 0; }
+.tfr-rv-statusline { min-height: 14px; font-size: 12px; font-weight: 700; text-align: right; color: var(--tfr-ink-faint, #9AB39A); }
+.tfr-rv-statusline.is-saved { color: #2f9e6e; }
+.tfr-rv-statusline.is-error { color: #E0653F; }
+.tfr-rv-context {
+  background: var(--tfr-bg, #FAF9F5); border: 1px solid var(--tfr-line, #eee);
+  border-radius: 10px; padding: 10px 12px;
+}
+.tfr-rv-ctx-code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; font-weight: 700; color: var(--tfr-ink-soft, #5b6b5b); }
+.tfr-rv-ctx-title { font-weight: 800; font-size: 14.5px; color: var(--tfr-ink, #142a14); margin-top: 2px; line-height: 1.2; }
+.tfr-rv-ctx-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.tfr-rv-ctx-meta span {
+  font-size: 11px; font-weight: 700; letter-spacing: .02em;
+  background: #fff; border: 1px solid var(--tfr-line, #e7e4dc); border-radius: 999px;
+  padding: 2px 8px; color: var(--tfr-ink-soft, #5b6b5b);
+}
+.tfr-rv-field { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.tfr-rv-field-label { font-weight: 700; color: var(--tfr-ink, #142a14); font-size: 13px; }
+.tfr-rv-select {
+  font: inherit; font-size: 12.5px; font-weight: 700; color: var(--tfr-ink, #142a14);
+  border: 1px solid var(--tfr-line, #ddd); border-radius: 9px; padding: 7px 9px; background: #fff;
+  max-width: 60%;
+}
+.tfr-rv-select:focus { outline: 2px solid var(--forest, #1f7a34); outline-offset: 1px; }
+.tfr-rv-by .tfr-rv-textbtn {
+  margin-left: 8px; background: none; border: none; padding: 0; cursor: pointer;
+  font: inherit; font-size: 12px; font-weight: 800; color: var(--forest, #1f7a34); text-decoration: underline;
+}
+/* messages (checking / no-access) */
+.tfr-rv-msg { font-size: 13px; color: var(--tfr-ink-soft, #5b6b5b); display: flex; flex-direction: column; gap: 8px; }
+.tfr-rv-msg strong { color: var(--tfr-ink, #142a14); }
+.tfr-rv-msg-dim { color: var(--tfr-ink-faint, #9AB39A); }
+.tfr-rv-textbtn {
+  align-self: flex-start; background: none; border: none; padding: 0; cursor: pointer;
+  font: inherit; font-size: 12.5px; font-weight: 800; color: var(--forest, #1f7a34); text-decoration: underline;
+}
+/* sign-in */
+.tfr-rv-signin { display: flex; flex-direction: column; gap: 10px; }
+.tfr-rv-signin-lede { font-size: 13px; font-weight: 700; color: var(--tfr-ink, #142a14); margin: 0; }
+.tfr-rv-input {
+  font: inherit; font-size: 13.5px; border: 1px solid var(--tfr-line, #ddd); border-radius: 9px;
+  padding: 10px 11px; background: #fff; color: var(--tfr-ink, #142a14);
+}
+.tfr-rv-input:focus { outline: 2px solid var(--forest, #1f7a34); outline-offset: 1px; border-color: transparent; }
+.tfr-rv-signin-btn {
+  font: inherit; font-size: 14px; font-weight: 800; cursor: pointer;
+  background: var(--forest, #1f7a34); color: #fff; border: none; border-radius: 999px;
+  padding: 10px 16px; min-height: 44px;
+}
+.tfr-rv-signin-btn:disabled { opacity: .6; cursor: default; }
+.tfr-rv-signin-hint { font-size: 11.5px; color: var(--tfr-ink-faint, #9AB39A); margin: 0; line-height: 1.4; }
+.tfr-rv-error { font-size: 12.5px; font-weight: 700; color: #E0653F; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 720px) {

@@ -1,0 +1,29 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Node deps — never deploy these
+node_modules/
+
+# Local tooling scripts (not part of the live site)
+tools/
+
+# Local screenshots scratch folder
+screenshots/
+
+# Heavy self-contained exports — NOT needed on the live Pages site.
+# These bloat the Pages deploy artifact and can make deployment fail.
+Haaraya Home (Standalone).html
+Haaraya Home (Standalone Source).html
+Haaraya Home (offline-src).html
+Haaraya Education (offline).html
+Haaraya Home-print-*.html
+Haaraya Odyssey-print.html
+offline-assets-*.js
+offline-shim.js
