@@ -15,9 +15,9 @@ function RegTop({ onHome }) {
   return (
     <header className="reg-top">
       <div className="reg-top-inner">
-        <button className="reg-top-brand" onClick={onHome} aria-label="Haaraya — start over">
+        <a className="reg-top-brand" href="Haaraya Home.html" aria-label="Haaraya — home">
           <img src="assets/logo-haaraya-literacy.png" alt="Haaraya Literacy" />
-        </button>
+        </a>
         <span className="reg-top-tag">A Nigerian reading journey</span>
         <div className="reg-top-spacer" />
         <a className="reg-top-signin" href="Haaraya Home.html">

@@ -25,11 +25,13 @@
 
   async function signUp(opts) {
     var email = opts.email, password = opts.password;
-    var fullName = opts.fullName || "", role = opts.role || "parent";
+    var firstName = opts.firstName || "", lastName = opts.lastName || "";
+    var fullName = opts.fullName || [firstName, lastName].filter(Boolean).join(" ").trim();
+    var role = opts.role || "parent";
     var res = await sb.auth.signUp({
       email: email,
       password: password,
-      options: { data: { full_name: fullName, role: role } },
+      options: { data: { full_name: fullName, first_name: firstName, last_name: lastName, role: role } },
     });
     if (res.error) throw res.error;
     profileCache = null;

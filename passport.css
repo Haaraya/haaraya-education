@@ -749,6 +749,36 @@
   border-radius: 0; box-shadow: none;
 }
 
+/* ---- Foil-stamped child name on the cover ---- */
+.pcover-wrap { position: relative; display: inline-block; line-height: 0; container-type: inline-size; }
+.pcover-name {
+  position: absolute; left: 7%; right: 7%; bottom: 6%;
+  text-align: center; line-height: 1;
+  font-family: var(--font-serif); font-weight: 600;
+  font-size: 7cqw; letter-spacing: .01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  text-shadow: 0 1px 1px rgba(0,0,0,.30);
+  pointer-events: none;
+}
+
+/* ---- Passport colour picker (registration) ---- */
+.pcolor-row { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+.pcolor-pick { display: flex; gap: 12px; flex-wrap: wrap; }
+.pcolor-swatch {
+  display: inline-flex; flex-direction: column; align-items: center; gap: 6px;
+  border: 0; background: none; cursor: pointer; padding: 2px;
+}
+.pcolor-swatch .dot {
+  width: 34px; height: 34px; border-radius: 50%; background: var(--sw);
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.30), 0 2px 5px rgba(0,0,0,.22);
+  border: 3px solid transparent; transition: transform .15s ease, border-color .15s ease;
+}
+.pcolor-swatch.on .dot { border-color: var(--forest); transform: scale(1.09); }
+.pcolor-swatch .lbl { font-size: 11px; font-weight: 700; color: var(--ink-soft); }
+.pcolor-swatch.on .lbl { color: var(--ink); }
+.pcolor-preview { width: 116px; flex: none; filter: drop-shadow(0 6px 14px rgba(0,0,0,.22)); }
+.pcolor-preview .pcover-img { border-radius: 2px 5px 5px 2px; }
+
 /* ---- ID page (literacy passport data spread) ---- */
 .pbook-spread:has(.ppid2) { aspect-ratio: auto; }
 

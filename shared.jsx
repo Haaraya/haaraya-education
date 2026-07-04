@@ -515,6 +515,27 @@ function bookToCardProps(dbBook) {
 
 Object.assign(window, { useApi, bookToCardProps });
 
+/* ------------ Passport cover colours (child-chosen) ------------ */
+const PASSPORT_COVERS = {
+  green: { key: "green", label: "Forest Green", img: "assets/passport-cover-green-blank.png", ink: "#F0BC4B", swatch: "#2C5A32" },
+  blue:  { key: "blue",  label: "Royal Blue",   img: "assets/passport-cover-blue-blank.png",  ink: "#F0BC4B", swatch: "#213D82" },
+  red:   { key: "red",   label: "Ruby Red",     img: "assets/passport-cover-red-blank.png",   ink: "#EEBA43", swatch: "#8A1E23" },
+  beige: { key: "beige", label: "Tan",          img: "assets/passport-cover-beige-blank.png", ink: "#123F1C", swatch: "#E4B466" },
+};
+const PASSPORT_COVER_ORDER = ["green", "blue", "red", "beige"];
+
+function PassportCover({ color, name, className = "", alt }) {
+  const cfg = PASSPORT_COVERS[color] || PASSPORT_COVERS.green;
+  return (
+    <div className={"pcover-wrap " + className}>
+      <img className="pcover-img" src={cfg.img} alt={alt || ((name || "Reading") + " — Reading Passport")} />
+      {name ? <span className="pcover-name" style={{ color: cfg.ink }}>{name}</span> : null}
+    </div>
+  );
+}
+
+Object.assign(window, { PASSPORT_COVERS, PASSPORT_COVER_ORDER, PassportCover });
+
 Object.assign(window, {
   STRANDS, CHILDREN_PROFILES, SAMPLE_BOOKS, STAMP_DATA, LEVEL_TIERS,
   Avatar, StrandLogo, Stamp, Book, SectionHeader, Nav,

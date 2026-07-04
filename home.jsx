@@ -20,22 +20,8 @@ function Hero({ onNavigate }) {
           <span></span><span></span><span></span>
         </div>
 
-        <div className="hero-frame-top">
-          <div className="left">
-            <span className="pulse"></span>
-            <span>Pre-launch · Waitlist open</span>
-          </div>
-          <div className="right">
-            <span>Haaraya Literacy · A Nigerian Reading Journey</span>
-          </div>
-        </div>
-
         <div className="hero-body">
           <div className="hero-headline">
-            <div className="eyebrow-card">
-              <span className="flag" aria-hidden="true">🇳🇬</span>
-              <span>Made for Nigerian children</span>
-            </div>
             <h1 className="hero-h1">
               <span className="line">Every app gives</span>
               <span className="line">them books.</span>
@@ -43,7 +29,7 @@ function Hero({ onNavigate }) {
               <span className="accent">journey.</span>
             </h1>
             <p className="hero-sub-headline">
-              Books that look like <em>their world.</em>
+              Rooted in Nigerian childhood. Made for readers everywhere.
             </p>
           </div>
 
@@ -53,9 +39,9 @@ function Hero({ onNavigate }) {
 
           <div className="hero-aside">
             <p>
-              A structured literacy reading series purpose-built for Nigerian
-              primary schools — every story rooted in Nigerian life,
-              every page engineered to build a reader.
+              A structured literacy series that turns reading into a journey — with
+              decodable and levelled books, joyful progress, and every page
+              engineered to build a reader.
             </p>
             <div className="actions">
               <button className="btn btn-primary" onClick={() => onNavigate("passport")}>

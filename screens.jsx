@@ -301,7 +301,7 @@ function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, 
   if (idx === 0) {
     return (
       <div className="ppage ppage-cover">
-        <img className="pcover-img" src="assets/passport-cover-green.png" alt={child.displayName + " — Reading Passport"} />
+        <PassportCover color={child.passportColor} name={child.displayName} />
       </div>
     );
   }
@@ -703,7 +703,7 @@ function ChildDashScreen({ onNavigate }) {
                   <h5 style={{ color: "var(--yellow)" }}>Your passport</h5>
                   <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
                     <img
-                      src="assets/passport-cover-green.png"
+                      src={(window.PASSPORT_COVERS && window.PASSPORT_COVERS[child.passportColor || "green"] || { img: "assets/passport-cover-green-blank.png" }).img}
                       alt="Your Reading Passport"
                       style={{
                         width: 76, height: "auto", flexShrink: 0,

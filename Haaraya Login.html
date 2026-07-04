@@ -42,6 +42,7 @@
   .msg.ok{background:#e9f5ec; color:var(--green-d); border:1px solid #bfe2c8}
   .msg.warn{background:#fdf6e3; color:var(--amber); border:1px solid #efe0b0}
   .hint{font-size:12px; color:var(--muted); margin:-6px 0 14px}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:0 12px}
   .profile{font-size:14px}
   .profile h2{font-size:15px; margin:0 0 14px}
   .row{display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px dashed var(--line)}
@@ -77,8 +78,16 @@
 
       <!-- Signup -->
       <form id="signupForm" onsubmit="return doSignup(event)">
-        <label>Full name</label>
-        <input id="su_name" type="text" placeholder="Ada Obi" autocomplete="name">
+        <div class="row2">
+          <div>
+            <label>First name</label>
+            <input id="su_first" type="text" placeholder="Ada" autocomplete="given-name">
+          </div>
+          <div>
+            <label>Last name</label>
+            <input id="su_last" type="text" placeholder="Obi" autocomplete="family-name">
+          </div>
+        </div>
         <label>Email</label>
         <input id="su_email" type="email" placeholder="you@example.com" autocomplete="email" required>
         <label>Password</label>
@@ -154,7 +163,8 @@
         var data = await HaarayaAuth.signUp({
           email: document.getElementById("su_email").value.trim(),
           password: document.getElementById("su_pass").value,
-          fullName: document.getElementById("su_name").value.trim(),
+          firstName: document.getElementById("su_first").value.trim(),
+          lastName: document.getElementById("su_last").value.trim(),
           role: document.getElementById("su_role").value,
         });
         if (data.session){

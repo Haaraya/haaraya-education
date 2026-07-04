@@ -6,19 +6,31 @@
 
 -- 1. Auto-create a public.users profile row whenever someone
 --    signs up through Supabase Auth.
---    full_name / role come from the signup metadata; role
---    defaults to 'parent' for self-serve testers.
+--    full_name / first_name / last_name / role come from the
+--    signup metadata; role defaults to 'parent' for self-serve.
+--    (Run the two ALTER TABLEs below first if the columns are new.)
+-- 0. Add the name columns if they don't exist yet.
+alter table public.users add column if not exists first_name text;
+alter table public.users add column if not exists last_name  text;
+
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer set search_path = public
 as $$
 begin
-  insert into public.users (auth_uid, email, full_name, role)
+  insert into public.users (auth_uid, email, full_name, first_name, last_name, role)
   values (
     new.id,
     new.email,
-    coalesce(new.raw_user_meta_data->>'full_name', ''),
+    coalesce(
+      nullif(new.raw_user_meta_data->>'full_name', ''),
+      trim(concat_ws(' ',
+        new.raw_user_meta_data->>'first_name',
+        new.raw_user_meta_data->>'last_name'))
+    ),
+    new.raw_user_meta_data->>'first_name',
+    new.raw_user_meta_data->>'last_name',
     coalesce(new.raw_user_meta_data->>'role', 'parent')
   )
   on conflict (auth_uid) do nothing;

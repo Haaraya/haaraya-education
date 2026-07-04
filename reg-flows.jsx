@@ -5,7 +5,7 @@
 const { useState: useStateF } = React;
 
 const KID_COLORS = ["#E65100", "#8E24AA", "#1565C0", "#00838F"];
-const emptyKid = () => ({ firstName: "", lastName: "", passportName: "", year: "", confidence: "", avatar: randomAvatar() });
+const emptyKid = () => ({ firstName: "", lastName: "", passportName: "", year: "", confidence: "", passportColor: "green", avatar: randomAvatar() });
 
 /* ---------- Passport Avatar step (handles 1–4 children) ---------- */
 function AvatarStepBody({ kids, setKid }) {
@@ -91,7 +91,7 @@ function ParentFlow({ onBack, onComplete }) {
     { key: "plan", title: "Choose a plan", sub: "Reserve your place" },
   ];
   const [step, setStep] = useStateF(0);
-  const [acc, setAcc] = useStateF({ fullName: "", email: "", password: "", country: "Nigeria", phone: "" });
+  const [acc, setAcc] = useStateF({ firstName: "", lastName: "", email: "", password: "", country: "Nigeria", phone: "" });
   const [kids, setKids] = useStateF([emptyKid()]);
   const [readingStart, setReadingStart] = useStateF("");
   const [manualLevel, setManualLevel] = useStateF("");
@@ -106,13 +106,14 @@ function ParentFlow({ onBack, onComplete }) {
   const child0 = { ...kids[0], readingStart };
   const planLabel = plan === "family" ? "Family plan" : plan === "individual" ? "Individual child" : "";
 
-  const accValid = acc.fullName.trim() && /.+@.+\..+/.test(acc.email) && acc.password.length >= 6 && acc.country;
+  const accFullName = [acc.firstName, acc.lastName].map(s => s.trim()).filter(Boolean).join(" ");
+  const accValid = acc.firstName.trim() && acc.lastName.trim() && /.+@.+\..+/.test(acc.email) && acc.password.length >= 6 && acc.country;
   const kidsValid = kids.every(k => k.firstName.trim() && k.passportName.trim() && k.year && k.confidence);
   const next = () => {
     if (step < STEPS.length - 1) { setStep(step + 1); window.scrollTo({ top: 0, behavior: "smooth" }); }
     else {
       onComplete({
-        role: "parent", account: acc,
+        role: "parent", account: { ...acc, fullName: accFullName },
         children: kids.map(k => ({
           ...k,
           ...buildReadingRecord(readingStart, manualLevel),
@@ -141,7 +142,10 @@ function ParentFlow({ onBack, onComplete }) {
               <StepHead n={1} total={5} tag="Parent account" title="Let's set up your account"
                 sub="You'll manage your children's reading, see their progress, and add more readers any time." />
               <div className="reg-fields">
-                <Field label="Your full name"><Input value={acc.fullName} onChange={setAccF("fullName")} placeholder="e.g. Amaka Obi" autoFocus /></Field>
+                <div className="reg-grid-2">
+                  <Field label="First name"><Input value={acc.firstName} onChange={setAccF("firstName")} placeholder="e.g. Amaka" autoFocus /></Field>
+                  <Field label="Last name"><Input value={acc.lastName} onChange={setAccF("lastName")} placeholder="e.g. Obi" /></Field>
+                </div>
                 <div className="reg-grid-2">
                   <Field label="Email"><Input type="email" value={acc.email} onChange={setAccF("email")} placeholder="you@email.com" /></Field>
                   <Field label="Password" hint="At least 6 characters."><Input type="password" value={acc.password} onChange={setAccF("password")} placeholder="Create a password" /></Field>
@@ -149,7 +153,7 @@ function ParentFlow({ onBack, onComplete }) {
                 <div className="reg-grid-2">
                   <Field label="Country">
                     <Select value={acc.country} onChange={setAccF("country")}>
-                      {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                      {COUNTRIES.map(c => <option key={c} value={c} disabled={c.startsWith("\u2500")}>{c}</option>)}
                     </Select>
                   </Field>
                   <Field label="Phone" optional hint="For account recovery only.">
@@ -202,6 +206,14 @@ function ParentFlow({ onBack, onComplete }) {
                           </Select>
                         </Field>
                       </div>
+                      <Field label="Passport colour"
+                        hint="Let your reader pick the colour of their passport cover.">
+                        <div className="pcolor-row">
+                          <PassportColorPicker value={kid.passportColor} onChange={c => setKid(i, "passportColor", c)} />
+                          <PassportCover className="pcolor-preview" color={kid.passportColor}
+                            name={kid.passportName || kid.firstName || ""} />
+                        </div>
+                      </Field>
                     </div>
                   </div>
                 ))}
@@ -279,7 +291,7 @@ function ParentFlow({ onBack, onComplete }) {
               <StepHead n={5} total={5} tag="Choose a plan" title="Pick the right plan"
                 sub="Billing isn't live yet — reserve your place today and we'll invite you the moment plans open. No card needed now." />
               <div className="reg-review">
-                <div className="row"><span className="k">Parent</span><span className="v">{acc.fullName || "—"}</span></div>
+                <div className="row"><span className="k">Parent</span><span className="v">{accFullName || "—"}</span></div>
                 <div className="row"><span className="k">Readers</span><span className="v">{kids.map(k => k.passportName || k.firstName).filter(Boolean).join(", ") || "—"}</span></div>
                 <div className="row"><span className="k">Start</span><span className="v">{READING_START_LABEL[readingStart] || "—"}</span></div>
               </div>
@@ -382,7 +394,7 @@ function SchoolFlow({ onBack, onComplete }) {
                 </div>
                 <div className="reg-grid-2">
                   <Field label="Country">
-                    <Select value={s.country} onChange={setF("country")}>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</Select>
+                    <Select value={s.country} onChange={setF("country")}>{COUNTRIES.map(c => <option key={c} value={c} disabled={c.startsWith("\u2500")}>{c}</option>)}</Select>
                   </Field>
                   <Field label="City"><Input value={s.city} onChange={setF("city")} placeholder="e.g. Lagos" /></Field>
                 </div>
@@ -460,13 +472,13 @@ function SponsoredFlow({ onBack, onComplete }) {
   const [code, setCode] = useStateF("");
   const [verified, setVerified] = useStateF(false);
   const [email, setEmail] = useStateF("");
-  const [kid, setKid] = useStateF({ passportName: "", firstName: "", confidence: "", avatar: randomAvatar() });
+  const [kid, setKid] = useStateF({ passportName: "", firstName: "", confidence: "", passportColor: "green", avatar: randomAvatar() });
 
   // Demo: any 6+ char code "resolves" to a programme.
   const programme = "Lagos State Reads · Sunshine Academy";
   const verify = () => { if (code.trim().length >= 4) setVerified(true); };
 
-  const child0 = { firstName: kid.firstName, passportName: kid.passportName, lastName: "", avatar: kid.avatar };
+  const child0 = { firstName: kid.firstName, passportName: kid.passportName, lastName: "", passportColor: kid.passportColor, avatar: kid.avatar };
   const codeValid = verified;
   const kidValid = kid.passportName.trim() && kid.firstName.trim();
 
@@ -538,6 +550,14 @@ function SponsoredFlow({ onBack, onComplete }) {
                     <option value="fluent">Already reading fluently</option>
                   </Select>
                 </Field>
+                <Field label="Passport colour"
+                  hint="Let your reader pick the colour of their passport cover.">
+                  <div className="pcolor-row">
+                    <PassportColorPicker value={kid.passportColor} onChange={c => setKid({ ...kid, passportColor: c })} />
+                    <PassportCover className="pcolor-preview" color={kid.passportColor}
+                      name={kid.passportName || kid.firstName || ""} />
+                  </div>
+                </Field>
               </div>
               <Actions onBack={back} onNext={next} nextDisabled={!kidValid} />
             </React.Fragment>
@@ -594,7 +614,7 @@ function SuccessScreen({ payload, onDashboard, onRestart }) {
   }
 
   const previewChild = isSchool ? null
-    : isSponsored ? { firstName: payload.child.firstName, passportName: payload.child.passportName, lastName: "", avatar: payload.child.avatar }
+    : isSponsored ? { firstName: payload.child.firstName, passportName: payload.child.passportName, lastName: "", passportColor: payload.child.passportColor, avatar: payload.child.avatar }
       : { ...payload.children[0] };
 
   return (
