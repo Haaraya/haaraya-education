@@ -751,6 +751,16 @@
 
 /* ---- Foil-stamped child name on the cover ---- */
 .pcover-wrap { position: relative; display: inline-block; line-height: 0; container-type: inline-size; }
+/* container-type: inline-size stops the wrap from taking its width from its
+   contents, so inside the centred flex cover page it collapses to 0×0. Give the
+   cover-page wrap a definite height + the cover's aspect ratio so its width is
+   derived geometrically (immune to inline-size containment), and let the image
+   fill it. (The registration preview sets an explicit width, so it's unaffected.) */
+.ppage-cover .pcover-wrap {
+  height: min(74vh, 660px);
+  aspect-ratio: 497 / 735;
+}
+.ppage-cover .pcover-img { height: 100%; width: 100%; object-fit: contain; }
 .pcover-name {
   position: absolute; left: 7%; right: 7%; bottom: 6%;
   text-align: center; line-height: 1;
