@@ -59,6 +59,7 @@
   font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em;
   text-transform: uppercase; color: var(--tfr-ink-faint);
 }
+.tfr .running-code { display: inline-block; margin-left: 7px; padding: 1px 6px; border-radius: 5px; background: var(--tfr-line); color: var(--tfr-ink); letter-spacing: 0.05em; white-space: nowrap; }
 .tfr .brand { justify-self: end; display: flex; flex-direction: column; align-items: flex-end; gap: 7px; }
 .tfr .brand img { height: 28px; width: auto; display: block; }
 .tfr .brand .brand-strand-logo { display: inline-flex; align-items: center; }
@@ -130,6 +131,30 @@
 .tfr .cover-sub { margin-top: 1.6cqh; font-weight: 700; font-size: 4.2cqw; letter-spacing: 0.04em; color: var(--tfr-ink-soft); }
 .tfr .cover-bottom { flex: 0 0 auto; display: flex; justify-content: flex-end; align-items: flex-end; padding-top: 1.6cqh; }
 .tfr .cover-bottom .logo-haaraya { height: 12cqh; width: auto; object-fit: contain; }
+
+/* ---------- About this book (front matter) ---------- */
+.tfr .surface.about { padding: 6cqh 8cqw; gap: 0; overflow-y: auto; }
+.tfr .about-head { flex: 0 0 auto; display: flex; align-items: center; gap: 2.6cqw; }
+.tfr .about-strandlogo { height: 5.4cqh; width: auto; object-fit: contain; }
+.tfr .about-eyebrow { font-weight: 700; font-size: 2.7cqw; letter-spacing: 0.16em; text-transform: uppercase; color: var(--tfr-accent); }
+.tfr .about-body { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; gap: 3.4cqh; padding: 4cqh 0; }
+.tfr .about-title { font-weight: 700; font-size: 8cqw; line-height: 1.06; color: var(--tfr-ink); text-wrap: balance; margin: 0; }
+.tfr .about-lead { font-weight: 700; font-size: 4.4cqw; line-height: 1.32; color: var(--tfr-ink); text-wrap: pretty; margin: 0; }
+/* focus sound + example words */
+.tfr .about-sound { display: flex; flex-wrap: wrap; align-items: center; gap: 3cqw 5cqw; }
+.tfr .about-focus { display: inline-flex; align-items: center; gap: 2cqw; padding: 1.6cqh 4cqw; border-radius: 999px; border: 2px solid var(--tfr-accent); background: color-mix(in srgb, var(--tfr-accent) 9%, #fff); color: var(--tfr-accent); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .12s; }
+.tfr .about-focus:active { transform: scale(.97); }
+.tfr .about-focus-letter { font-weight: 700; font-size: 6cqw; line-height: 1; }
+.tfr .about-focus-cue { font-weight: 700; font-size: 3.6cqw; color: var(--tfr-ink-soft); }
+.tfr .about-focus-spk { display: inline-flex; font-size: 4.4cqw; }
+.tfr .about-words { display: flex; flex-direction: column; gap: 0.8cqh; }
+.tfr .about-words-label { font-weight: 700; font-size: 2.3cqw; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tfr-ink-faint); }
+.tfr .about-words-list { display: flex; flex-wrap: wrap; gap: 2cqw; }
+.tfr .about-word { font-weight: 700; font-size: 3.8cqw; color: var(--tfr-ink); padding: 0.6cqh 2.6cqw; border-radius: 10px; background: var(--tfr-line); }
+/* read-to-find-out hook */
+.tfr .about-hook { display: flex; flex-direction: column; gap: 1cqh; padding: 3cqh 4cqw; border-radius: 16px; background: var(--tfr-bg); border: 1.5px solid var(--tfr-line); }
+.tfr .about-hook-label { font-weight: 700; font-size: 2.4cqw; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tfr-accent); }
+.tfr .about-hook-text { font-weight: 700; font-size: 4cqw; line-height: 1.28; color: var(--tfr-ink); margin: 0; text-wrap: pretty; }
 
 /* shared image placeholder */
 .tfr .ph {
@@ -375,6 +400,10 @@
   .tfr .running-title { font-size: 0.95rem; }
   .tfr .btn-nav { min-width: 0; padding: 0 16px; width: var(--tfr-tap); }
   .tfr .btn-nav .nav-label { display: none; }
+  /* Keep the “Reading check” wording visible even on small screens so the
+     child knows the check is coming next. */
+  .tfr .btn-next.is-to-check { width: auto; padding: 0 16px; }
+  .tfr .btn-next.is-to-check .nav-label { display: inline; }
   .tfr .tfr-review-toggle span:not(.ico) { display: none; }
 }
 /* Stack the review rail under the book on narrow screens. */
@@ -569,6 +598,16 @@
    ============================================================================ */
 .tfr .quiz { padding: 4.4cqh 7cqw; overflow-y: auto; gap: 0; }
 .tfr .quiz-eyebrow { font-weight: 700; font-size: 2.5cqw; letter-spacing: 0.16em; text-transform: uppercase; color: var(--tfr-accent); text-align: center; }
+.tfr .quiz-eyebrow-row { display: flex; align-items: center; justify-content: center; gap: 3cqw; flex-wrap: wrap; }
+/* Speak-only text: present in the DOM (read by TTS) but invisible on screen. */
+.tfr .tfr-speak-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; color: #fff; }
+/* Read-aloud on/off toggle, sat beside the “Reading check” eyebrow. */
+.tfr .quiz-ra { display: inline-flex; align-items: center; gap: 1.4cqw; padding: 0.9cqh 2.2cqw; border-radius: 999px; border: 1.6px solid var(--tfr-line); background: #fff; color: var(--tfr-ink-faint); font-weight: 700; font-size: 2.3cqw; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background .15s, color .15s, border-color .15s; }
+.tfr .quiz-ra:active { transform: scale(.97); }
+.tfr .quiz-ra .quiz-ra-ico { flex: 0 0 auto; }
+.tfr .quiz-ra .quiz-ra-state { padding: 0.2cqh 1.6cqw; border-radius: 999px; background: var(--tfr-line); color: var(--tfr-ink-faint); font-size: 2cqw; letter-spacing: 0.04em; text-transform: uppercase; }
+.tfr .quiz-ra.is-on { border-color: var(--tfr-accent); color: var(--tfr-accent); background: color-mix(in srgb, var(--tfr-accent) 10%, #fff); }
+.tfr .quiz-ra.is-on .quiz-ra-state { background: var(--tfr-accent); color: #fff; }
 .tfr .quiz-title { font-weight: 700; font-size: 5.2cqw; line-height: 1.08; text-align: center; margin-top: 1cqh; color: var(--tfr-ink); text-wrap: balance; }
 .tfr .quiz-pips { display: flex; justify-content: center; gap: 2cqw; margin: 2.8cqh 0 3.2cqh; }
 .tfr .quiz-pip { width: 2.3cqw; height: 2.3cqw; border-radius: 50%; background: var(--tfr-line); transition: background .2s ease, transform .2s ease; }

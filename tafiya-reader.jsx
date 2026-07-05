@@ -115,6 +115,58 @@ function TfrPage({ page, local }) {
   );
 }
 
+/* Front-matter "About this book" screen. Content comes from HaarayaAbout,
+   keyed by book code. Shows the intro, a read-to-find-out hook, and — for
+   phonics/sound books — the focus letter, example words, and the spoken cue. */
+function TfrAbout({ pkg, about }) {
+  const b = pkg.book || {};
+  const local = !!pkg._local;
+  const logos = (pkg.assets && pkg.assets.logos) || {};
+  const strandLogo = tfrStrandLogo(b, logos);
+  const words = (about.soundbite || "").split(",").map(w => w.trim()).filter(Boolean);
+  const hasSound = !!(about.focusVisible || about.soundCue || words.length);
+  const sayCue = () => { const cue = about.soundCue || about.focusSound || about.focusVisible; if (cue) tfrSpeakText(cue); };
+  return (
+    <div className="surface about">
+      <div className="about-head">
+        {strandLogo.src && <img className="about-strandlogo" src={tfrSrc(strandLogo.src, local)} alt={strandLogo.alt} />}
+        <span className="about-eyebrow">About this book</span>
+      </div>
+      <div className="about-body">
+        <h1 className="about-title">{tfrText(b.title) || about.title || "Book title"}</h1>
+        {about.about && <p className="about-lead">{about.about}</p>}
+
+        {hasSound && (
+          <div className="about-sound">
+            {about.focusVisible && (
+              <button type="button" className="about-focus" onClick={sayCue} title="Hear the sound">
+                <span className="about-focus-letter">{about.focusVisible}</span>
+                {about.soundCue && <span className="about-focus-cue">{"\u201c" + about.soundCue + "\u201d"}</span>}
+                <span className="about-focus-spk" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z" /><path d="M15.5 8.5a5 5 0 0 1 0 7" /></svg>
+                </span>
+              </button>
+            )}
+            {words.length > 0 && (
+              <div className="about-words">
+                <span className="about-words-label">Hear it in</span>
+                <span className="about-words-list">{words.map((w, i) => <span key={i} className="about-word">{w}</span>)}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {about.read && (
+          <div className="about-hook">
+            <span className="about-hook-label">Read to find out</span>
+            <p className="about-hook-text">{about.read}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function TfrBack({ pkg }) {
   const b = pkg.book || {};
   const s = pkg.skills || {};
@@ -233,10 +285,69 @@ function tfrSampleQuestions(pkg, catalog) {
 /* Read text aloud with the device voice (no audio files yet). Phoneme
    notation like "/s/" is de-slashed so TTS doesn't say "slash". The word
    options carry the true pronunciation, which is what the child needs. */
-function tfrSpeakText(raw) {
+/* ----------------------------------------------------------------
+   Phonics speech layer.
+   Browser text-to-speech mangles isolated letter-sounds (it reads the
+   phoneme /i/ as the long letter-name “eye” instead of the short “ih”).
+   Two fixes work together:
+     1. A default respelling map so the common sounds speak correctly with
+        no authoring.
+     2. A hidden override the author can drop into any question / option:
+        write  the /i/{{ih}} sound  — the {{ih}} is INVISIBLE on screen
+        (white, clipped) but is what gets spoken, replacing the /i/ before
+        it. Use {{...}} on its own anywhere to add speak-only text.
+   The visible text is never changed by any of this. */
+var TFR_PHONEME = {
+  // short vowels — the classic long/short TTS failure
+  "a": "aah", "e": "eh", "i": "ih", "o": "aw", "u": "uh",
+  // hard single consonants read as a clean sound, not a letter-name
+  "c": "kuh", "g": "guh", "h": "huh", "j": "juh", "q": "kwuh",
+  "w": "wuh", "y": "yuh",
+  // common digraphs
+  "ch": "chuh", "sh": "shh", "th": "thuh", "ph": "fuh",
+  "wh": "wuh", "ng": "ng", "qu": "kwuh", "ck": "kuh"
+};
+function tfrPhonemeSay(tok) {
+  var key = String(tok || "").toLowerCase().trim();
+  return Object.prototype.hasOwnProperty.call(TFR_PHONEME, key) ? TFR_PHONEME[key] : tok;
+}
+/* Turn display text into the string that should actually be spoken. */
+/* Turn display text into the string that should actually be spoken.
+   `cue` is the CURRENT BOOK's authored pronunciation (from About / sound_cue).
+   Because a phonics book's quiz is about that book's one focus sound, any
+   /x/ phoneme in the question is spoken with the book's own cue — authored,
+   per-book, and correct (a global letter->sound map is ambiguous: "i" is
+   "ih" in one book and "eye" in another). An inline {{...}} override still
+   wins over everything. Falls back to the guessed map only when no cue. */
+function tfrSpokenText(raw, cue) {
+  var t = String(raw || "");
+  // phoneme immediately followed by a hidden override: /x/{{ih}} -> "ih"
+  t = t.replace(/\/[^/]*\/\s*\{\{\s*([^}]*?)\s*\}\}/g, " $1 ");
+  // standalone hidden override: {{ih}} -> "ih"
+  t = t.replace(/\{\{\s*([^}]*?)\s*\}\}/g, " $1 ");
+  // remaining slash phonemes
+  var authored = (cue != null && String(cue).trim() !== "") ? String(cue).trim() : null;
+  t = t.replace(/\/([^/]+)\//g, function (_m, p1) { return " " + (authored || tfrPhonemeSay(p1)) + " "; });
+  return t.replace(/\s+/g, " ").trim();
+}
+/* Render display text, hiding any {{...}} speak-only overrides off-screen
+   (present in the DOM, invisible on screen) so layout is unaffected. */
+function TfrRichText({ text }) {
+  var s = String(text || "");
+  if (s.indexOf("{{") < 0) return s;
+  var nodes = []; var re = /\{\{\s*([^}]*?)\s*\}\}/g; var last = 0; var m; var k = 0;
+  while ((m = re.exec(s))) {
+    if (m.index > last) nodes.push(s.slice(last, m.index));
+    nodes.push(<span key={"sp" + (k++)} className="tfr-speak-only" aria-hidden="true">{m[1]}</span>);
+    last = m.index + m[0].length;
+  }
+  if (last < s.length) nodes.push(s.slice(last));
+  return <React.Fragment>{nodes}</React.Fragment>;
+}
+function tfrSpeakText(raw, cue) {
   try {
     if (!window.speechSynthesis) return;
-    let t = String(raw || "").replace(/\/([^/]+)\//g, "$1").trim();
+    let t = tfrSpokenText(raw, cue);
     if (!t) return;
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(t);
@@ -244,15 +355,46 @@ function tfrSpeakText(raw) {
     window.speechSynthesis.speak(u);
   } catch (e) { /* ignore */ }
 }
-function TfrSpeaker({ text, label, size }) {
+/* Read-aloud preference — shared, persisted, OFF by default for everyone.
+   Controls whether reading-check questions are spoken automatically. The
+   tap-to-hear speaker buttons always work regardless of this setting. */
+var TFR_RA_KEY = "haaraya.readAloud.v1";
+var tfrRaSubs = [];
+function tfrReadAloudGet() { try { return localStorage.getItem(TFR_RA_KEY) === "1"; } catch (e) { return false; } }
+function tfrReadAloudSet(v) { try { localStorage.setItem(TFR_RA_KEY, v ? "1" : "0"); } catch (e) { /* ignore */ } tfrRaSubs.forEach(function (fn) { fn(v); }); }
+function useTfrReadAloud() {
+  const [v, setV] = useStateTfr(tfrReadAloudGet());
+  useEffectTfr(() => {
+    const fn = (nv) => setV(nv); tfrRaSubs.push(fn);
+    return () => { const i = tfrRaSubs.indexOf(fn); if (i >= 0) tfrRaSubs.splice(i, 1); };
+  }, []);
+  return [v, tfrReadAloudSet];
+}
+function TfrReadAloudToggle() {
+  const [on, setOn] = useTfrReadAloud();
+  const toggle = (e) => {
+    e.stopPropagation();
+    const nv = !on; setOn(nv);
+    if (nv) tfrSpeakText("Reading aloud is on.");
+    else if (window.speechSynthesis) { try { window.speechSynthesis.cancel(); } catch (er) { /* ignore */ } }
+  };
+  return (
+    <button type="button" role="switch" aria-checked={on} onClick={toggle} title="Read the questions aloud" className={"quiz-ra" + (on ? " is-on" : "")}>
+      <svg className="quiz-ra-ico" viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z" />{on ? <path d="M15.5 8.5a5 5 0 0 1 0 7" /> : null}</svg>
+      <span className="quiz-ra-label">Read aloud</span>
+      <span className="quiz-ra-state">{on ? "On" : "Off"}</span>
+    </button>
+  );
+}
+function TfrSpeaker({ text, label, size, cue }) {
   return (
     <span
       role="button"
       tabIndex={0}
       className={"quiz-speak" + (size === "sm" ? " sm" : "")}
       aria-label={label || ("Hear " + text)}
-      onClick={(e) => { e.stopPropagation(); tfrSpeakText(text); }}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); tfrSpeakText(text); } }}
+      onClick={(e) => { e.stopPropagation(); tfrSpeakText(text, cue); }}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); tfrSpeakText(text, cue); } }}
     >
       <svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7"></path><path d="M18.5 5.5a9 9 0 0 1 0 13"></path></svg>
     </span>
@@ -291,14 +433,16 @@ function TfrQuizDone({ total, write, onContinue }) {
   );
 }
 
-function TfrQuizCards({ questions, write, retryNote, alreadyPassed, onPass, onContinue }) {
+function TfrQuizCards({ questions, write, retryNote, alreadyPassed, onPass, onContinue, cue }) {
   const n = questions.length;
   const [qi, setQi] = useStateTfr(0);  const [sel, setSel] = useStateTfr(-1);
   const [st, setSt] = useStateTfr("idle"); // idle | correct | wrong
   const [done, setDone] = useStateTfr(false);
-  // Auto-read each question aloud when it appears (best-effort; browsers
-  // permit speechSynthesis once the child has interacted with the page).
-  useEffectTfr(() => { if (!done && questions[qi]) tfrSpeakText(questions[qi].q); }, [qi, done]);
+  const [readAloud] = useTfrReadAloud();
+  // Auto-read each question aloud when it appears — only when the child has
+  // turned Read aloud on (off by default). Best-effort; browsers permit
+  // speechSynthesis once the child has interacted with the page.
+  useEffectTfr(() => { if (!done && readAloud && questions[qi]) tfrSpeakText(questions[qi].q, cue); }, [qi, done, readAloud]);
   if (done) return <TfrQuizDone total={n} write={write} onContinue={onContinue} />;
   const q = questions[qi];
   const pick = (oi) => { if (st === "correct") return; setSel(oi); setSt("idle"); };
@@ -307,12 +451,12 @@ function TfrQuizCards({ questions, write, retryNote, alreadyPassed, onPass, onCo
   const stateOf = (oi) => { if (st === "correct") return oi === q.answer ? "correct" : "dim lock"; if (st === "wrong" && oi === sel) return "wrong"; if (oi === sel) return "sel"; return ""; };
   return (
     <div className="surface quiz quiz-cards">
-      <div className="quiz-eyebrow">Reading check</div>
+      <div className="quiz-eyebrow-row"><span className="quiz-eyebrow">Reading check</span><TfrReadAloudToggle /></div>
       <div className="quiz-title">A few quick questions</div>
       <div className="quiz-pips">{questions.map((_, i) => <span key={i} className={"quiz-pip" + (i < qi ? " done" : i === qi ? " current" : "")} />)}</div>
-      <div className="quiz-q"><span className="quiz-num">Question {qi + 1} of {n}</span>{q.q}<TfrSpeaker text={q.q} label="Hear the question" /></div>
+      <div className="quiz-q"><span className="quiz-num">Question {qi + 1} of {n}</span><TfrRichText text={q.q} /><TfrSpeaker text={q.q} cue={cue} label="Hear the question" /></div>
       <div className="quiz-options">
-        {q.options.map((o, oi) => { const cls = stateOf(oi); const tok = cls.split(" ")[0]; const mk = tok === "correct" ? "✓" : tok === "wrong" ? "✕" : ("ABC"[oi] || "•"); return <button key={oi} type="button" className={"quiz-opt " + cls} onClick={() => pick(oi)}><span className="mark">{mk}</span><span className="quiz-opt-text">{o}</span><TfrSpeaker text={o} size="sm" label={"Hear " + o} /></button>; })}
+        {q.options.map((o, oi) => { const cls = stateOf(oi); const tok = cls.split(" ")[0]; const mk = tok === "correct" ? "✓" : tok === "wrong" ? "✕" : ("ABC"[oi] || "•"); return <button key={oi} type="button" className={"quiz-opt " + cls} onClick={() => pick(oi)}><span className="mark">{mk}</span><span className="quiz-opt-text"><TfrRichText text={o} /></span><TfrSpeaker text={o} size="sm" label={"Hear " + o} /></button>; })}
       </div>
       <div className={"quiz-feedback " + (st === "correct" ? "ok" : st === "wrong" ? "no" : "")}>
         {st === "correct" ? "That’s right!" : st === "wrong" ? (retryNote || "Not quite — try again.") : "\u00a0"}
@@ -326,12 +470,15 @@ function TfrQuizCards({ questions, write, retryNote, alreadyPassed, onPass, onCo
   );
 }
 
-function TfrQuizSheet({ questions, write, retryNote, alreadyPassed, onPass, onContinue }) {
+function TfrQuizSheet({ questions, write, retryNote, alreadyPassed, onPass, onContinue, cue }) {
   const n = questions.length;
   const [ans, setAns] = useStateTfr(() => questions.map(() => -1));
   const [locked, setLocked] = useStateTfr(() => questions.map(() => false));
   const [checked, setChecked] = useStateTfr(false);
   const [done, setDone] = useStateTfr(false);
+  const [readAloud] = useTfrReadAloud();
+  // Read the questions aloud once on arrival, only when Read aloud is on.
+  useEffectTfr(() => { if (readAloud) { const txt = questions.map((q, i) => "Question " + (i + 1) + ". " + q.q).join(" "); tfrSpeakText(txt, cue); } }, [readAloud]);
   if (done) return <TfrQuizDone total={n} write={write} onContinue={onContinue} />;
   const pick = (qi, oi) => { if (locked[qi]) return; setAns(a => { const c = a.slice(); c[qi] = oi; return c; }); };
   const allAnswered = ans.every(a => a >= 0);
@@ -344,14 +491,14 @@ function TfrQuizSheet({ questions, write, retryNote, alreadyPassed, onPass, onCo
   const anyWrong = checked && !locked.every(Boolean);
   return (
     <div className="surface quiz quiz-sheet">
-      <div className="quiz-eyebrow">Reading check</div>
+      <div className="quiz-eyebrow-row"><span className="quiz-eyebrow">Reading check</span><TfrReadAloudToggle /></div>
       <div className="quiz-title">Answer all the questions</div>
       <div className="quiz-blocks">
         {questions.map((q, qi) => (
           <div className="quiz-block" key={qi}>
-            <div className="quiz-q"><span className="quiz-num">Question {qi + 1}</span>{q.q}<TfrSpeaker text={q.q} label="Hear the question" /></div>
+            <div className="quiz-q"><span className="quiz-num">Question {qi + 1}</span><TfrRichText text={q.q} /><TfrSpeaker text={q.q} cue={cue} label="Hear the question" /></div>
             <div className="quiz-options">
-              {q.options.map((o, oi) => { const cls = stateOf(qi, oi); const tok = cls.split(" ")[0]; const mk = tok === "correct" ? "✓" : tok === "wrong" ? "✕" : ("ABC"[oi] || "•"); return <button key={oi} type="button" className={"quiz-opt " + cls} onClick={() => pick(qi, oi)}><span className="mark">{mk}</span><span className="quiz-opt-text">{o}</span><TfrSpeaker text={o} size="sm" label={"Hear " + o} /></button>; })}
+              {q.options.map((o, oi) => { const cls = stateOf(qi, oi); const tok = cls.split(" ")[0]; const mk = tok === "correct" ? "✓" : tok === "wrong" ? "✕" : ("ABC"[oi] || "•"); return <button key={oi} type="button" className={"quiz-opt " + cls} onClick={() => pick(qi, oi)}><span className="mark">{mk}</span><span className="quiz-opt-text"><TfrRichText text={o} /></span><TfrSpeaker text={o} size="sm" label={"Hear " + o} /></button>; })}
             </div>
           </div>
         ))}
@@ -698,12 +845,18 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
     });
   };
 
+  const about = React.useMemo(
+    () => (pkg && window.HaarayaAbout) ? window.HaarayaAbout.get(tfrText((pkg.book || {}).book_code) || tfrText((pkg.book || {}).code)) : null,
+    [pkg]
+  );
+
   // Build the screen list once a package is loaded.
   const screens = React.useMemo(() => {
     if (!pkg) return [];
     const pages = (pkg.pages || []).slice().sort((a, b) => (a.page_number || 0) - (b.page_number || 0));
-    return [{ type: "cover" }, ...pages.map(p => ({ type: "page", page: p })), { type: "back" }, { type: "quiz" }, { type: "nextup" }];
-  }, [pkg]);
+    const front = about ? [{ type: "about" }] : [];
+    return [{ type: "cover" }, ...front, ...pages.map(p => ({ type: "page", page: p })), { type: "back" }, { type: "quiz" }, { type: "nextup" }];
+  }, [pkg, about]);
 
   // Catalogue (for "next book"). The reading check is always presented fresh
   // when the child reaches it — a previously-completed book still shows its
@@ -743,7 +896,8 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
       if (!alive) return;
       setPkg(p);
       setStatus("ready");
-      const totalScreens = 1 + (p.pages ? p.pages.length : 0) + 3;
+      const hasAbout = !!(window.HaarayaAbout && window.HaarayaAbout.get((p.book || {}).book_code || (p.book || {}).code));
+      const totalScreens = 1 + (hasAbout ? 1 : 0) + (p.pages ? p.pages.length : 0) + 3;
       if (window.TafiyaData) window.TafiyaData.recordOpen(code, totalScreens);
       // Restore saved screen for this book.
       let start = 0;
@@ -810,10 +964,14 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
   const b = (pkg && pkg.book) || {};
   const logos = (pkg && pkg.assets && pkg.assets.logos) || {};
   const cur = screens[index];
+  const nextScreen = screens[index + 1];
+  const nextLeadsToCheck = !!(nextScreen && nextScreen.type === "quiz");
+  const nextLabel = nextLeadsToCheck ? "Reading check" : "Next";
 
   let progressText = "";
   if (cur) {
     if (cur.type === "cover") progressText = "Front cover";
+    else if (cur.type === "about") progressText = "About this book";
     else if (cur.type === "back") progressText = "Back cover";
     else if (cur.type === "quiz") progressText = "Reading check";
     else if (cur.type === "nextup") progressText = "Up next";
@@ -854,7 +1012,7 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
           </div>
           <div className="running">
             <span className="running-title">{tfrText(b.title) || "\u00a0"}</span>
-            <span className="running-level">{pkg ? tfrMeta(b) : ""}</span>
+            <span className="running-level">{pkg ? tfrMeta(b) : ""}{pkg && (b.book_code || b.code) ? <span className="running-code">{b.book_code || b.code}</span> : null}</span>
           </div>
           <div className="brand" aria-hidden="true">
             {logos.haaraya_literacy && <img src={tfrSrc(logos.haaraya_literacy, !!(pkg && pkg._local))} alt="" />}
@@ -890,6 +1048,7 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
               </div>
             )}
             {status === "ready" && cur && cur.type === "cover" && <TfrCover pkg={pkg} />}
+            {status === "ready" && cur && cur.type === "about" && <TfrAbout pkg={pkg} about={about} />}
             {status === "ready" && cur && cur.type === "page" && <TfrPage page={cur.page} local={!!(pkg && pkg._local)} />}
             {status === "ready" && cur && cur.type === "back" && <TfrBack pkg={pkg} />}
             {status === "ready" && cur && cur.type === "quiz" && (
@@ -898,6 +1057,7 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
                 questions={check.questions}
                 write={check.write}
                 retryNote={check.retryNote}
+                cue={about ? about.soundCue : ""}
                 layout={quizLayout === "Worksheet" ? "sheet" : "cards"}
                 alreadyPassed={quizPassed}
                 onPass={handlePass}
@@ -950,8 +1110,8 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
                 </div>
               )}
             </div>
-            <button className="btn btn-nav btn-next next" type="button" onClick={next} disabled={index === total - 1 || status !== "ready" || (cur && cur.type === "quiz" && !quizPassed)}>
-              <span className="nav-label">Next</span><span className="ico" aria-hidden="true">›</span>
+            <button className={"btn btn-nav btn-next next" + (nextLeadsToCheck ? " is-to-check" : "")} type="button" onClick={next} disabled={index === total - 1 || status !== "ready" || (cur && cur.type === "quiz" && !quizPassed)}>
+              <span className="nav-label">{nextLabel}</span><span className="ico" aria-hidden="true">›</span>
             </button>
           </footer>
         )}
