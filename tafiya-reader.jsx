@@ -116,16 +116,15 @@ function TfrPage({ page, local }) {
 }
 
 /* Front-matter "About this book" screen. Content comes from HaarayaAbout,
-   keyed by book code. Shows the intro, a read-to-find-out hook, and — for
-   phonics/sound books — the focus letter, example words, and the spoken cue. */
+   keyed by book code. Shows the intro, the focus letter + example words (as
+   silent visuals — no text-to-speech), and a read-to-find-out hook. */
 function TfrAbout({ pkg, about }) {
   const b = pkg.book || {};
   const local = !!pkg._local;
   const logos = (pkg.assets && pkg.assets.logos) || {};
   const strandLogo = tfrStrandLogo(b, logos);
   const words = (about.soundbite || "").split(",").map(w => w.trim()).filter(Boolean);
-  const hasSound = !!(about.focusVisible || about.soundCue || words.length);
-  const sayCue = () => { const cue = about.soundCue || about.focusSound || about.focusVisible; if (cue) tfrSpeakText(cue); };
+  const hasSound = !!(about.focusVisible || words.length);
   return (
     <div className="surface about">
       <div className="about-head">
@@ -139,17 +138,14 @@ function TfrAbout({ pkg, about }) {
         {hasSound && (
           <div className="about-sound">
             {about.focusVisible && (
-              <button type="button" className="about-focus" onClick={sayCue} title="Hear the sound">
+              <div className="about-focus">
                 <span className="about-focus-letter">{about.focusVisible}</span>
                 {about.soundCue && <span className="about-focus-cue">{"\u201c" + about.soundCue + "\u201d"}</span>}
-                <span className="about-focus-spk" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z" /><path d="M15.5 8.5a5 5 0 0 1 0 7" /></svg>
-                </span>
-              </button>
+              </div>
             )}
             {words.length > 0 && (
               <div className="about-words">
-                <span className="about-words-label">Hear it in</span>
+                <span className="about-words-label">Words to spot</span>
                 <span className="about-words-list">{words.map((w, i) => <span key={i} className="about-word">{w}</span>)}</span>
               </div>
             )}

@@ -142,11 +142,9 @@
 .tfr .about-lead { font-weight: 700; font-size: 4.4cqw; line-height: 1.32; color: var(--tfr-ink); text-wrap: pretty; margin: 0; }
 /* focus sound + example words */
 .tfr .about-sound { display: flex; flex-wrap: wrap; align-items: center; gap: 3cqw 5cqw; }
-.tfr .about-focus { display: inline-flex; align-items: center; gap: 2cqw; padding: 1.6cqh 4cqw; border-radius: 999px; border: 2px solid var(--tfr-accent); background: color-mix(in srgb, var(--tfr-accent) 9%, #fff); color: var(--tfr-accent); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .12s; }
-.tfr .about-focus:active { transform: scale(.97); }
+.tfr .about-focus { display: inline-flex; align-items: center; gap: 2cqw; padding: 1.6cqh 4cqw; border-radius: 999px; border: 2px solid var(--tfr-accent); background: color-mix(in srgb, var(--tfr-accent) 9%, #fff); color: var(--tfr-accent); }
 .tfr .about-focus-letter { font-weight: 700; font-size: 6cqw; line-height: 1; }
 .tfr .about-focus-cue { font-weight: 700; font-size: 3.6cqw; color: var(--tfr-ink-soft); }
-.tfr .about-focus-spk { display: inline-flex; font-size: 4.4cqw; }
 .tfr .about-words { display: flex; flex-direction: column; gap: 0.8cqh; }
 .tfr .about-words-label { font-weight: 700; font-size: 2.3cqw; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tfr-ink-faint); }
 .tfr .about-words-list { display: flex; flex-wrap: wrap; gap: 2cqw; }
