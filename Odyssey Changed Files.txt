@@ -1,0 +1,83 @@
+HAARAYA — 100 BOOK ODYSSEY  ·  CHANGED FILES MANIFEST
+Generated: July 5, 2026
+Repo: Haaraya/haaraya-education (branch: main)
+=====================================================================
+
+Everything below was added or modified while building the Odyssey Home
+page, the My Odyssey Medals page, the levels→stages change, and the
+Supabase progress backend.
+
+---------------------------------------------------------------------
+NEW FILES  (git add)
+---------------------------------------------------------------------
+
+Pages
+  Odyssey Home.html                 100 Book Odyssey landing (hero)
+  My Odyssey Medals.html            Medal case + 100 book-lights
+
+Styles / scripts
+  odyssey-screens.css               Scoped styles for both screens + access gate
+  odyssey-data.js                   Mock progress config (fallback data)
+  odyssey-titles.js                 Book-number → title lookup (hover tooltips)
+  odyssey-nav.js                    Shared nav behaviour + access-gate logic
+  odyssey-supabase.js               Live progress data layer (Supabase + mock fallback)
+
+Database
+  supabase/odyssey_schema.sql       Stages + books + per-user progress, RLS, seed
+
+Processed image assets  (git add — binary)
+  assets/odyssey_hero.png
+  assets/odyssey_nsude_wonder.png
+  assets/odyssey_ocean_explorer.png     (renamed from uploaded "explorere")
+  assets/odyssey_story_spell.png
+  assets/odyssey_code_quest.png
+  assets/odyssey_power_spark.png
+  assets/odyssey_legend.png
+  assets/odyssey-medal-case.png
+  assets/odyssey-booklight-empty.png    (checkerboard bg keyed to transparent)
+  assets/odyssey-booklight-complete.png (checkerboard bg keyed to transparent)
+  assets/odyssey-booklight-current.png  (checkerboard bg keyed to transparent)
+  assets/haaraya-emblem.png             (circular seal cropped for nav/gate)
+  assets/haaraya-emblem-white.png       (white circular seal)
+  assets/odyssey-logo-forest.png        (forest-green wordmark for light bg)
+
+---------------------------------------------------------------------
+MODIFIED FILES  (git add)
+---------------------------------------------------------------------
+
+  odyssey.jsx            Home "Start the Odyssey" button now opens the
+                         standalone Odyssey Home.html (was in-app screen).
+  shared.jsx             Nav Odyssey wordmark (desktop + mobile) points to
+                         Odyssey Home.html.
+  odyssey-library.jsx    Levels → Stages throughout (filter "All stages / S1–S6",
+                         card labels "Stage N", subtitle "One hundred great books");
+                         "← The Odyssey" back button → Odyssey Home.html.
+
+---------------------------------------------------------------------
+POST-PUSH: RUN ONCE IN SUPABASE
+---------------------------------------------------------------------
+
+  Run supabase/odyssey_schema.sql in the Supabase SQL editor.
+  (Creates + seeds odyssey_stages, odyssey_books, odyssey_book_progress,
+   with Row-Level Security. Idempotent — safe to re-run.)
+
+---------------------------------------------------------------------
+SUGGESTED GIT COMMANDS
+---------------------------------------------------------------------
+
+  git add "Odyssey Home.html" "My Odyssey Medals.html" \
+          odyssey-screens.css odyssey-data.js odyssey-titles.js \
+          odyssey-nav.js odyssey-supabase.js \
+          supabase/odyssey_schema.sql \
+          odyssey.jsx shared.jsx odyssey-library.jsx \
+          assets/odyssey_hero.png assets/odyssey_nsude_wonder.png \
+          assets/odyssey_ocean_explorer.png assets/odyssey_story_spell.png \
+          assets/odyssey_code_quest.png assets/odyssey_power_spark.png \
+          assets/odyssey_legend.png assets/odyssey-medal-case.png \
+          assets/odyssey-booklight-empty.png assets/odyssey-booklight-complete.png \
+          assets/odyssey-booklight-current.png \
+          assets/haaraya-emblem.png assets/haaraya-emblem-white.png \
+          assets/odyssey-logo-forest.png
+
+  git commit -m "Add 100 Book Odyssey: home + medals pages, stages, Supabase progress"
+  git push origin main

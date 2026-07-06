@@ -1,0 +1,36 @@
+HAARAYA — ODYSSEY UPDATE #2  ·  CHANGED FILES
+Generated: July 5, 2026
+Repo: Haaraya/haaraya-education (branch: main)
+=====================================================================
+
+This is the SECOND batch — the book-light deep-links, the library
+logo header, and the library recolour. Copy these over the versions
+from the first push.
+
+MODIFIED FILES  (git add)
+---------------------------------------------------------------------
+  app.jsx                Router: landing handoff can now carry a book
+                         code and boot into the Odyssey reader. (additive)
+  odyssey-library.jsx    Header text replaced with the Odyssey logo.
+  odyssey-library.css    Recoloured to the Odyssey scheme (warm case-navy
+                         #16324a + satin-gold #e6c277); added .ol-logo.
+  odyssey-titles.js      Now also exposes window.ODYSSEY_CODES (n -> code)
+                         so book-lights can deep-link to their book.
+  My Odyssey Medals.html Read / current book-lights are clickable and open
+                         their book in the reader.
+  odyssey-screens.css    Styling for clickable book-lights (.bl-link,
+                         .bl-tip-go).
+
+No new files, no new assets, no DB change this round.
+
+SUGGESTED GIT COMMANDS
+---------------------------------------------------------------------
+  git add app.jsx odyssey-library.jsx odyssey-library.css \
+          odyssey-titles.js "My Odyssey Medals.html" odyssey-screens.css
+
+  git status
+  git commit -m "Odyssey: book-lights open their book; library logo header + recolour"
+  git push origin main
+
+NOTE: same Mac copy-paste caution — copy the FILES into place, don't
+replace whole folders.

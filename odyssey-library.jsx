@@ -111,8 +111,7 @@ function OdysseyLibraryScreen({ onNavigate, initialLevel, initialStream }) {
         <div className="ol-head-wrap">
           <button className="ol-back" type="button" onClick={() => { window.location.href = "Odyssey Home.html"; }}>← The Odyssey</button>
           <div className="ol-head-titles">
-            <span className="ol-eyebrow">The 100 Book Odyssey</span>
-            <h1 className="ol-h1">The Odyssey Library</h1>
+            <img className="ol-logo" src="assets/odyssey-logo-white-trim.png" alt="The 100 Book Odyssey · The Odyssey Library" />
             <p className="ol-sub">One hundred great books to carry you from the first stage to the top of the climb — knowledge, classics, and stories from the estate.</p>
           </div>
         </div>

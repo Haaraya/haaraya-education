@@ -317,7 +317,18 @@ function App() {
     }
     return dest;
   });
-  const [params, setParams] = useStateApp({});
+  const [params, setParams] = useStateApp(() => {
+    // One-time deep-link handoff: a standalone page (e.g. My Odyssey Medals)
+    // can open a specific book by stashing its code alongside haaraya:landing.
+    try {
+      const bookCode = sessionStorage.getItem("haaraya:landing-book");
+      if (bookCode) {
+        sessionStorage.removeItem("haaraya:landing-book");
+        return { bookCode: bookCode };
+      }
+    } catch (e) { /* ignore */ }
+    return {};
+  });
 
   useEffectApp(() => {
     const onHash = () => {

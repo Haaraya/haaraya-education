@@ -201,10 +201,15 @@
       for (let n = s.start; n <= s.end; n++) {
         const st = lightState(n);
         const bookTitle = (window.ODYSSEY_TITLES && window.ODYSSEY_TITLES[n]) || ('Book ' + n);
+        const code = (window.ODYSSEY_CODES && window.ODYSSEY_CODES[n]) || '';
+        const clickable = (st === 'complete' || st === 'current') && code;
         const stateWord = st === 'complete' ? 'Read' : st === 'current' ? 'Reading now' : 'Not yet read';
-        lights += `<span class="bl ${st}" tabindex="0" aria-label="Book ${n}: ${bookTitle} \u2014 ${stateWord}">`
+        const verb = st === 'current' ? 'Continue reading' : 'Open book';
+        const cls = 'bl ' + st + (clickable ? ' bl-link' : '');
+        const dc = clickable ? ' data-code="' + code + '"' : '';
+        lights += `<span class="${cls}" tabindex="0"${dc} aria-label="Book ${n}: ${bookTitle} \u2014 ${stateWord}${clickable ? ', ' + verb : ''}">`
           + `<img src="${IMG[st]}" alt="" />`
-          + `<span class="bl-tip"><b>Book ${n}</b>${bookTitle}</span>`
+          + `<span class="bl-tip"><b>Book ${n}</b>${bookTitle}${clickable ? `<span class="bl-tip-go">${verb} \u2192</span>` : ''}</span>`
           + `</span>`;
       }
 
@@ -226,6 +231,24 @@
       if (i === 1 || i === 3) html += `<div class="odm-st-divider"></div>`;
     });
     stations.innerHTML = html;
+
+    // Clicking a read / current book-light opens that book in the Odyssey
+    // reader. Hand the book code to the app via the landing handoff.
+    function openBook(code) {
+      if (!code) return;
+      try {
+        sessionStorage.setItem('haaraya:landing', 'odyssey-reader');
+        sessionStorage.setItem('haaraya:landing-book', code);
+      } catch (e) { /* ignore */ }
+      window.location.href = 'Haaraya Home.html';
+    }
+    stations.querySelectorAll('.bl-link').forEach(function (el) {
+      el.setAttribute('role', 'button');
+      el.addEventListener('click', function () { openBook(el.getAttribute('data-code')); });
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBook(el.getAttribute('data-code')); }
+      });
+    });
 
     // legend key
     document.getElementById('legendKey').innerHTML = `

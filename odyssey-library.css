@@ -4,19 +4,21 @@
    colours. Sits on the app's Nunito / display-serif tokens.
    ============================================================ */
 .ol-screen {
-  --ol-navy: #0f2233;
-  --ol-gold: #e7b53f;
+  --ol-navy: #16324a;          /* warm case navy — matches the Odyssey screens */
+  --ol-gold: #e6c277;          /* satin gold */
+  --ol-gold-hi: #f6dfa1;
   min-height: 100vh;
   background:
-    radial-gradient(120% 60% at 8% -8%, #1c3b56 0%, rgba(28,59,86,0) 55%),
-    linear-gradient(180deg, #13293c 0%, #0f2233 100%);
-  color: #f7f2e7;
+    radial-gradient(120% 60% at 8% -8%, #1d3f5e 0%, rgba(29,63,94,0) 55%),
+    linear-gradient(180deg, #16324a 0%, #0f2436 100%);
+  color: #f4ecdb;
   padding-bottom: 80px;
 }
 
 /* header */
 .ol-head { padding: 34px 24px 10px; }
 .ol-head-wrap { max-width: 1160px; margin: 0 auto; }
+.ol-logo { height: clamp(66px, 9vw, 108px); width: auto; max-width: 100%; display: block; margin: 4px 0 16px; filter: drop-shadow(0 3px 12px rgba(0,0,0,.42)); }
 .ol-back {
   background: rgba(255,255,255,.08); color: #f7f2e7; border: 1px solid rgba(231,181,63,.3);
   border-radius: 999px; padding: 8px 16px; font: inherit; font-weight: 800; font-size: 13px;
@@ -89,8 +91,8 @@
 .olc--capstone {
   outline: 2px solid var(--ol-gold); outline-offset: 2px;
   background:
-    radial-gradient(130% 80% at 80% 8%, rgba(231,181,63,.28) 0%, rgba(231,181,63,0) 45%),
-    linear-gradient(160deg, #26405c 0%, #0f2233 92%);
+    radial-gradient(130% 80% at 80% 8%, rgba(230,194,119,.30) 0%, rgba(230,194,119,0) 45%),
+    linear-gradient(160deg, #26445f 0%, #16324a 92%);
 }
 .olc--capstone .olc-emblem { color: var(--ol-gold); font-size: 20px; }
 

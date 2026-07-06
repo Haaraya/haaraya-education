@@ -358,6 +358,16 @@ body.odx-locked .odx-gate {
 .bl:hover .bl-tip, .bl:focus-visible .bl-tip { opacity: 1; transform: translate(-50%, 0); }
 .bl:hover, .bl:focus-visible { z-index: 50; }
 
+/* clickable book-lights (read / current) open their book */
+.bl-link { cursor: pointer; transition: transform .14s ease; }
+.bl-link:hover, .bl-link:focus-visible { transform: translateY(-3px); }
+.bl-tip-go {
+  display: block; margin-top: 5px; padding-top: 5px;
+  border-top: 1px solid rgba(185,138,60,.35);
+  font-family: var(--font-body); font-weight: 800;
+  font-size: 10.5px; letter-spacing: .04em; color: var(--satin-deep);
+}
+
 .odm-legend-note { position: relative; text-align: center; margin: 34px auto 0; color: rgba(255,255,255,.55); font-size: 13px; font-family: var(--font-body); font-weight: 600; }
 .odm-legend-key { display:flex; justify-content:center; gap: 22px; flex-wrap: wrap; margin: 16px 0 0; }
 .odm-legend-key .k { display:flex; align-items:center; gap: 9px; font-family: var(--font-body); font-weight: 700; font-size: 12.5px; color: rgba(255,255,255,.7); }
