@@ -397,6 +397,8 @@ function App() {
     school:   "08 School Admin Dashboard",
     admin:    "09 Haaraya Admin Dashboard",
     odyssey:  "10 Haaraya Odyssey",
+    "odyssey-library": "11 Odyssey Library",
+    "odyssey-reader":  "12 Odyssey Reader",
   })[screen];
 
   return (
