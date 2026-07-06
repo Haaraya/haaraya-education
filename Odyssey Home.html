@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The 100 Book Odyssey — Haaraya</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Nunito:wght@400;600;700;800;900&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="odyssey.css" />
+<link rel="stylesheet" href="odyssey-screens.css" />
+<script src="session.js"></script>
+</head>
+<body class="odx">
+<template id="__bundler_thumbnail">
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="100" fill="#16324a"/>
+    <circle cx="50" cy="42" r="20" fill="none" stroke="#e6c277" stroke-width="4"/>
+    <path d="M50 34 L53 42 L61 42 L54 47 L57 55 L50 50 L43 55 L46 47 L39 42 L47 42 Z" fill="#f6dfa1"/>
+    <rect x="30" y="70" width="40" height="6" rx="3" fill="#e6c277"/>
+  </svg>
+</template>
+
+<!-- Site nav — identical to the Haaraya / Tafiya nav -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="Haaraya Home.html" aria-label="Haaraya — home">
+      <img src="assets/logo-haaraya-literacy.png" alt="Haaraya Literacy" class="nav-logo-mark nav-logo-literacy" />
+      <img src="assets/logo-haaraya-education.png" alt="Haaraya Education" class="nav-logo-mark nav-logo-education" />
+    </a>
+    <div class="nav-links">
+      <a href="Haaraya Home.html">Home</a>
+      <div class="nav-group">
+        <a href="#" class="nav-group-trigger" aria-haspopup="true" aria-expanded="false">Library<span class="nav-caret" aria-hidden="true">▾</span></a>
+        <div class="nav-dropdown" role="menu">
+          <a href="Haaraya Home.html" role="menuitem">Tafiya Library</a>
+          <a href="Haaraya Home.html" role="menuitem" data-landing="odyssey-library">Odyssey Library</a>
+        </div>
+      </div>
+      <a href="Haaraya Home.html">Passport</a>
+    </div>
+    <a href="Odyssey Home.html" class="nav-odyssey active" title="The 100 Book Odyssey" aria-label="The Odyssey">
+      <img src="assets/odyssey-logo-white-trim.png" alt="The Odyssey" />
+    </a>
+    <div class="nav-spacer"></div>
+    <div class="nav-actions">
+      <a class="signin" href="Haaraya Login.html">Sign in</a>
+      <button class="btn btn-primary btn-sm" onclick="location.href='Haaraya Registration.html'">Join the waitlist</button>
+    </div>
+    <button class="nav-burger" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+
+  <div class="nav-mobile">
+    <div class="nav-mobile-links">
+      <a class="nav-mobile-odyssey active" href="Odyssey Home.html"><img src="assets/odyssey-logo-white-trim.png" alt="The Odyssey" /><span aria-hidden="true">→</span></a>
+      <a href="Haaraya Home.html">Home<span aria-hidden="true">→</span></a>
+      <div class="nav-mobile-group">
+        <div class="nav-mobile-group-label">Library</div>
+        <a class="nav-mobile-sub" href="Haaraya Home.html">Tafiya Library<span aria-hidden="true">→</span></a>
+        <a class="nav-mobile-sub" href="Haaraya Home.html" data-landing="odyssey-library">Odyssey Library<span aria-hidden="true">→</span></a>
+      </div>
+      <a href="Haaraya Home.html">Passport<span aria-hidden="true">→</span></a>
+    </div>
+    <div class="nav-mobile-actions">
+      <a class="signin" href="Haaraya Login.html">Sign in</a>
+      <button class="btn btn-primary" onclick="location.href='Haaraya Registration.html'">Join the waitlist</button>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="odh-hero">
+  <div class="odx-wrap odh-grid">
+    <div class="odh-copy">
+      <img class="odh-logo" src="assets/odyssey-logo-forest.png" alt="Haaraya Odyssey" />
+      <h1 class="odh-title">The <span class="amp">100 Book</span> Challenge.</h1>
+      <p class="odh-sub">One Incredible Journey</p>
+      <p class="odh-body">
+        You can read anything now, so this is where reading becomes truly yours.
+        The Odyssey is the next chapter after becoming a confident reader: one hundred
+        great books and ten worlds of stories, history, science and discovery, with a
+        path you chart yourself. Time to set sail.
+      </p>
+
+      <div class="odh-meta">
+        <div class="m"><span class="n">100</span><span class="l">Books</span></div>
+        <div class="m"><span class="n">10</span><span class="l">Worlds to Explore</span></div>
+        <div class="m"><span class="n">6</span><span class="l">Achievement Ranks</span></div>
+      </div>
+
+      <div class="odh-actions">
+        <a class="btn-satin" href="My Odyssey Medals.html">Start the Odyssey <span class="arw">→</span></a>
+        <a class="btn-quiet" href="Haaraya Home.html" data-landing="odyssey-library">Explore the Library</a>
+      </div>
+    </div>
+
+    <div class="odh-art">
+      <div class="odh-art-frame">
+        <img src="assets/odyssey_hero.png" alt="An open storybook beside a lantern, compass and golden medals, looking out over an island sea at sunset" />
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Six stages preview -->
+<section class="odh-stages">
+  <div class="odx-wrap">
+    <div class="odh-stages-head">
+      <div class="eb">The Journey</div>
+      <h2>Six stages, six medals</h2>
+      <p>Travel stage by stage. Each one ends with a satin-gold medal for your case.</p>
+    </div>
+    <div class="odh-stage-row" id="stageRow"></div>
+  </div>
+</section>
+
+<footer class="odx-foot">
+  <div class="odx-wrap">
+    <div class="rule"></div>
+    <p><strong>Haaraya · The 100 Book Odyssey</strong></p>
+    <p>Keep reading — your next book-light is waiting to glow.</p>
+  </div>
+</footer>
+
+<!-- Floating publisher seal — bottom-right, same as the rest of the app -->
+<div class="publisher-mark" role="button" aria-label="Published by Haaraya Education" tabindex="0" onclick="this.classList.toggle('expanded')">
+  <div class="publisher-mark-seal">
+    <img src="assets/logo-haaraya-education-white.png" alt="Haaraya Education" />
+  </div>
+  <div class="publisher-mark-caption">
+    <span class="by">Published by</span>
+    <span class="org">Haaraya Education</span>
+    <span class="tag">Ignite minds. Illuminate futures.</span>
+  </div>
+</div>
+
+<!-- Access gate — Odyssey is free but needs a Haaraya account -->
+<div class="odx-gate" role="dialog" aria-modal="true" aria-labelledby="odxGateTitle">
+  <div class="odx-gate-card">
+    <a class="odx-gate-back" href="Haaraya Home.html">← Haaraya</a>
+    <img class="odx-gate-seal" src="assets/haaraya-emblem.png" alt="Haaraya Education" />
+    <p class="odx-gate-eyebrow">Always free</p>
+    <h2 id="odxGateTitle">Sign in to begin the Odyssey</h2>
+    <p>The 100 Book Odyssey is completely free — you just need a Haaraya account so we can save your book-lights and medals as you read.</p>
+    <div class="odx-gate-actions">
+      <a class="btn-satin" href="Haaraya Registration.html" data-landing="odyssey">Create your free account <span class="arw">→</span></a>
+      <a class="btn-quiet" href="Haaraya Login.html" data-landing="odyssey">I already have an account · Sign in</a>
+    </div>
+    <p class="odx-gate-foot">Free forever · no card needed</p>
+  </div>
+</div>
+
+<!-- Supabase (live progress) + local mock fallback -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase-client.js"></script>
+<script src="odyssey-data.js"></script>
+<script src="odyssey-supabase.js"></script>
+<script src="odyssey-nav.js"></script>
+<script>
+  (async function () {
+    const prog = (window.OdysseyData ? await OdysseyData.load() : null) || window.ODYSSEY;
+    const O = Object.assign({}, window.ODYSSEY, {
+      totalBooks: prog.totalBooks,
+      completedBooks: prog.completedBooks,
+      currentBook: prog.currentBook,
+    });
+
+    // stage cards
+    const row = document.getElementById('stageRow');
+    row.innerHTML = O.stages.map((s, i) => {
+      const st = O.completedBooks >= s.end ? 'done'
+               : (O.currentBook >= s.start && O.currentBook <= s.end) ? 'prog' : 'locked';
+      const doneInStage = Math.max(0, Math.min(s.end, O.completedBooks) - (s.start - 1));
+      const total = s.end - s.start + 1;
+      const tag = st === 'done' ? 'Unlocked'
+                : st === 'prog' ? `${doneInStage} / ${total}`
+                : 'Locked';
+      return `
+        <div class="odh-stage-card ${st}">
+          <div class="medal"><img src="assets/${s.medalFile}" alt="${s.medal} medal" /></div>
+          <div class="snum">Stage ${i + 1}</div>
+          <div class="sname">${s.name}</div>
+          <div class="srange">Books ${s.start}–${s.end}</div>
+          <div class="stag">${tag}</div>
+        </div>`;
+    }).join('');
+  })();
+</script>
+</body>
+</html>

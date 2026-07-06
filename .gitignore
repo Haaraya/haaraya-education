@@ -17,3 +17,5 @@ screenshots/
 import_sources/
 *.backup-before-*.jsx
 __pycache__/
+node_modules/
+node_modules/

@@ -74,7 +74,7 @@ function OdysseySection({ onNavigate }) {
               own reading journey.
             </p>
             <div className="ody-home-actions">
-              <button className="btn btn-gold" onClick={() => onNavigate("odyssey")}>
+              <button className="btn btn-gold" onClick={() => { window.location.href = "Odyssey Home.html"; }}>
                 Start the Odyssey <span aria-hidden="true">→</span>
               </button>
               <button className="btn btn-ghost-light" onClick={() => onNavigate("odyssey-library")}>

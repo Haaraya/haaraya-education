@@ -1,12 +1,12 @@
 /* ============================================================
    Haaraya — Odyssey Library
    The 100 Book Odyssey: long-form chapter books across three
-   streams (Knowledge, Classics, Estate Fiction) and three
-   levels (13–15). A filterable catalogue of typographic covers
-   plus a calm chapter reader.
+   streams (Knowledge, Classics, Estate Fiction) and six
+   stages (by book number). A filterable catalogue of typographic
+   covers plus a calm chapter reader.
 
    Data:
-     data/odyssey-catalog.json        — 99 book summaries
+     data/odyssey-catalog.json        — 100 book summaries
      data/odyssey/<CODE>.json         — chapters + pages per book
    ============================================================ */
 const { useState: useStateOL, useEffect: useEffectOL, useMemo: useMemoOL, useRef: useRefOL } = React;
@@ -19,6 +19,17 @@ const OL_STREAMS = {
   "Estate Fiction": { key: "st", label: "Tafiya Tales", ink: "#3a2708", accent: "#c17d1a", soft: "#f8ecd7", tag: "Estate stories" },
 };
 function olStream(name) { return OL_STREAMS[name] || OL_STREAMS["Knowledge"]; }
+
+/* ---- Odyssey stages (by book number) ---- */
+const OL_STAGES = [
+  { no: 1, name: "Wonder",   start: 1,  end: 15  },
+  { no: 2, name: "Explorer", start: 16, end: 30  },
+  { no: 3, name: "Story",    start: 31, end: 45  },
+  { no: 4, name: "Quest",    start: 46, end: 60  },
+  { no: 5, name: "Spark",    start: 61, end: 80  },
+  { no: 6, name: "Legend",   start: 81, end: 100 },
+];
+function olStageOf(n) { return OL_STAGES.find(st => n >= st.start && n <= st.end) || OL_STAGES[OL_STAGES.length - 1]; }
 
 /* ---- tiny data layer (cached) ---- */
 const OL_cache = { catalog: null, books: {} };
@@ -56,7 +67,7 @@ function OdysseyCover({ book, onOpen }) {
           <span className="olc-soon">Coming soon</span>
         ) : (
           <React.Fragment>
-            <span className="olc-lvl">Level {book.level}</span>
+            <span className="olc-lvl">Stage {olStageOf(book.n).no}</span>
             <span className="olc-dot" aria-hidden="true">•</span>
             <span className="olc-ch">{book.chapterCount} chapters</span>
           </React.Fragment>
@@ -73,7 +84,7 @@ function OdysseyCover({ book, onOpen }) {
 function OdysseyLibraryScreen({ onNavigate, initialLevel, initialStream }) {
   const [catalog, setCatalog] = useStateOL(null);
   const [q, setQ] = useStateOL("");
-  const [level, setLevel] = useStateOL(initialLevel ? String(initialLevel) : "all");
+  const [stage, setStage] = useStateOL("all");
   const [stream, setStream] = useStateOL(initialStream || "all");
 
   useEffectOL(() => { olLoadCatalog().then(setCatalog); }, []);
@@ -82,27 +93,27 @@ function OdysseyLibraryScreen({ onNavigate, initialLevel, initialStream }) {
     if (!catalog) return [];
     const needle = q.trim().toLowerCase();
     return catalog.filter(b => {
-      if (level !== "all" && String(b.level) !== level) return false;
+      if (stage !== "all" && String(olStageOf(b.n).no) !== stage) return false;
       if (stream !== "all" && b.stream !== stream) return false;
       if (needle && !(b.title.toLowerCase().includes(needle) || b.code.toLowerCase().includes(needle))) return false;
       return true;
     });
-  }, [catalog, q, level, stream]);
+  }, [catalog, q, stage, stream]);
 
   const openBook = (code) => onNavigate("odyssey-reader", { bookCode: code });
 
-  const levels = ["13", "14", "15"];
+  const stages = ["1", "2", "3", "4", "5", "6"];
   const streams = Object.keys(OL_STREAMS);
 
   return (
     <div className="ol-screen">
       <header className="ol-head">
         <div className="ol-head-wrap">
-          <button className="ol-back" type="button" onClick={() => onNavigate("odyssey")}>← The Odyssey</button>
+          <button className="ol-back" type="button" onClick={() => { window.location.href = "Odyssey Home.html"; }}>← The Odyssey</button>
           <div className="ol-head-titles">
             <span className="ol-eyebrow">The 100 Book Odyssey</span>
             <h1 className="ol-h1">The Odyssey Library</h1>
-            <p className="ol-sub">Ninety-nine great books to carry you from Level 13 to the top of the climb — knowledge, classics, and stories from the estate.</p>
+            <p className="ol-sub">One hundred great books to carry you from the first stage to the top of the climb — knowledge, classics, and stories from the estate.</p>
           </div>
         </div>
       </header>
@@ -113,9 +124,9 @@ function OdysseyLibraryScreen({ onNavigate, initialLevel, initialStream }) {
           <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="Search by title or code…" />
         </div>
         <div className="ol-filters">
-          <div className="ol-seg" role="group" aria-label="Level">
-            <button className={level === "all" ? "on" : ""} onClick={() => setLevel("all")}>All levels</button>
-            {levels.map(l => <button key={l} className={level === l ? "on" : ""} onClick={() => setLevel(l)}>L{l}</button>)}
+          <div className="ol-seg" role="group" aria-label="Stage">
+            <button className={stage === "all" ? "on" : ""} onClick={() => setStage("all")}>All stages</button>
+            {stages.map(l => <button key={l} className={stage === l ? "on" : ""} onClick={() => setStage(l)}>S{l}</button>)}
           </div>
           <div className="ol-seg" role="group" aria-label="Stream">
             <button className={stream === "all" ? "on" : ""} onClick={() => setStream("all")}>All streams</button>

@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>My Odyssey Medals — Haaraya</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Nunito:wght@400;600;700;800;900&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="odyssey.css" />
+<link rel="stylesheet" href="odyssey-screens.css" />
+<script src="session.js"></script>
+</head>
+<body class="odx">
+<template id="__bundler_thumbnail">
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="100" fill="#16324a"/>
+    <circle cx="34" cy="34" r="12" fill="none" stroke="#e6c277" stroke-width="3"/>
+    <circle cx="66" cy="34" r="12" fill="none" stroke="#e6c277" stroke-width="3"/>
+    <circle cx="50" cy="66" r="15" fill="#e6c277"/>
+    <g fill="#f6dfa1"><circle cx="26" cy="56" r="2.4"/><circle cx="34" cy="56" r="2.4"/><circle cx="42" cy="56" r="2.4"/></g>
+  </svg>
+</template>
+
+<!-- Site nav — identical to the Haaraya / Tafiya nav -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="Haaraya Home.html" aria-label="Haaraya — home">
+      <img src="assets/logo-haaraya-literacy.png" alt="Haaraya Literacy" class="nav-logo-mark nav-logo-literacy" />
+      <img src="assets/logo-haaraya-education.png" alt="Haaraya Education" class="nav-logo-mark nav-logo-education" />
+    </a>
+    <div class="nav-links">
+      <a href="Haaraya Home.html">Home</a>
+      <div class="nav-group">
+        <a href="#" class="nav-group-trigger" aria-haspopup="true" aria-expanded="false">Library<span class="nav-caret" aria-hidden="true">▾</span></a>
+        <div class="nav-dropdown" role="menu">
+          <a href="Haaraya Home.html" role="menuitem">Tafiya Library</a>
+          <a href="Haaraya Home.html" role="menuitem" data-landing="odyssey-library">Odyssey Library</a>
+        </div>
+      </div>
+      <a href="Haaraya Home.html">Passport</a>
+    </div>
+    <a href="Odyssey Home.html" class="nav-odyssey active" title="The 100 Book Odyssey" aria-label="The Odyssey">
+      <img src="assets/odyssey-logo-white-trim.png" alt="The Odyssey" />
+    </a>
+    <div class="nav-spacer"></div>
+    <div class="nav-actions">
+      <a class="signin" href="Haaraya Login.html">Sign in</a>
+      <button class="btn btn-primary btn-sm" onclick="location.href='Haaraya Registration.html'">Join the waitlist</button>
+    </div>
+    <button class="nav-burger" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+
+  <div class="nav-mobile">
+    <div class="nav-mobile-links">
+      <a class="nav-mobile-odyssey active" href="Odyssey Home.html"><img src="assets/odyssey-logo-white-trim.png" alt="The Odyssey" /><span aria-hidden="true">→</span></a>
+      <a href="Haaraya Home.html">Home<span aria-hidden="true">→</span></a>
+      <div class="nav-mobile-group">
+        <div class="nav-mobile-group-label">Library</div>
+        <a class="nav-mobile-sub" href="Haaraya Home.html">Tafiya Library<span aria-hidden="true">→</span></a>
+        <a class="nav-mobile-sub" href="Haaraya Home.html" data-landing="odyssey-library">Odyssey Library<span aria-hidden="true">→</span></a>
+      </div>
+      <a href="Haaraya Home.html">Passport<span aria-hidden="true">→</span></a>
+    </div>
+    <div class="nav-mobile-actions">
+      <a class="signin" href="Haaraya Login.html">Sign in</a>
+      <button class="btn btn-primary" onclick="location.href='Haaraya Registration.html'">Join the waitlist</button>
+    </div>
+  </div>
+</nav>
+
+<!-- Header -->
+<section class="odm-head">
+  <div class="odx-wrap">
+    <p class="odm-eyebrow">Your Collection</p>
+    <h1>My Odyssey Medals</h1>
+    <p class="sub">Read 100 books. Light every book-light. Unlock every medal.</p>
+
+    <div class="odm-prog" id="medalProg"></div>
+    <div class="odm-summary" id="medalSummary"></div>
+  </div>
+</section>
+
+<!-- The medal case -->
+<section class="odm-case-wrap">
+  <div class="odm-case">
+    <div class="odm-case-inner">
+      <div class="odm-crest">
+        <img class="odm-crest-logo" src="assets/odyssey-logo-white-trim.png" alt="The Odyssey · 100 Book Challenge" />
+        <span class="lbl" id="caseLabel">The Odyssey Medal Case</span>
+      </div>
+      <div class="odm-stations" id="stations"></div>
+
+      <div class="odm-legend-key" id="legendKey"></div>
+    </div>
+  </div>
+</section>
+
+<footer class="odx-foot">
+  <div class="odx-wrap">
+    <div class="rule"></div>
+    <p><strong>Haaraya · The 100 Book Odyssey</strong></p>
+    <p>Book-lights mark every book you read. Medals are your rewards.</p>
+  </div>
+</footer>
+
+<!-- Floating publisher seal — bottom-right, same as the rest of the app -->
+<div class="publisher-mark" role="button" aria-label="Published by Haaraya Education" tabindex="0" onclick="this.classList.toggle('expanded')">
+  <div class="publisher-mark-seal">
+    <img src="assets/logo-haaraya-education-white.png" alt="Haaraya Education" />
+  </div>
+  <div class="publisher-mark-caption">
+    <span class="by">Published by</span>
+    <span class="org">Haaraya Education</span>
+    <span class="tag">Ignite minds. Illuminate futures.</span>
+  </div>
+</div>
+
+<!-- Access gate — Odyssey is free but needs a Haaraya account -->
+<div class="odx-gate" role="dialog" aria-modal="true" aria-labelledby="odxGateTitle">
+  <div class="odx-gate-card">
+    <a class="odx-gate-back" href="Haaraya Home.html">← Haaraya</a>
+    <img class="odx-gate-seal" src="assets/haaraya-emblem.png" alt="Haaraya Education" />
+    <p class="odx-gate-eyebrow">Always free</p>
+    <h2 id="odxGateTitle">Sign in to see your medals</h2>
+    <p>The 100 Book Odyssey is completely free — you just need a Haaraya account so we can save your book-lights and medals as you read.</p>
+    <div class="odx-gate-actions">
+      <a class="btn-satin" href="Haaraya Registration.html" data-landing="odyssey">Create your free account <span class="arw">→</span></a>
+      <a class="btn-quiet" href="Haaraya Login.html" data-landing="odyssey">I already have an account · Sign in</a>
+    </div>
+    <p class="odx-gate-foot">Free forever · no card needed</p>
+  </div>
+</div>
+
+<!-- Supabase (live progress) + local mock fallback -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase-client.js"></script>
+<script src="odyssey-data.js"></script>
+<script src="odyssey-titles.js"></script>
+<script src="odyssey-supabase.js"></script>
+<script src="odyssey-nav.js"></script>
+<script>
+  (async function () {
+    const prog = (window.OdysseyData ? await OdysseyData.load() : null) || window.ODYSSEY;
+    const O = Object.assign({}, window.ODYSSEY, {
+      totalBooks: prog.totalBooks,
+      completedBooks: prog.completedBooks,
+      currentBook: prog.currentBook,
+    });
+    const completedSet = prog.completedSet || null;
+    const pct = Math.round((O.completedBooks / O.totalBooks) * 100);
+    const unlocked = O.stages.filter(s => O.completedBooks >= s.end).length;
+
+    // progress
+    document.getElementById('medalProg').innerHTML = `
+      <div class="odm-prog-top">
+        <div class="n"><b>${O.completedBooks}</b> of ${O.totalBooks} books completed</div>
+        <div class="pct">${pct}%</div>
+      </div>
+      <div class="odm-bar"><span style="width:${pct}%"></span></div>`;
+
+    document.getElementById('medalSummary').innerHTML = `
+      <div class="st"><div class="v"><em>${unlocked}</em> / 6</div><div class="l">Medals unlocked</div></div>
+      <div class="st"><div class="v">${O.completedBooks}</div><div class="l">Book-lights lit</div></div>
+      <div class="st"><div class="v">${O.totalBooks - O.completedBooks}</div><div class="l">Books to go</div></div>`;
+
+    document.getElementById('caseLabel').textContent = O.reader ? `${O.reader}'s Medal Case` : 'The Odyssey Medal Case';
+
+    // book-light state for a global book number
+    function lightState(n) {
+      if (completedSet) {
+        if (completedSet.indexOf(n) !== -1) return 'complete';
+        if (n === O.currentBook) return 'current';
+        return 'empty';
+      }
+      if (n < O.currentBook) return 'complete';
+      if (n === O.currentBook) return 'current';
+      return 'empty';
+    }
+    const IMG = {
+      empty:   'assets/odyssey-booklight-empty.png',
+      complete:'assets/odyssey-booklight-complete.png',
+      current: 'assets/odyssey-booklight-current.png'
+    };
+
+    // build stations, with divider rows after station 2 and 4
+    const stations = document.getElementById('stations');
+    let html = '';
+    O.stages.forEach((s, i) => {
+      const isLegend = i === O.stages.length - 1;
+      const total = s.end - s.start + 1;
+      const doneInStage = Math.max(0, Math.min(s.end, O.completedBooks) - (s.start - 1));
+      let state, statusTxt;
+      if (O.completedBooks >= s.end) { state = 'unlocked'; statusTxt = 'Medal unlocked'; }
+      else if (O.currentBook >= s.start && O.currentBook <= s.end) { state = 'progress'; statusTxt = `${doneInStage} of ${total} read`; }
+      else { state = 'locked'; statusTxt = 'Locked'; }
+
+      // book-lights
+      let lights = '';
+      for (let n = s.start; n <= s.end; n++) {
+        const st = lightState(n);
+        const bookTitle = (window.ODYSSEY_TITLES && window.ODYSSEY_TITLES[n]) || ('Book ' + n);
+        const stateWord = st === 'complete' ? 'Read' : st === 'current' ? 'Reading now' : 'Not yet read';
+        lights += `<span class="bl ${st}" tabindex="0" aria-label="Book ${n}: ${bookTitle} \u2014 ${stateWord}">`
+          + `<img src="${IMG[st]}" alt="" />`
+          + `<span class="bl-tip"><b>Book ${n}</b>${bookTitle}</span>`
+          + `</span>`;
+      }
+
+      const lockSvg = `<span class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="#f6dfa1" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>`;
+
+      html += `
+        <div class="odm-st ${state} ${isLegend ? 'legend' : ''}">
+          <div class="odm-slot">
+            <img src="assets/${s.medalFile}" alt="${s.medal} medal" />
+            ${state === 'unlocked' ? '' : lockSvg}
+          </div>
+          <div class="s-no">Stage ${i + 1}${isLegend ? ' · Final' : ''}</div>
+          <div class="s-name">${s.medal}</div>
+          <div class="s-range">${s.name} · Books ${s.start}–${s.end}</div>
+          <div class="s-status"><span class="dot"></span>${statusTxt}</div>
+          <div class="odm-lights">${lights}</div>
+        </div>`;
+
+      if (i === 1 || i === 3) html += `<div class="odm-st-divider"></div>`;
+    });
+    stations.innerHTML = html;
+
+    // legend key
+    document.getElementById('legendKey').innerHTML = `
+      <span class="k"><span class="sw"><img src="${IMG.complete}" alt=""></span>Book read</span>
+      <span class="k"><span class="sw"><img src="${IMG.current}" alt=""></span>Reading now</span>
+      <span class="k"><span class="sw"><img src="${IMG.empty}" alt=""></span>Not yet</span>`;
+
+    // deep-link: #board scrolls to the case (used for previews)
+    if (location.hash === '#board') {
+      requestAnimationFrame(() => {
+        const el = document.querySelector('.odm-case-wrap');
+        window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 12);
+      });
+    }
+  })();
+</script>
+</body>
+</html>
