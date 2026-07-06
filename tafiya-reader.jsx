@@ -115,9 +115,10 @@ function TfrPage({ page, local }) {
   );
 }
 
-/* Front-matter "About this book" screen. Content comes from HaarayaAbout,
-   keyed by book code. Shows the intro, the focus letter + example words (as
-   silent visuals — no text-to-speech), and a read-to-find-out hook. */
+/* Front-matter "About this book" screen. Content comes from HaarayaAboutDB
+   (live from Supabase), keyed by book code. Shows the intro, the focus letter
+   + example words (as silent visuals — no text-to-speech), and a
+   read-to-find-out hook. */
 function TfrAbout({ pkg, about }) {
   const b = pkg.book || {};
   const local = !!pkg._local;
@@ -397,14 +398,25 @@ function TfrSpeaker({ text, label, size, cue }) {
   );
 }
 
-function tfrGetCheck(pkg, catalog) {
+// Resolve a book's reading check. Source of truth is Supabase
+// (window.HaarayaQuizDB) — nothing is baked into the client. If the DB has no
+// check (or the network is down), a generated sample is the last resort.
+async function tfrResolveCheck(pkg, catalog) {
   const b = (pkg && pkg.book) || {};
   const code = tfrText(b.book_code) || tfrText(b.code);
-  const bank = (window.HaarayaQuiz && code) ? window.HaarayaQuiz.get(code) : null;
-  if (bank && bank.questions && bank.questions.length) {
-    return { questions: bank.questions, write: bank.write || null, retryNote: bank.retryNote || "" };
+
+  // 1. Supabase — the live, authored source.
+  if (code && window.HaarayaQuizDB && window.HaarayaQuizDB.ready()) {
+    try {
+      const db = await window.HaarayaQuizDB.get(code);
+      if (db && db.questions && db.questions.length) return db;
+    } catch (e) {
+      if (window.console) console.warn("[Quiz] Supabase fetch failed:", e && e.message);
+    }
   }
-  return { questions: tfrSampleQuestions(pkg, catalog), write: null, retryNote: "" };
+
+  // 2. Generated sample — only when the DB has no authored check for this book.
+  return { questions: tfrSampleQuestions(pkg, catalog), write: null, retryNote: "", source: "sample" };
 }
 
 function TfrQuizDone({ total, write, onContinue }) {
@@ -841,10 +853,16 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
     });
   };
 
-  const about = React.useMemo(
-    () => (pkg && window.HaarayaAbout) ? window.HaarayaAbout.get(tfrText((pkg.book || {}).book_code) || tfrText((pkg.book || {}).code)) : null,
-    [pkg]
-  );
+  // "About this book" front-matter — fetched live from Supabase (async).
+  const [about, setAbout] = useStateTfr(null);
+  useEffectTfr(() => {
+    if (!pkg) { setAbout(null); return; }
+    const c = tfrText((pkg.book || {}).book_code) || tfrText((pkg.book || {}).code);
+    if (!(window.HaarayaAboutDB && c)) { setAbout(null); return; }
+    let alive = true;
+    window.HaarayaAboutDB.get(c).then(a => { if (alive) setAbout(a); });
+    return () => { alive = false; };
+  }, [pkg]);
 
   // Build the screen list once a package is loaded.
   const screens = React.useMemo(() => {
@@ -866,10 +884,15 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
     }
   }, [code]);
 
-  const check = React.useMemo(
-    () => pkg ? tfrGetCheck(pkg, catalog) : { questions: [], write: null, retryNote: "" },
-    [pkg, catalog]
-  );
+  // Reading check for this book — fetched live from Supabase (async).
+  const [check, setCheck] = useStateTfr({ questions: [], write: null, retryNote: "", source: "", loading: true });
+  useEffectTfr(() => {
+    if (!pkg) { setCheck({ questions: [], write: null, retryNote: "", source: "", loading: false }); return; }
+    let alive = true;
+    setCheck(c => ({ ...c, loading: true }));
+    tfrResolveCheck(pkg, catalog).then(res => { if (alive) setCheck({ ...res, loading: false }); });
+    return () => { alive = false; };
+  }, [pkg, catalog]);
   const nextBook = React.useMemo(() => {
     if (!catalog.length || !window.TafiyaData) return null;
     const sorted = window.TafiyaData.sortedCatalog(catalog);
@@ -888,11 +911,16 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
   useEffectTfr(() => {
     let alive = true;
     setStatus("loading"); setPkg(null); setErrMsg("");
-    window.TafiyaData.getPackage(code).then(p => {
+    window.TafiyaData.getPackage(code).then(async p => {
+      if (!alive) return;
+      const aboutCode = (p.book || {}).book_code || (p.book || {}).code;
+      let hasAbout = false;
+      if (window.HaarayaAboutDB && aboutCode) {
+        try { hasAbout = !!(await window.HaarayaAboutDB.get(aboutCode)); } catch (e) { /* ignore */ }
+      }
       if (!alive) return;
       setPkg(p);
       setStatus("ready");
-      const hasAbout = !!(window.HaarayaAbout && window.HaarayaAbout.get((p.book || {}).book_code || (p.book || {}).code));
       const totalScreens = 1 + (hasAbout ? 1 : 0) + (p.pages ? p.pages.length : 0) + 3;
       if (window.TafiyaData) window.TafiyaData.recordOpen(code, totalScreens);
       // Restore saved screen for this book.
@@ -1047,7 +1075,13 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
             {status === "ready" && cur && cur.type === "about" && <TfrAbout pkg={pkg} about={about} />}
             {status === "ready" && cur && cur.type === "page" && <TfrPage page={cur.page} local={!!(pkg && pkg._local)} />}
             {status === "ready" && cur && cur.type === "back" && <TfrBack pkg={pkg} />}
-            {status === "ready" && cur && cur.type === "quiz" && (
+            {status === "ready" && cur && cur.type === "quiz" && check.loading && (
+              <div className="surface quiz">
+                <div className="quiz-eyebrow-row"><span className="quiz-eyebrow">Reading check</span></div>
+                <div className="quiz-title">Preparing your reading check…</div>
+              </div>
+            )}
+            {status === "ready" && cur && cur.type === "quiz" && !check.loading && check.questions.length > 0 && (
               <TfrQuiz
                 key={code}
                 questions={check.questions}
@@ -1200,9 +1234,17 @@ function LibraryScreen({ onNavigate, initialLevel }) {
   const levelsPresent = React.useMemo(() => new Set(catalog.map(levelNum)), [catalog]);
 
   const strandRank = (b) => { const i = TAFIYA_STRAND_ORDER.indexOf(tfrStrandUi(b)); return i < 0 ? 99 : i; };
-  // Programme order within a level = the code's numeric suffix (interleaves strands
-  // in the intended teaching sequence, e.g. S-01-010, H-01-040, TF-01-080, …).
+  // Programme order = global v4_2 teaching sequence, joined per book by Book_Code
+  // via window.HAARAYA_PROGRESSION. Falls back to code suffix when unmapped.
+  const progNum = (b) => { const m = window.HAARAYA_PROGRESSION; const c = codeOf(b); return (m && m[c] != null) ? m[c] : null; };
   const seqNum = (b) => { const m = String(codeOf(b)).split("-").pop(); const n = parseInt(m, 10); return isNaN(n) ? 999999 : n; };
+  const byProgramme = (a, b) => {
+    const pa = progNum(a), pb = progNum(b);
+    if (pa != null && pb != null) return pa - pb;
+    if (pa != null) return -1;
+    if (pb != null) return 1;
+    return (levelNum(a) - levelNum(b)) || (seqNum(a) - seqNum(b)) || codeOf(a).localeCompare(codeOf(b), undefined, { numeric: true });
+  };
 
   const q = query.trim().toLowerCase();
   const matchesQuery = (b) => {
@@ -1215,7 +1257,7 @@ function LibraryScreen({ onNavigate, initialLevel }) {
     .filter(matchesQuery)
     .filter(b => levelFilter === "all" || levelNum(b) === levelFilter)
     .filter(b => strandFilter === "all" || tfrStrandUi(b) === strandFilter)
-    .sort((a, b) => (levelNum(a) - levelNum(b)) || (seqNum(a) - seqNum(b)) || codeOf(a).localeCompare(codeOf(b)));
+    .sort(byProgramme);
 
   return (
     <main style={{ background: "var(--cream)", minHeight: "100vh" }}>

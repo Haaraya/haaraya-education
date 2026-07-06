@@ -869,13 +869,6 @@ html[data-direction="classic"] .hero-passport-img { transform: rotate(0); }
 [data-screen-label^="02"] .publisher-mark {
   display: none;
 }
-/* On the Odyssey reader, lift the seal to the vertical middle so it never
-   covers the footer's "Next →" button */
-[data-screen-label^="12"] .publisher-mark {
-  top: 50%;
-  bottom: auto;
-  transform: translateY(-50%);
-}
 
 @media (max-width: 640px) {
   .publisher-mark { bottom: 12px; right: 12px; }

@@ -444,8 +444,9 @@ function Nav({ current, onNavigate, session, navKeys, homeScreen, onSignIn, onSi
           ))}
         </div>
         <a
-          href="Odyssey Home.html"
-          className="nav-odyssey"
+          href="#odyssey"
+          className={"nav-odyssey " + (current === "odyssey" ? "active" : "")}
+          onClick={e => { e.preventDefault(); go("odyssey"); }}
           title="The 100 Book Odyssey"
           aria-label="The Odyssey"
         >
@@ -495,8 +496,9 @@ function Nav({ current, onNavigate, session, navKeys, homeScreen, onSignIn, onSi
         )}
         <div className="nav-mobile-links">
           <a
-            className="nav-mobile-odyssey"
-            href="Odyssey Home.html"
+            className={"nav-mobile-odyssey " + (current === "odyssey" ? "active" : "")}
+            onClick={e => { e.preventDefault(); go("odyssey"); }}
+            href="#odyssey"
           >
             <img src="assets/odyssey-logo-white-trim.png" alt="The Odyssey" />
             <span aria-hidden="true">→</span>
