@@ -608,155 +608,117 @@ function ChildDashScreen({ onNavigate }) {
   const levelPct        = levelTotal ? Math.round((levelDone / levelTotal) * 100) : 0;
   const levelName       = (HaarayaSeed.levels.find(l => l.number === currentLevel) || {}).name || "";
 
+  const feat = continueBooks[0] || pathBooks[0] || null;
+  const firstName = (ME || "").split(" ")[0] || ME;
+  const pw = (levelPct || 0) + "%";
+  const toGo = Math.max(0, (levelTotal || 0) - (levelDone || 0));
+
   return (
-    <main style={{ background: "var(--cream)", minHeight: "100vh" }}>
-      <div className="wrap" style={{ padding: "40px 32px 80px", maxWidth: 1380 }}>
-        <div className="dash" style={{ minHeight: 720 }}>
-          <aside className="dash-sidebar">
-            <div className="dash-brand">
-              <img src="assets/logo-haaraya-literacy.png" alt="Haaraya Literacy" />
-              
+    <main className="nd-page" data-screen-label="Child Dashboard">
+      <div className="nd">
+
+        <div className="nd-top">
+          <div className="nd-word"><img src="assets/odyssey-seal.png" alt="Haaraya" /> Haaraya</div>
+          <nav className="nd-nav">
+            <a className="on">My Books</a>
+            <a onClick={() => onNavigate("passport")}>Reading Passport</a>
+            <a onClick={() => onNavigate("library")}>Library</a>
+          </nav>
+          <div className="nd-chip">
+            <Avatar name={ME} color={child.avatarColor} size={40} />
+            <div className="who">
+              <div className="n">{firstName}</div>
+              <div className="l">{"Level " + currentLevel + " \u00b7 " + levelName}</div>
             </div>
-            <nav className="dash-nav">
-              <a className="active"><span className="nav-icon" /> Continue Reading</a>
-              <a onClick={() => onNavigate("passport")}><span className="nav-icon" /> Reading Passport</a>
-              <a><span className="nav-icon" /> My Reading Path</a>
-              <a><span className="nav-icon" /> Story Practice</a>
-              <a onClick={() => onNavigate("library")}><span className="nav-icon" /> Explore for Fun</a>
-            </nav>
-            <div style={{ marginTop: "auto", paddingTop: 24, borderTop: "1px solid rgba(255,255,255,.1)" }}>
-              <div style={{
-                display: "flex", alignItems: "center", gap: 10,
-                background: "rgba(255,255,255,.06)",
-                padding: 10, borderRadius: 10,
-              }}>
-                <Avatar name={ME} color={child.avatarColor} size={36} border={false} />
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: 14 }}>{ME}</div>
-                  <div style={{ fontSize: 11, opacity: 0.7 }}>Level {child.currentLevelId}</div>
+          </div>
+        </div>
+
+        <div className="nd-grid">
+          <div className="nd-col">
+
+            <div className="nd-welcome">
+              <svg className="trail" viewBox="0 0 300 300" aria-hidden="true">
+                <path d="M60 280 C120 220 40 180 120 130 C180 96 110 60 180 20" />
+                <circle cx="180" cy="20" r="7" />
+                <circle cx="60" cy="280" r="7" />
+              </svg>
+              <div className="eye">Good to see you</div>
+              <h1>{"Ready to keep your journey going, " + firstName + "?"}</h1>
+              <p>{"You've earned " + stampsEarned + " " + (stampsEarned === 1 ? "stamp" : "stamps") + " so far. Keep reading to reach the next stop on your trail."}</p>
+            </div>
+
+            {feat && (
+              <div className="nd-continue">
+                <div className="cov">{feat.title}</div>
+                <div className="body">
+                  <div className="tag">Continue reading</div>
+                  <h3>{feat.title}</h3>
+                  <div className="meta">{"Level " + (feat.level || currentLevel) + " \u00b7 " + ((STRANDS[feat.strand] && STRANDS[feat.strand].name) || "Story")}</div>
+                  <div className="pbar"><span style={{ width: pw }} /></div>
+                  <div className="pct">{levelDone + " of " + levelTotal + " books this level \u00b7 " + levelPct + "%"}</div>
                 </div>
+                <button className="nd-btn" onClick={() => onNavigate("reader", { bookCode: feat.id })}>Keep reading →</button>
+              </div>
+            )}
+
+            <div className="nd-panel">
+              <div className="nd-phead"><h4>Keep reading</h4><span className="side" onClick={() => onNavigate("library")}>See all</span></div>
+              <div className="nd-rail">
+                {continueBooks.map(b => <Book key={b.id} book={b} onClick={() => onNavigate("reader", { bookCode: b.id })} />)}
               </div>
             </div>
-          </aside>
-          <div className="dash-main">
-            <div className="dash-child-hero">
-              <Avatar name={ME} color={child.avatarColor} size={88} />
-              <div className="greet">
-                <h4>Hi there, <span style={{ fontFamily: '"Andika", system-ui, sans-serif' }}>{ME}</span>!</h4>
-                <div className="level">Level {currentLevel} · {levelName}</div>
-                <div className="sub" style={{ fontSize: 13, color: "var(--ink-soft)", fontWeight: 600, marginTop: 4 }}>
-                  {levelDone} {levelDone === 1 ? "book" : "books"} completed
-                </div>
+
+            <div className="nd-panel">
+              <div className="nd-phead"><h4>My reading path</h4><span className="side">{pathProgress ? (pathProgress.completed + " / " + pathProgress.total + " \u00b7 " + pathProgress.pct + "%") : ""}</span></div>
+              <div className="nd-rail">
+                {pathBooks.map(b => <Book key={b.id} book={b} onClick={() => onNavigate("reader", { bookCode: b.id })} />)}
               </div>
-              <div className="stat">
-                <div className="num">{stampsEarned}</div>
-                <div className="lbl">Stamps earned</div>
+            </div>
+
+            <div className="nd-panel">
+              <div className="nd-phead"><h4>Story practice</h4><span className="side">Tafiya at your level</span></div>
+              <div className="nd-rail">
+                {practiceBooks.map(b => <Book key={b.id} book={b} onClick={() => onNavigate("reader", { bookCode: b.id })} />)}
+              </div>
+            </div>
+
+            <div className="nd-panel">
+              <div className="nd-phead"><h4>Explore for fun</h4><span className="side" onClick={() => onNavigate("library")}>Open library</span></div>
+              <div className="nd-rail">
+                {exploreList.map(b => <Book key={b.id} book={b} onClick={() => onNavigate("reader", { bookCode: b.id })} />)}
               </div>
             </div>
 
             <SkillCheckPanel defaultChildId={CHILD_ID} />
 
-            <div className="dash-twocol cols-2-1" style={{ gap: 20 }}>
-              <div className="dash-card">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
-                  <h5>Continue Reading</h5>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-soft)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                    Pick up where you left off
-                  </span>
-                </div>
-                <div className="dash-mini-books cols-4">
-                  {continueBooks.map(b => <Book key={b.id} book={b} onClick={() => onNavigate("reader", { bookCode: b.id })} />)}
-                </div>
+          </div>
 
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 28, marginBottom: 14 }}>
-                  <h5>My Reading Path</h5>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--hafwas)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                    {pathProgress ? `${pathProgress.completed} / ${pathProgress.total} this level · ${pathProgress.pct}%` : ""}
-                  </span>
-                </div>
-                <div className="dash-mini-books cols-4">
-                  {pathBooks.map(b => <Book key={b.id} book={b} onClick={() => onNavigate("reader", { bookCode: b.id })} />)}
-                </div>
+          <div className="nd-col">
+            <div className="nd-medal" onClick={() => onNavigate("passport")} style={{ cursor: "pointer" }}>
+              <div className="nd-disc"><div className="in"><div className="n">{stampsEarned}</div><div className="u">Stamps</div></div></div>
+              <div className="cap">{firstName + "'s collection"}</div>
+              <div className="sub">{"Level " + currentLevel + " \u00b7 " + levelName + " Reader"}</div>
+            </div>
 
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 28, marginBottom: 14 }}>
-                  <h5>Story Practice</h5>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--forest)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                    Tafiya at your level
-                  </span>
-                </div>
-                <div className="dash-mini-books cols-4">
-                  {practiceBooks.map(b => <Book key={b.id} book={b} onClick={() => onNavigate("reader", { bookCode: b.id })} />)}
-                </div>
+            <div className="nd-panel nd-mile">
+              <div className="lbl">Next milestone</div>
+              <h4>{toGo > 0 ? ("Finish " + toGo + " more " + (toGo === 1 ? "book" : "books") + " to reach Level " + (currentLevel + 1)) : "You've finished this level \u2014 on to the next!"}</h4>
+              <div className="pbar"><span style={{ width: pw }} /></div>
+              <div className="row"><span>{levelDone + " of " + levelTotal + " books"}</span><span>{levelPct + "%"}</span></div>
+            </div>
 
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 28, marginBottom: 14 }}>
-                  <h5>Explore for Fun</h5>
-                  <button className="btn btn-ghost-dark btn-sm" style={{ padding: "6px 14px", fontSize: 12 }} onClick={() => onNavigate("library")}>Open library</button>
-                </div>
-                <div className="dash-mini-books cols-4">
-                  {exploreList.map(b => <Book key={b.id} book={b} onClick={() => onNavigate("reader", { bookCode: b.id })} />)}
-                </div>
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <div className="dash-card" style={{ background: "linear-gradient(135deg, var(--forest), var(--forest-dark))", color: "white", borderColor: "var(--forest)", cursor: "pointer" }}
-                  onClick={() => onNavigate("passport")}>
-                  <h5 style={{ color: "var(--yellow)" }}>Your passport</h5>
-                  <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
-                    <img
-                      src={(window.PASSPORT_COVERS && window.PASSPORT_COVERS[child.passportColor || "green"] || { img: "assets/passport-cover-green-blank.png" }).img}
-                      alt="Your Reading Passport"
-                      style={{
-                        width: 76, height: "auto", flexShrink: 0,
-                        borderRadius: "3px 7px 7px 3px",
-                        boxShadow: "0 8px 20px rgba(0,0,0,.4), inset 5px 0 0 rgba(0,0,0,.18)",
-                        transform: "rotate(-3deg)",
-                        display: "block",
-                      }}
-                    />
-                    <div>
-                      <div style={{ fontFamily: "var(--font-display)", fontSize: 32, lineHeight: 1, color: "white" }}>{stampsEarned}</div>
-                      <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.8 }}>stamps</div>
-                      <div style={{ fontFamily: "var(--font-display)", fontSize: 22, marginTop: 8, color: "white" }}>L{currentLevel}</div>
-                      <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.8 }}>current level</div>
-                    </div>
-                  </div>
-                  <div style={{ height: 8, background: "rgba(255,255,255,.15)", borderRadius: 999, overflow: "hidden" }}>
-                    <div style={{ width: `${levelPct}%`, height: "100%", background: "linear-gradient(90deg, var(--yellow), var(--green-mid))" }} />
-                  </div>
-                  <div style={{ fontSize: 11, fontWeight: 700, marginTop: 8, opacity: 0.8, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                    Tap to open your passport →
-                  </div>
-                </div>
-
-                <div className="dash-card">
-                  <h5>Recent stamps</h5>
-                  <div className="dash-passport-mini" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
-                    {recentStamps.map((st, i) => {
-                      const uiKey = st.strandUi || "tafiya";
-                      return <Stamp key={st.code || st.bookId || i} strand={uiKey} title={st.title} rotate={(i % 7) - 3} />;
-                    })}
-                    {recentStamps.length === 0 && <Stamp strand="locked" title="?" rotate={2} locked />}
-                  </div>
-                </div>
-
-                <div className="dash-card">
-                  <h5>Today's prompt</h5>
-                  <div style={{
-                    background: "var(--yellow)",
-                    color: "var(--ink)",
-                    padding: "14px 16px",
-                    borderRadius: 12,
-                    fontWeight: 800,
-                  }}>
-                    Your passport is waiting.
-                    <div style={{ fontSize: 12, fontWeight: 700, marginTop: 4, opacity: 0.75 }}>
-                      Read one book today. Earn a new stamp.
-                    </div>
-                  </div>
-                </div>
+            <div className="nd-panel">
+              <div className="nd-phead" style={{ marginBottom: 14 }}><h4>Recent stamps</h4></div>
+              <div className="nd-stamps">
+                {recentStamps.map((st, i) => {
+                  const uiKey = st.strandUi || "tafiya";
+                  return <Stamp key={st.code || st.bookId || i} strand={uiKey} title={st.title} rotate={(i % 7) - 3} />;
+                })}
+                {recentStamps.length === 0 && <Stamp strand="locked" title="?" rotate={2} locked />}
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </main>
@@ -821,24 +783,26 @@ function ParentDashScreen({ onNavigate }) {
   const totalStamps  = realStamps;
 
   return (
-    <main style={{ background: "var(--cream)", minHeight: "100vh" }}>
-      <div className="wrap" style={{ padding: "40px 32px 80px", maxWidth: 1380 }}>
-        <div className="dash" style={{ minHeight: 720 }}>
-          <aside className="dash-sidebar">
-            <div className="dash-brand">
-              <img src="assets/logo-haaraya-literacy.png" alt="Haaraya Literacy" />
-              
+    <main className="nd-page role-adult" data-screen-label="Parent Dashboard">
+      <div className="nd">
+        <div className="nd-top">
+          <div className="nd-word"><img src="assets/odyssey-seal.png" alt="Haaraya" /> Haaraya</div>
+          <nav className="nd-nav">
+            <a className="on">Children</a>
+            <a>Reading plan</a>
+            <a>Subscription</a>
+            <a>Reports</a>
+          </nav>
+          <div className="nd-chip">
+            <Avatar name={(window.HaarayaSession && HaarayaSession.get().displayName) || "Demo Parent"} color={(window.HaarayaSession && HaarayaSession.get().color) || "#516155"} size={40} />
+            <div className="who">
+              <div className="n">{(window.HaarayaSession && HaarayaSession.get().displayName) || "Demo Parent"}</div>
+              <div className="l">Parent account</div>
             </div>
-            <nav className="dash-nav">
-              <a className="active"><span className="nav-icon" /> Children</a>
-              <a><span className="nav-icon" /> Reading plan</a>
-              <a><span className="nav-icon" /> Subscription</a>
-              <a><span className="nav-icon" /> Reports</a>
-              <a><span className="nav-icon" /> Settings</a>
-            </nav>
-          </aside>
-
-          <div className="dash-main">
+          </div>
+        </div>
+        <div className="dash role-adult" style={{ display: "block", background: "transparent", border: "none", boxShadow: "none", padding: 0, minHeight: 0 }}>
+          <div className="dash-main" style={{ padding: 0 }}>
             <div className="dash-header">
               <div>
                 <h3>Welcome back, <span style={{ fontFamily: '"Andika", system-ui, sans-serif' }}>{(window.HaarayaSession && HaarayaSession.get().displayName) || "Demo Parent"}</span>.</h3>

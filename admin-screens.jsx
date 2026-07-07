@@ -59,23 +59,27 @@ function TeacherDashScreen({ onNavigate }) {
   if (!classrooms || !teacher) return null;
 
   return (
-    <main style={{ background: "var(--cream)", minHeight: "100vh" }}>
-      <div className="wrap" style={{ padding: "40px 32px 80px", maxWidth: 1380 }}>
-        <div className="dash" style={{ minHeight: 720 }}>
-          <AdultSidebar
-            items={[
-              { label: "Classrooms",   active: true },
-              { label: "Assignments" },
-              { label: "Pupil progress" },
-              { label: "Support alerts" },
-              { label: "Reports" },
-              { label: "Library", onClick: () => onNavigate("library") },
-            ]}
-            footerName={ME}
-            footerSub="Lead teacher"
-            footerColor="#8E24AA"
-          />
-          <div className="dash-main">
+    <main className="nd-page role-adult" data-screen-label="Teacher Dashboard">
+      <div className="nd">
+        <div className="nd-top">
+          <div className="nd-word"><img src="assets/odyssey-seal.png" alt="Haaraya" /> Haaraya</div>
+          <nav className="nd-nav">
+            <a className="on">Classrooms</a>
+            <a>Assignments</a>
+            <a>Pupil progress</a>
+            <a>Reports</a>
+            <a onClick={() => onNavigate("library")}>Library</a>
+          </nav>
+          <div className="nd-chip">
+            <Avatar name={ME} color="#8E24AA" size={40} />
+            <div className="who">
+              <div className="n">{ME}</div>
+              <div className="l">Lead teacher</div>
+            </div>
+          </div>
+        </div>
+        <div className="dash role-adult" style={{ display: "block", background: "transparent", border: "none", boxShadow: "none", padding: 0, minHeight: 0 }}>
+          <div className="dash-main" style={{ padding: 0 }}>
             <div className="dash-header">
               <div>
                 <h3><span style={{ fontFamily: '"Andika", system-ui, sans-serif' }}>{ME}</span>&rsquo;s classrooms</h3>
@@ -205,23 +209,27 @@ function SchoolAdminDashScreen({ onNavigate }) {
   const { school, teachers, classrooms, pupils, subscription, sponsored } = data;
 
   return (
-    <main style={{ background: "var(--cream)", minHeight: "100vh" }}>
-      <div className="wrap" style={{ padding: "40px 32px 80px", maxWidth: 1380 }}>
-        <div className="dash" style={{ minHeight: 720 }}>
-          <AdultSidebar
-            items={[
-              { label: "Overview", active: true },
-              { label: "Teachers" },
-              { label: "Classrooms" },
-              { label: "Pupils" },
-              { label: "Subscription" },
-              { label: "Reports" },
-            ]}
-            footerName="Demo School Admin"
-            footerSub="School admin"
-            footerColor="#00838F"
-          />
-          <div className="dash-main">
+    <main className="nd-page role-adult" data-screen-label="School Admin Dashboard">
+      <div className="nd">
+        <div className="nd-top">
+          <div className="nd-word"><img src="assets/odyssey-seal.png" alt="Haaraya" /> Haaraya</div>
+          <nav className="nd-nav">
+            <a className="on">Overview</a>
+            <a>Teachers</a>
+            <a>Classrooms</a>
+            <a>Subscription</a>
+            <a>Reports</a>
+          </nav>
+          <div className="nd-chip">
+            <Avatar name="Demo School Admin" color="#00838F" size={40} />
+            <div className="who">
+              <div className="n">Demo School Admin</div>
+              <div className="l">School admin</div>
+            </div>
+          </div>
+        </div>
+        <div className="dash role-adult" style={{ display: "block", background: "transparent", border: "none", boxShadow: "none", padding: 0, minHeight: 0 }}>
+          <div className="dash-main" style={{ padding: 0 }}>
             <div className="dash-header">
               <div>
                 <h3>{school.name}</h3>
@@ -321,24 +329,27 @@ function HaarayaAdminDashScreen({ onNavigate }) {
   if (!cat) return null;
 
   return (
-    <main style={{ background: "var(--cream)", minHeight: "100vh" }}>
-      <div className="wrap" style={{ padding: "40px 32px 80px", maxWidth: 1380 }}>
-        <div className="dash" style={{ minHeight: 720 }}>
-          <AdultSidebar
-            items={[
-              { label: "Catalogue", active: true },
-              { label: "Levels & strands" },
-              { label: "Stamps & themes" },
-              { label: "Subscriptions" },
-              { label: "Sponsored access" },
-              { label: "Audit log" },
-              { label: "Users" },
-            ]}
-            footerName="Demo Admin"
-            footerSub="Internal"
-            footerColor="#283593"
-          />
-          <div className="dash-main">
+    <main className="nd-page role-adult" data-screen-label="Haaraya Admin Dashboard">
+      <div className="nd">
+        <div className="nd-top">
+          <div className="nd-word"><img src="assets/odyssey-seal.png" alt="Haaraya" /> Haaraya</div>
+          <nav className="nd-nav">
+            <a className="on">Catalogue</a>
+            <a>Levels &amp; strands</a>
+            <a>Subscriptions</a>
+            <a>Audit log</a>
+            <a>Users</a>
+          </nav>
+          <div className="nd-chip">
+            <Avatar name="Demo Admin" color="#283593" size={40} />
+            <div className="who">
+              <div className="n">Demo Admin</div>
+              <div className="l">Internal</div>
+            </div>
+          </div>
+        </div>
+        <div className="dash role-adult" style={{ display: "block", background: "transparent", border: "none", boxShadow: "none", padding: 0, minHeight: 0 }}>
+          <div className="dash-main" style={{ padding: 0 }}>
             <div className="dash-header">
               <div>
                 <h3>Haaraya control center</h3>

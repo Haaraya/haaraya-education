@@ -16,6 +16,14 @@ const ODY_PATHWAY = [
   { k: "Read 100 Great Books", s: "A lifetime of reading",    state: "next" },
 ];
 
+/* "How it fits" — collectible storybook milestone plaques */
+const ODY_FIT = [
+  { k: "Learn to Read",        s: "Phonics & first words",     token: "assets/odyssey-tokens/learn.png", theme: "green" },
+  { k: "Become a Reader",      s: "12 levels, fluent at last", token: "assets/odyssey-tokens/become.png",  theme: "olive" },
+  { k: "The Haaraya Odyssey",  s: "Reading to learn",          token: "assets/odyssey-tokens/odyssey.png", theme: "navy", hero: true },
+  { k: "Read 100 Great Books", s: "A lifetime of reading",     token: "assets/odyssey-tokens/books.png",   theme: "gold" },
+];
+
 const ODY_MILESTONES = [
   { n: 1,   cap: "Set sail",       note: "Your first great book",  state: "done" },
   { n: 10,  cap: "Bronze",         note: "First milestone",         state: "done" },
@@ -26,16 +34,16 @@ const ODY_MILESTONES = [
 ];
 
 const ODY_CATEGORIES = [
-  { key: "stories",   name: "Stories",   cls: "ody-cat-stories",   desc: "Novels, tales and worlds to get lost inside.",            n: 18 },
-  { key: "adventure", name: "Adventure", cls: "ody-cat-adventure", desc: "Journeys, quests and daring escapes.",                    n: 12 },
-  { key: "mystery",   name: "Mystery",   cls: "ody-cat-mystery",   desc: "Clues, puzzles and secrets to unravel.",                  n: 8  },
-  { key: "science",   name: "Science",   cls: "ody-cat-science",   desc: "How the world works, from atoms to galaxies.",            n: 11 },
-  { key: "nature",    name: "Nature",    cls: "ody-cat-nature",    desc: "Animals, plants and the living planet.",                  n: 10 },
-  { key: "history",   name: "History",   cls: "ody-cat-history",   desc: "Empires, heroes and the story of us.",                    n: 9  },
-  { key: "biography", name: "Biography", cls: "ody-cat-biography", desc: "Real lives that changed the world.",                      n: 8  },
-  { key: "geography", name: "Geography", cls: "ody-cat-geography", desc: "Places, peoples and journeys across the map.",            n: 7  },
-  { key: "poetry",    name: "Poetry",    cls: "ody-cat-poetry",    desc: "Rhythm, verse and words that sing.",                      n: 9  },
-  { key: "culture",   name: "Culture",   cls: "ody-cat-culture",   desc: "Traditions, festivals and life across Nigeria.",          n: 8  },
+  { key: "stories",   name: "Stories",   cls: "ody-cat-stories",   desc: "Novels, tales and worlds to get lost inside.",            n: 18, token: "assets/odyssey-tokens/w-stories.png"   },
+  { key: "adventure", name: "Adventure", cls: "ody-cat-adventure", desc: "Journeys, quests and daring escapes.",                    n: 12, token: "assets/odyssey-tokens/w-adventure.png" },
+  { key: "mystery",   name: "Mystery",   cls: "ody-cat-mystery",   desc: "Clues, puzzles and secrets to unravel.",                  n: 8,  token: "assets/odyssey-tokens/w-mystery.png"   },
+  { key: "science",   name: "Science",   cls: "ody-cat-science",   desc: "How the world works, from atoms to galaxies.",            n: 11, token: "assets/odyssey-tokens/w-science.png"   },
+  { key: "nature",    name: "Nature",    cls: "ody-cat-nature",    desc: "Animals, plants and the living planet.",                  n: 10, token: "assets/odyssey-tokens/w-nature.png"    },
+  { key: "history",   name: "History",   cls: "ody-cat-history",   desc: "Empires, heroes and the story of us.",                    n: 9,  token: "assets/odyssey-tokens/w-history.png"   },
+  { key: "biography", name: "Biography", cls: "ody-cat-biography", desc: "Real lives that changed the world.",                      n: 8,  token: "assets/odyssey-tokens/w-biography.png" },
+  { key: "geography", name: "Geography", cls: "ody-cat-geography", desc: "Places, peoples and journeys across the map.",            n: 7,  token: "assets/odyssey-tokens/w-geography.png" },
+  { key: "poetry",    name: "Poetry",    cls: "ody-cat-poetry",    desc: "Rhythm, verse and words that sing.",                      n: 9,  token: "assets/odyssey-tokens/w-poetry.png"    },
+  { key: "culture",   name: "Culture",   cls: "ody-cat-culture",   desc: "Traditions, festivals and life across Nigeria.",          n: 8,  token: "assets/odyssey-tokens/w-culture.png"   },
 ];
 
 const ODY_ACHIEVEMENTS = [
@@ -161,15 +169,22 @@ function OdysseyPathwayBand() {
           title="The next chapter, not a new book."
           lede="The Odyssey picks up exactly where the Haaraya literacy journey ends. The natural continuation once a child can truly read."
         />
-        <div className="ody-pathline">
-          {ODY_PATHWAY.map((p, i) => (
+        <div className="ody-fit">
+          {ODY_FIT.map((p, i) => (
             <React.Fragment key={p.k}>
-              <div className={`ody-pathline-node ${p.state}`}>
-                <span className="ring">{p.state === "done" ? "✓" : (p.state === "now" ? "★" : i + 1)}</span>
-                <span className="k">{p.k}</span>
-                <span className="s">{p.s}</span>
-              </div>
-              {i < ODY_PATHWAY.length - 1 && <span className="ody-pathline-arrow" aria-hidden="true">→</span>}
+              <article className={`ody-plaque theme-${p.theme} ${p.hero ? "is-hero" : ""}`}>
+                {p.hero && <span className="ody-plaque-flag">You are here</span>}
+                <div className="ody-plaque-holder">
+                  <img className="ody-plaque-token" src={p.token} alt="" loading="lazy" />
+                </div>
+                <h4 className="ody-plaque-title">{p.k}</h4>
+                <p className="ody-plaque-sub">{p.s}</p>
+              </article>
+              {i < ODY_FIT.length - 1 && (
+                <span className="ody-fit-arrow" aria-hidden="true">
+                  <svg viewBox="0 0 42 16" width="42" height="16"><path d="M2 8 H33" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeDasharray="1 6" /><path d="M31 2 L39 8 L31 14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </span>
+              )}
             </React.Fragment>
           ))}
         </div>
@@ -221,7 +236,6 @@ function OdysseyDashboard() {
     <section className="ody-section ody-band-cream">
       <div className="wrap">
         <SectionHeader
-          eyebrow="Your progress"
           title="Every reader gets a captain's log."
           lede="A calm, beautiful dashboard, not a leaderboard. It shows how far you've come and gently points to what's next."
         />
@@ -274,11 +288,13 @@ function OdysseyCategories() {
         <div className="ody-cats">
           {ODY_CATEGORIES.map(c => (
             <article key={c.key} className={`ody-cat ${c.cls}`}>
-              <div className="ody-cat-ic"><span></span></div>
+              <span className="ody-cat-count">{c.n} books</span>
+              <div className="ody-cat-token">
+                <img src={c.token} alt="" loading="lazy" />
+              </div>
               <h4>{c.name}</h4>
               <p>{c.desc}</p>
-              <div className="count">{c.n} books</div>
-              <span className="ody-cat-go" aria-hidden="true">Explore this world →</span>
+              <span className="ody-cat-go">Explore this world <span aria-hidden="true">→</span></span>
             </article>
           ))}
         </div>
@@ -568,7 +584,6 @@ function OdysseyScreen({ onNavigate }) {
       <OdysseyHero onNavigate={onNavigate} />
       <OdysseyStages onNavigate={onNavigate} />
       <OdysseyPathwayBand />
-      <OdysseyDashboard />
       <OdysseyCategories />
       <OdysseyShipmateScribe />
       <OdysseyCTA onNavigate={onNavigate} />

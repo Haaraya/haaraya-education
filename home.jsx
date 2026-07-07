@@ -540,44 +540,60 @@ function DashChildPreview({ onNavigate }) {
   if (!suggest.length) suggest = ordered.slice(0, 3);
   const suggested = suggest.slice(0, 3).map(cardOf);
 
+  const keepFirst = keepReading[0];
   return (
-    <div className="dash">
-      <aside className="dash-sidebar">
-        <div className="dash-brand">
-          <img src="assets/logo-haaraya-literacy.png" alt="Haaraya Literacy" />
-          
-        </div>
-        <nav className="dash-nav">
-          <a className="active"><span className="nav-icon" /> My Books</a>
-          <a onClick={() => onNavigate("passport")}><span className="nav-icon" /> My Passport</a>
-          <a onClick={() => onNavigate("library")}><span className="nav-icon" /> Library</a>
-          <a><span className="nav-icon" /> Assignments</a>
-        </nav>
-      </aside>
-      <div className="dash-main">
-        <div className="dash-child-hero">
-          <Avatar name={NAME} color={avatarColor} size={72} />
-          <div className="greet">
-            <h4>Hi there, {NAME}!</h4>
-            <div className="level">Level {currentLevel} · {levelName}</div>
-            <div className="sub" style={{ fontSize: 13, color: "var(--ink-soft)", fontWeight: 600, marginTop: 4 }}>{levelDone} {levelDone === 1 ? "book" : "books"} completed</div>
-          </div>
-          <div className="stat">
-            <div className="num">{stampsEarned}</div>
-            <div className="lbl">Stamps earned</div>
+    <div className="nd-page nd-frame">
+      <div className="nd">
+        <div className="nd-top">
+          <div className="nd-word"><img src="assets/odyssey-seal.png" alt="Haaraya" /> Haaraya</div>
+          <nav className="nd-nav">
+            <a className="on">My Books</a>
+            <a onClick={() => onNavigate("passport")}>Reading Passport</a>
+            <a onClick={() => onNavigate("library")}>Library</a>
+          </nav>
+          <div className="nd-chip">
+            <Avatar name={NAME} color={avatarColor} size={38} />
+            <div className="who"><div className="n">{NAME}</div><div className="l">{"Level " + currentLevel + " \u00b7 " + levelName}</div></div>
           </div>
         </div>
-        <div className="dash-child-grid">
-          <div className="dash-card">
-            <h5>Keep reading</h5>
-            <div className="dash-mini-books">
-              {keepReading.map(b => <Book key={b.id} book={b} onClick={() => onNavigate("reader", { bookCode: b.id })} />)}
+        <div className="nd-grid">
+          <div className="nd-col">
+            <div className="nd-welcome">
+              <svg className="trail" viewBox="0 0 300 300" aria-hidden="true"><path d="M60 280 C120 220 40 180 120 130 C180 96 110 60 180 20" /><circle cx="180" cy="20" r="7" /><circle cx="60" cy="280" r="7" /></svg>
+              <div className="eye">Good to see you</div>
+              <h1>{"Ready to keep your journey going, " + NAME + "?"}</h1>
+              <p>{"You've earned " + stampsEarned + " " + (stampsEarned === 1 ? "stamp" : "stamps") + " so far. Keep reading to reach the next stop on your trail."}</p>
+            </div>
+            {keepFirst && (
+              <div className="nd-continue">
+                <div className="cov">{keepFirst.title}</div>
+                <div className="body">
+                  <div className="tag">Continue reading</div>
+                  <h3>{keepFirst.title}</h3>
+                  <div className="meta">{"Level " + keepFirst.level + " \u00b7 " + ((window.STRANDS && STRANDS[keepFirst.strand] && STRANDS[keepFirst.strand].name) || "Story")}</div>
+                </div>
+                <button className="nd-btn" onClick={() => onNavigate("reader", { bookCode: keepFirst.id })}>Read now →</button>
+              </div>
+            )}
+            <div className="nd-panel">
+              <div className="nd-phead"><h4>Keep reading</h4><span className="side" onClick={() => onNavigate("library")}>See all</span></div>
+              <div className="nd-rail">{keepReading.map(b => <Book key={b.id} book={b} onClick={() => onNavigate("reader", { bookCode: b.id })} />)}</div>
+            </div>
+            <div className="nd-panel">
+              <div className="nd-phead"><h4>Suggested for you</h4><span className="side" onClick={() => onNavigate("library")}>Browse library</span></div>
+              <div className="nd-rail">{suggested.map(b => <Book key={b.id} book={b} onClick={() => onNavigate("reader", { bookCode: b.id })} />)}</div>
             </div>
           </div>
-          <div className="dash-card">
-            <h5>Suggested for you</h5>
-            <div className="dash-mini-books">
-              {suggested.map(b => <Book key={b.id} book={b} onClick={() => onNavigate("reader", { bookCode: b.id })} />)}
+          <div className="nd-col">
+            <div className="nd-medal">
+              <div className="nd-disc"><div className="in"><div className="n">{stampsEarned}</div><div className="u">Stamps</div></div></div>
+              <div className="cap">{NAME + "'s collection"}</div>
+              <div className="sub">{"Level " + currentLevel + " \u00b7 " + levelName + " Reader"}</div>
+            </div>
+            <div className="nd-panel nd-mile">
+              <div className="lbl">This level</div>
+              <h4>{levelDone + " " + (levelDone === 1 ? "book" : "books") + " completed at Level " + currentLevel}</h4>
+              <div className="pbar"><span style={{ width: Math.min(100, levelDone * 12) + "%" }} /></div>
             </div>
           </div>
         </div>
@@ -587,54 +603,37 @@ function DashChildPreview({ onNavigate }) {
 }
 
 function DashParentPreview({ onNavigate }) {
+  const kids = [
+    { name: "Kaha",  color: "#E65100", level: 7,  pct: 78, books: "14 / 18 books" },
+    { name: "Tobi",  color: "#1565C0", level: 4,  pct: 42, books: "8 / 19 books" },
+    { name: "Chidi", color: "#228B22", level: 10, pct: 60, books: "12 / 20 books" },
+  ];
   return (
-    <div className="dash">
-      <aside className="dash-sidebar">
-        <div className="dash-brand">
-          <img src="assets/logo-haaraya-literacy.png" alt="Haaraya Literacy" />
-          
+    <div className="nd-page role-adult nd-frame">
+      <div className="nd">
+        <div className="nd-top">
+          <div className="nd-word"><img src="assets/odyssey-seal.png" alt="Haaraya" /> Haaraya</div>
+          <nav className="nd-nav"><a className="on">Children</a><a>Reading plan</a><a>Subscription</a><a>Reports</a></nav>
+          <div className="nd-chip"><Avatar name="Family" color="#516155" size={38} /><div className="who"><div className="n">Family plan</div><div className="l">3 children</div></div></div>
         </div>
-        <nav className="dash-nav">
-          <a className="active"><span className="nav-icon" /> Children</a>
-          <a><span className="nav-icon" /> Reading plan</a>
-          <a><span className="nav-icon" /> Subscription</a>
-          <a><span className="nav-icon" /> Reports</a>
-          <a><span className="nav-icon" /> Settings</a>
-        </nav>
-      </aside>
-      <div className="dash-main">
-        <div className="dash-header">
-          <div>
-            <h3>Your children</h3>
-            <div className="sub">3 children · Family plan · Renews 14 Aug</div>
+        <div className="nd-kpis" style={{ marginBottom: 20 }}>
+          <div className="nd-kpi"><div className="lbl">Books read</div><div className="num">84</div><div className="delta">+12 this month</div></div>
+          <div className="nd-kpi"><div className="lbl">Reading time</div><div className="num">11h</div><div className="delta">+1.4h vs last month</div></div>
+          <div className="nd-kpi"><div className="lbl">Stamps earned</div><div className="num">96</div><div className="delta">Across 5 strands</div></div>
+          <div className="nd-kpi"><div className="lbl">Active streak</div><div className="num">9d</div><div className="delta">Family best</div></div>
+        </div>
+        <div className="nd-panel">
+          <div className="nd-phead"><h4>Your children</h4><span className="side">Renews 14 Aug</span></div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {kids.map(c => (
+              <div className="nd-childrow" key={c.name}>
+                <Avatar name={c.name} color={c.color} size={44} />
+                <div><div className="name">{c.name}</div><div className="meta">{c.books + " \u00b7 Auto reading plan"}</div></div>
+                <div className="prog"><div className="plbl">Level progress</div><div className="bar"><span style={{ width: c.pct + "%" }} /></div></div>
+                <div className="pill">{"Level " + c.level}</div>
+              </div>
+            ))}
           </div>
-          <button className="btn btn-ghost-dark btn-sm">+ Add child</button>
-        </div>
-        <div className="kpis">
-          <div className="kpi"><div className="lbl">Books read</div><div className="num">84</div><div className="delta">+12 this month</div></div>
-          <div className="kpi"><div className="lbl">Reading time</div><div className="num">11h</div><div className="delta">+1.4h vs last month</div></div>
-          <div className="kpi"><div className="lbl">Stamps earned</div><div className="num">96</div><div className="delta">Across 5 strands</div></div>
-          <div className="kpi"><div className="lbl">Active streak</div><div className="num">9d</div><div className="delta">Family best</div></div>
-        </div>
-        <div className="child-rows">
-          {[
-            { name: "Kaha",  color: "#E65100", level: 7,  pct: 78, books: "14 / 18 books" },
-            { name: "Tobi",   color: "#1565C0", level: 4,  pct: 42, books: "8 / 19 books"  },
-            { name: "Chidi",  color: "#228B22", level: 10, pct: 60, books: "12 / 20 books" },
-          ].map(c => (
-            <div className="child-row" key={c.name}>
-              <Avatar name={c.name} color={c.color} size={44} />
-              <div>
-                <div className="name">{c.name}</div>
-                <div className="meta">{c.books} · Auto reading plan</div>
-              </div>
-              <div className="prog">
-                <div className="lbl">Level progress</div>
-                <div className="bar"><span style={{ width: `${c.pct}%` }} /></div>
-              </div>
-              <div className="lvl-pill">Level {c.level}</div>
-            </div>
-          ))}
         </div>
       </div>
     </div>
@@ -666,64 +665,33 @@ function DashTeacherPreview() {
     status: statuses[i], pct: pcts[i],
   }));
   return (
-    <div className="dash">
-      <aside className="dash-sidebar">
-        <div className="dash-brand">
-          <img src="assets/logo-haaraya-literacy.png" alt="Haaraya Literacy" />
-          
+    <div className="nd-page role-adult nd-frame">
+      <div className="nd">
+        <div className="nd-top">
+          <div className="nd-word"><img src="assets/odyssey-seal.png" alt="Haaraya" /> Haaraya</div>
+          <nav className="nd-nav"><a>Classes</a><a className="on">Assignments</a><a>Students</a><a>Reports</a><a>Library</a></nav>
+          <div className="nd-chip"><Avatar name="Mrs Adekunle" color="#8E24AA" size={38} /><div className="who"><div className="n">Primary 3B</div><div className="l">28 pupils</div></div></div>
         </div>
-        <nav className="dash-nav">
-          <a><span className="nav-icon" /> Classes</a>
-          <a className="active"><span className="nav-icon" /> Assignments</a>
-          <a><span className="nav-icon" /> Students</a>
-          <a><span className="nav-icon" /> Reports</a>
-          <a><span className="nav-icon" /> Library</a>
-        </nav>
-      </aside>
-      <div className="dash-main">
-        <div className="dash-header">
-          <div>
-            <h3>Primary 3B — Assignments</h3>
-            <div className="sub">28 students · Mrs. Adekunle · Term 2 · Week 6</div>
-          </div>
-          <button className="btn btn-primary btn-sm">+ New assignment</button>
+        <div className="nd-panel">
+          <div className="nd-phead"><h4>Primary 3B — Assignments</h4><span className="side">Term 2 · Week 6</span></div>
+          <table className="nd-prevtable">
+            <thead><tr><th style={{ width: "40%" }}>Book</th><th>Strand</th><th>Level</th><th>Completed</th><th>Status</th></tr></thead>
+            <tbody>
+              {rows.map(r => {
+                const s = STRANDS[r.strand];
+                return (
+                  <tr key={r.name}>
+                    <td><div className="book-cell"><div className="book-mini" style={{ background: s.bg, "--c": s.color }} /><strong>{r.name}</strong></div></td>
+                    <td><StrandPill strand={r.strand} size="sm" /></td>
+                    <td><strong>{"L" + r.level}</strong></td>
+                    <td>{r.pct}</td>
+                    <td><span className={"nd-status " + r.status}>{r.status === "done" ? "Complete" : r.status === "progress" ? "In progress" : "Not started"}</span></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-        <table className="assign-table">
-          <thead>
-            <tr>
-              <th style={{ width: "40%" }}>Book</th>
-              <th>Strand</th>
-              <th>Level</th>
-              <th>Completed</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(r => {
-              const s = STRANDS[r.strand];
-              return (
-                <tr key={r.name}>
-                  <td>
-                    <div className="book-cell">
-                      <div className="book-mini" style={{ background: s.bg, "--c": s.color }} />
-                      <strong>{r.name}</strong>
-                    </div>
-                  </td>
-                  <td>
-                    <StrandPill strand={r.strand} size="sm" />
-                  </td>
-                  <td><strong>L{r.level}</strong></td>
-                  <td>{r.pct}</td>
-                  <td>
-                    <span className={`status ${r.status}`}>
-                      {r.status === "done" ? "Complete" : r.status === "progress" ? "In progress" : "Not started"}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
       </div>
     </div>
   );
