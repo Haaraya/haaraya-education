@@ -11,11 +11,18 @@ Thumbs.db
 # Node deps — never deploy these
 node_modules/
 
+# Python cache
+__pycache__/
+
 # Local tooling scripts (not part of the live site)
 tools/
 
-# Local screenshots scratch folder
+# Local scratch / secrets
 screenshots/
+.env
+.env.local
+import_sources/
+*.backup-before-*.jsx
 
 # Heavy self-contained exports — NOT needed on the live Pages site.
 # These bloat the Pages deploy artifact and can make deployment fail.

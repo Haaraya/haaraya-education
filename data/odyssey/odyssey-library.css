@@ -1,0 +1,203 @@
+/* ============================================================
+   Haaraya — Odyssey Library styles
+   Premium series look: deep navy grounds, gold, three stream
+   colours. Sits on the app's Nunito / display-serif tokens.
+   ============================================================ */
+.ol-screen {
+  --ol-navy: #0f2233;
+  --ol-gold: #e7b53f;
+  min-height: 100vh;
+  background:
+    radial-gradient(120% 60% at 8% -8%, #1c3b56 0%, rgba(28,59,86,0) 55%),
+    linear-gradient(180deg, #13293c 0%, #0f2233 100%);
+  color: #f7f2e7;
+  padding-bottom: 80px;
+}
+
+/* header */
+.ol-head { padding: 34px 24px 10px; }
+.ol-head-wrap { max-width: 1160px; margin: 0 auto; }
+.ol-back {
+  background: rgba(255,255,255,.08); color: #f7f2e7; border: 1px solid rgba(231,181,63,.3);
+  border-radius: 999px; padding: 8px 16px; font: inherit; font-weight: 800; font-size: 13px;
+  cursor: pointer; margin-bottom: 22px; transition: background .15s ease;
+}
+.ol-back:hover { background: rgba(255,255,255,.16); }
+.ol-eyebrow {
+  display: inline-block; font-size: 12px; font-weight: 800; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--ol-gold); margin-bottom: 8px;
+}
+.ol-h1 { font-family: var(--font-display, "Lora", serif); font-size: clamp(30px, 5vw, 46px); margin: 0 0 10px; line-height: 1.05; }
+.ol-sub { max-width: 620px; font-size: 15.5px; line-height: 1.6; color: rgba(247,242,231,.76); margin: 0; }
+
+/* controls */
+.ol-controls {
+  max-width: 1160px; margin: 22px auto 0; padding: 0 24px;
+  display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between;
+}
+.ol-search { position: relative; flex: 1 1 260px; max-width: 380px; }
+.ol-search-ic { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 17px; color: rgba(247,242,231,.5); }
+.ol-search input {
+  width: 100%; font: inherit; font-size: 14.5px; color: #f7f2e7;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(231,181,63,.28);
+  border-radius: 999px; padding: 11px 16px 11px 40px;
+}
+.ol-search input::placeholder { color: rgba(247,242,231,.5); }
+.ol-search input:focus { outline: 2px solid var(--ol-gold); outline-offset: 1px; }
+.ol-filters { display: flex; gap: 10px; flex-wrap: wrap; }
+.ol-seg { display: inline-flex; flex-wrap: wrap; background: rgba(255,255,255,.06); border: 1px solid rgba(231,181,63,.22); border-radius: 999px; padding: 3px; }
+.ol-seg button {
+  border: 1px solid transparent; background: none; cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 800;
+  color: rgba(247,242,231,.72); padding: 7px 13px; border-radius: 999px; transition: all .15s ease;
+}
+.ol-seg button.on { background: var(--ol-gold); color: var(--ol-navy); }
+
+.ol-count { max-width: 1160px; margin: 20px auto 0; padding: 0 24px; font-size: 13px; font-weight: 700; color: rgba(247,242,231,.6); }
+.ol-loading, .ol-empty { max-width: 1160px; margin: 40px auto; padding: 0 24px; text-align: center; color: rgba(247,242,231,.7); font-size: 15px; }
+
+/* grid */
+.ol-grid {
+  max-width: 1160px; margin: 14px auto 0; padding: 0 24px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 20px;
+}
+
+/* ---- cover ---- */
+.olc {
+  position: relative; text-align: left; cursor: pointer; overflow: hidden;
+  aspect-ratio: 3 / 4.2; border-radius: 10px; padding: 20px 18px 18px 24px;
+  border: 0; color: #fff; font: inherit;
+  display: flex; flex-direction: column;
+  background:
+    radial-gradient(130% 80% at 80% 8%, rgba(255,255,255,.14) 0%, rgba(255,255,255,0) 45%),
+    linear-gradient(160deg, color-mix(in oklab, var(--ol-accent) 82%, #fff 0%) 0%, var(--ol-ink) 92%);
+  box-shadow: 0 12px 30px rgba(6,14,22,.42);
+  transition: transform .16s ease, box-shadow .2s ease;
+}
+.olc:hover { transform: translateY(-4px); box-shadow: 0 20px 44px rgba(6,14,22,.55); }
+.olc-spine { position: absolute; left: 0; top: 0; bottom: 0; width: 7px; background: rgba(0,0,0,.28); box-shadow: inset -1px 0 0 rgba(255,255,255,.12); }
+.olc-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.olc-stream { font-size: 10.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.82); }
+.olc-num { font-family: var(--font-display, serif); font-size: 15px; color: rgba(255,255,255,.6); }
+.olc-title {
+  font-family: var(--font-display, "Lora", serif); font-size: 22px; line-height: 1.15;
+  margin-top: 14px; text-wrap: balance; flex: 1;
+}
+.olc-foot { display: flex; align-items: center; gap: 7px; font-size: 11.5px; font-weight: 700; color: rgba(255,255,255,.82); margin-top: 12px; }
+.olc-dot { opacity: .6; }
+.olc-emblem { position: absolute; right: 14px; bottom: 12px; font-size: 16px; color: rgba(255,255,255,.32); }
+.olc-soon { white-space: nowrap; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--ol-navy); background: var(--ol-gold); padding: 3px 10px; border-radius: 999px; }
+.olc--capstone {
+  outline: 2px solid var(--ol-gold); outline-offset: 2px;
+  background:
+    radial-gradient(130% 80% at 80% 8%, rgba(231,181,63,.28) 0%, rgba(231,181,63,0) 45%),
+    linear-gradient(160deg, #26405c 0%, #0f2233 92%);
+}
+.olc--capstone .olc-emblem { color: var(--ol-gold); font-size: 20px; }
+
+/* reader coming-soon */
+.olr-soon { flex: 1; display: grid; place-content: center; text-align: center; padding: 40px 26px; max-width: 560px; margin: 0 auto; }
+.olr-soon-emblem { font-size: 46px; color: var(--ol-accent, #9c2b45); }
+.olr-soon-kicker { font-size: 12px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--ol-accent, #9c2b45); margin-top: 12px; }
+.olr-soon-title { font-family: "Andika", system-ui, sans-serif; font-weight: 700; font-size: clamp(30px, 6vw, 44px); margin: 8px 0 14px; color: var(--ol-ink, #3a1420); }
+.olr-soon-text { font-size: 17px; line-height: 1.65; color: #5b5340; margin: 0 0 26px; }
+
+/* ============================================================
+   READER
+   ============================================================ */
+.olr {
+  min-height: 100vh; display: flex; flex-direction: column;
+  background: linear-gradient(180deg, #fbf7ee 0%, var(--ol-soft, #f3efe6) 100%);
+  color: #241d13;
+}
+.olr-loading { min-height: 100vh; display: grid; place-items: center; color: #5b5340; font-size: 16px; background: #fbf7ee; }
+
+.olr-top {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: 12px; justify-content: space-between;
+  padding: 12px 20px; background: var(--ol-ink, #10333a); color: #fff;
+  box-shadow: 0 2px 14px rgba(6,14,22,.25);
+}
+.olr-topbtn {
+  background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.2);
+  border-radius: 999px; padding: 8px 15px; font: inherit; font-weight: 800; font-size: 13px; cursor: pointer;
+  white-space: nowrap; transition: background .15s ease;
+}
+.olr-topbtn:hover { background: rgba(255,255,255,.22); }
+.olr-top-mid { text-align: center; display: flex; flex-direction: column; min-width: 0; }
+.olr-top-stream { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.7); }
+.olr-top-title { font-family: "Andika", system-ui, sans-serif; font-weight: 700; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* chapter menu */
+.olr-menu { position: fixed; inset: 0; z-index: 40; background: rgba(6,14,22,.5); backdrop-filter: blur(3px); display: grid; place-items: start center; padding: 78px 18px 18px; }
+.olr-menu-card { width: min(560px, 100%); max-height: 80vh; overflow: auto; background: #fff; border-radius: 16px; box-shadow: 0 24px 60px rgba(6,14,22,.4); }
+.olr-menu-head {
+  position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; background: var(--ol-ink, #10333a); color: #fff;
+  font-family: "Andika", system-ui, sans-serif; font-weight: 700; font-size: 17px;
+}
+.olr-menu-head button { background: rgba(255,255,255,.15); color: #fff; border: 0; width: 30px; height: 30px; border-radius: 50%; font-size: 20px; cursor: pointer; }
+.olr-menu-list { list-style: none; margin: 0; padding: 8px; counter-reset: none; }
+.olr-menu-list button {
+  width: 100%; display: flex; align-items: center; gap: 12px; text-align: left;
+  background: none; border: 0; padding: 12px 12px; border-radius: 10px; cursor: pointer; font: inherit;
+  color: #241d13; transition: background .12s ease;
+}
+.olr-menu-list button:hover { background: var(--ol-soft, #f2ede2); }
+.olr-menu-list button.on { background: color-mix(in oklab, var(--ol-accent) 14%, #fff); }
+.olr-menu-num {
+  flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--ol-accent, #0d7d6f); color: #fff; font-weight: 800; font-size: 14px;
+}
+.olr-menu-t { flex: 1; font-weight: 700; font-size: 14.5px; }
+.olr-menu-pp { font-size: 12px; color: #8a8069; font-weight: 700; }
+
+/* reading column */
+.olr-scroll { flex: 1; overflow: auto; }
+.olr-page { max-width: 680px; margin: 0 auto; padding: 40px 26px 20px; }
+.olr-ch-head { margin-bottom: 26px; padding-bottom: 20px; border-bottom: 2px solid color-mix(in oklab, var(--ol-accent) 40%, transparent); }
+.olr-ch-kicker { font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--ol-accent, #0d7d6f); }
+.olr-ch-title { font-family: "Andika", system-ui, sans-serif; font-weight: 700; font-size: clamp(28px, 5vw, 38px); line-height: 1.12; margin: 8px 0 0; color: var(--ol-ink, #10333a); }
+.olr-para {
+  font-family: "Andika", system-ui, sans-serif; font-size: 19px; line-height: 1.75;
+  margin: 0 0 20px; color: #2c2416; text-wrap: pretty;
+}
+.olr-para:first-of-type::first-letter {
+  float: left; font-size: 58px; line-height: .82; font-weight: 700;
+  padding: 4px 10px 0 0; color: var(--ol-accent, #0d7d6f);
+}
+
+/* image placeholder */
+.olr-fig { margin: 6px 0 24px; }
+.olr-fig-ph {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  aspect-ratio: 16 / 9; border-radius: 12px;
+  background: color-mix(in oklab, var(--ol-accent) 8%, #fff);
+  border: 1.5px dashed color-mix(in oklab, var(--ol-accent) 45%, #fff);
+  color: var(--ol-accent, #0d7d6f);
+}
+.olr-fig-ic { font-size: 30px; opacity: .8; }
+.olr-fig-label { font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.olr-fig-note { font-size: 13px; line-height: 1.5; color: #6a5f47; font-style: italic; margin-top: 8px; padding: 0 4px; text-align: center; }
+
+/* footer nav */
+.olr-foot {
+  max-width: 680px; margin: 20px auto 0; padding: 20px 26px 44px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  border-top: 1px solid rgba(0,0,0,.08);
+}
+.olr-navbtn {
+  background: #fff; color: var(--ol-ink, #10333a); border: 1.5px solid rgba(0,0,0,.14);
+  border-radius: 999px; padding: 11px 18px; font: inherit; font-weight: 800; font-size: 14px; cursor: pointer;
+  min-height: 46px; transition: all .15s ease;
+}
+.olr-navbtn:hover:not(:disabled) { border-color: var(--ol-accent, #0d7d6f); color: var(--ol-accent, #0d7d6f); }
+.olr-navbtn:disabled { opacity: .4; cursor: default; }
+.olr-navbtn.primary { background: var(--ol-accent, #0d7d6f); color: #fff; border-color: var(--ol-accent, #0d7d6f); }
+.olr-navbtn.primary:hover { filter: brightness(1.06); color: #fff; }
+.olr-foot-pos { font-size: 12.5px; font-weight: 700; color: #8a8069; }
+
+@media (max-width: 560px) {
+  .olr-top-title { max-width: 42vw; }
+  .olr-para { font-size: 17.5px; }
+  .ol-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+}

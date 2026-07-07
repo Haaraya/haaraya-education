@@ -1,0 +1,35 @@
+# GitHub Pages build configuration.
+# The live site (index.html -> "Haaraya Home.html") only loads root-level
+# JS/CSS plus the assets/, data/, and books/ folders. Everything listed
+# below is developer/scratch material that the website never requests, so
+# we tell Pages NOT to publish it. This keeps the deployed site small and
+# lets the "syncing_files" step finish (large unused folders like uploads/
+# were making the deploy time out and fail).
+#
+# Nothing here is deleted from the repository — these files simply are not
+# copied into the published site.
+
+exclude:
+  # Developer tooling / dependencies (never served to browsers)
+  - node_modules
+  - vendor
+  - Gemfile
+  - Gemfile.lock
+
+  # Scratch + working material not used by the live site
+  - uploads
+  - tools
+  - import_sources
+  - design_handoff_haaraya_platform
+  - supabase
+
+  # One-off exports / reports / alternate source copies
+  - "Haaraya Home (Standalone Source).html"
+  - "Haaraya Home (offline-src).html"
+  - "Supabase Seeding Report.md"
+  - "Library Tab (extract).jsx"
+  - "*.backup-before-*.jsx"
+
+# Keep Jekyll from choking on folders it doesn't need to process.
+# (Static files without front matter are copied verbatim, which is what
+#  we want for all the .html/.js/.css/.jsx files.)
