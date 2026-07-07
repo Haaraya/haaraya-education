@@ -34,7 +34,7 @@
       levelId: levelNum(b),
       bookType: b.book_type,
       audioUrl: null,
-      thumbnail_image_path: b.thumbnail_image_path || "",
+      thumbnail_image_path: b.thumbnail_image_path || b.cover_image_path || "",
     };
   }
 

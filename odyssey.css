@@ -6,11 +6,18 @@
    ============================================================ */
 
 :root {
-  --ody-night:   #0C2E12;   /* deepest forest — the "night sky" of the odyssey */
-  --ody-night-2: #123D1A;
+  /* Parchment page + navy accents (matches the standalone medal-case palette) */
+  --ody-night:   #0f2436;   /* deep navy — the standalone's dark accent */
+  --ody-night-2: #16324a;
   --ody-gold:    #F5C518;
   --ody-gold-dk: #E0AF00;
   --ody-gold-soft: #FBE7A2;
+  --parch:       #f4ecdb;   /* warm parchment */
+  --parch-2:     #efe4cd;
+  --parch-hi:    #faf6ec;
+  --parch-line:  #e2d3b3;
+  --ink-warm:    #2c2213;
+  --ink-warm-mid:#6b5a3c;
 }
 
 /* ---- Category accents (harmonious with the strand palette) ---- */
@@ -140,14 +147,14 @@
 /* ============================================================
    ODYSSEY LANDING PAGE
    ============================================================ */
-.ody-page { background: var(--cream); }
+.ody-page { background: var(--parch); color: var(--ink-warm); }
 
 /* ---- Hero ---- */
 .ody-hero {
   position: relative; overflow: hidden;
   background:
     radial-gradient(120% 100% at 80% -10%, rgba(245,197,24,.14), transparent 50%),
-    linear-gradient(180deg, var(--ody-night) 0%, var(--ody-night-2) 62%, #17501f 100%);
+    linear-gradient(180deg, var(--ody-night) 0%, var(--ody-night-2) 62%, #4a3419 100%);
   color: #fff;
   padding: 84px 0 108px;
 }
@@ -214,6 +221,13 @@
   overflow: hidden;
 }
 .ody-hero-art image-slot { display:block; width: 100%; height: 460px; }
+.ody-hero-img { display:block; width: 100%; height: auto; }
+.ody-stages-cta { text-align: center; margin-top: 36px; }
+.ody-stages-note { max-width: 640px; margin: 22px auto 0; text-align: center; }
+.ody-stages-note h3 { font-family: var(--font-display); color: var(--case-navy); font-size: 28px; margin: 0 0 8px; }
+.ody-stages-note p { color: var(--ink-warm-mid); font-size: 16px; line-height: 1.55; margin: 0; }
+.ody-medals-page { background: var(--parch); }
+.ody-medals-back { margin-bottom: 18px; }
 .ody-art-ph {
   position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
   z-index: 4; font-family: var(--font-mono, ui-monospace, monospace);
@@ -242,8 +256,8 @@
 /* ---- Shared section header tweak on the deep bands ---- */
 .ody-section { padding: 96px 0; }
 .ody-section.tight { padding: 72px 0; }
-.ody-band-sand { background: var(--sand); }
-.ody-band-cream { background: var(--cream); }
+.ody-band-sand { background: var(--parch-2); color: var(--ink-warm); }
+.ody-band-cream { background: var(--parch-hi); color: var(--ink-warm); }
 .ody-band-deep {
   background:
     radial-gradient(110% 80% at 90% 0%, rgba(245,197,24,.08), transparent 55%),
@@ -573,3 +587,70 @@
 .ody-cta-actions { display:flex; gap: 14px; justify-content:center; flex-wrap: wrap; margin-top: 34px; }
 
 /* reduced motion / entrance safety handled by base site */
+
+/* ============================================================
+   LIGHT PARCHMENT RE-THEME  (Odyssey landing = the standalone's warm parchment)
+   ============================================================ */
+.ody-page { background: var(--parch); color: var(--ink-warm); }
+
+/* Hero → parchment */
+.ody-hero {
+  background:
+    radial-gradient(120% 100% at 82% -10%, rgba(230,194,119,.30), transparent 56%),
+    linear-gradient(180deg, var(--parch-hi) 0%, var(--parch) 100%) !important;
+  color: var(--ink-warm) !important;
+}
+.ody-hero::before {
+  opacity: .5;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 22%, rgba(120,95,45,.22), transparent),
+    radial-gradient(2px 2px at 48% 24%, rgba(185,138,60,.35), transparent),
+    radial-gradient(1.5px 1.5px at 80% 18%, rgba(120,95,45,.18), transparent),
+    radial-gradient(1.5px 1.5px at 66% 62%, rgba(185,138,60,.22), transparent) !important;
+}
+.ody-hero h1 { color: var(--case-navy); }
+.ody-hero h1 .gold { color: var(--satin-dk); }
+.ody-hero-tag { color: var(--satin-deep); }
+.ody-hero-sub { color: var(--ink-warm-mid); }
+.ody-hero-meta .m .n { color: var(--case-navy); }
+.ody-hero-meta .m .l { color: var(--ink-warm-mid); }
+
+/* Deep bands → parchment with dark ink */
+.ody-band-deep {
+  background: var(--parch-2) !important;
+  color: var(--ink-warm) !important;
+  border-top: 1px solid var(--parch-line);
+  border-bottom: 1px solid var(--parch-line);
+}
+.ody-band-deep .section-header h2 { color: var(--case-navy) !important; }
+.ody-band-deep .section-header .eyebrow { color: var(--satin-deep) !important; }
+.ody-band-deep .section-header .lede { color: var(--ink-warm-mid) !important; }
+.ody-band-deep .eyebrow::before { background: var(--satin-dk) !important; }
+
+/* Journey seals on light */
+.ody-journey-track::before { background: repeating-linear-gradient(90deg, rgba(120,95,45,.28) 0 12px, transparent 12px 22px); }
+.ody-mile-seal { background: #fff; border: 2px dashed var(--parch-line); color: var(--case-navy); }
+.ody-mile-seal .of { color: var(--ink-warm-mid); }
+.ody-mile-cap { color: var(--case-navy); }
+.ody-mile-note { color: var(--ink-warm-mid); }
+.ody-mile.done .ody-mile-cap { color: var(--satin-deep); }
+.ody-journey-legend { color: var(--ink-warm-mid); }
+
+/* Achievements on light */
+.ody-ach { background: #fff; border: 1px solid var(--parch-line); }
+.ody-ach h4 { color: var(--case-navy); }
+.ody-ach .req { color: var(--ink-warm-mid); }
+
+/* Closing CTA → parchment */
+.ody-cta {
+  background:
+    radial-gradient(90% 120% at 50% 0%, rgba(230,194,119,.32), transparent 62%),
+    linear-gradient(180deg, var(--parch-hi), var(--parch)) !important;
+  color: var(--ink-warm) !important;
+}
+.ody-cta h2 { color: var(--case-navy) !important; }
+.btn-logo { display: inline-flex; align-items: center; gap: 12px; }
+.btn-logo .btn-logo-odyssey { height: 30px; width: auto; display: block; }
+.btn-logo .btn-logo-literacy { height: 21px; width: auto; display: block; }
+.ody-cta h2 .gold { color: var(--satin-dk) !important; }
+.ody-cta p { color: var(--ink-warm-mid) !important; }

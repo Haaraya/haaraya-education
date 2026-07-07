@@ -2180,32 +2180,36 @@ html[data-direction="classic"] .hero-passport-img { transform: rotate(0); }
 .dash-mini-books { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .dash-mini-books .book { aspect-ratio: 3/4; padding: 10px; border-radius: 4px 8px 8px 4px; }
 
-/* Cover-thumbnail book variant (library-backed dashboards) */
-.book--cover { padding: 0; overflow: hidden; background: var(--sand, #EEEAE2); display: block; }
+/* Packaged book-cover variant (mirrors the Tafiya reader front cover) */
+.book--cover {
+  padding: 8px 8px 10px; overflow: hidden; display: flex; flex-direction: column;
+  background: #fff; border: 1px solid var(--sand-dk, #DDD9D0);
+  box-shadow: inset 5px 0 0 rgba(0,0,0,.06), var(--shadow-sm);
+}
+.book--cover .bc-top { flex: 0 0 auto; display: flex; justify-content: flex-end; align-items: center; min-height: 14px; }
+.book--cover .bc-top img { max-height: 12px; width: auto; }
+.book--cover .bc-art {
+  flex: 1 1 auto; min-height: 0; width: 100%;
+  display: flex; align-items: center; justify-content: center; padding: 6px 0;
+}
 .book--cover .book-cover-img {
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  object-fit: cover; display: block; background: #fff;
+  max-width: 100%; max-height: 100%; width: auto; height: auto;
+  object-fit: contain; display: block; border-radius: 3px;
 }
-.book--cover .strand-badge {
-  position: absolute; top: 8px; left: 8px; z-index: 2;
-  background: var(--c, var(--forest)); border-radius: 999px;
+.book--cover .bc-meta { flex: 0 0 auto; text-align: center; }
+.book--cover .bc-title {
+  margin: 0; color: var(--ink, #1A2A1A);
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 14px; line-height: 1.1; text-wrap: balance;
 }
+.book--cover .bc-sub {
+  margin-top: 3px; font-size: 10px; font-weight: 800; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--ink-soft, #6B7A6B);
+}
+.book--cover .strand-badge { position: static; }
 .book--cover .level-tag { z-index: 2; }
-.book--cover .book-cover-cap {
-  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
-  padding: 22px 10px 9px;
-  background: linear-gradient(to top, rgba(20,30,20,.86) 0%, rgba(20,30,20,.55) 55%, transparent 100%);
-}
-.book--cover .book-cover-cap h4 {
-  margin: 0; color: #fff;
-  font-family: "Andika", system-ui, sans-serif; font-weight: 700;
-  font-size: 13px; line-height: 1.16; text-shadow: 0 1px 3px rgba(0,0,0,.4);
-}
 .book--cover.book--nocover { background: var(--bg, var(--sand)); }
-.book--cover.book--nocover .book-cover-cap {
-  background: none; position: static; padding: 10px;
-}
-.book--cover.book--nocover .book-cover-cap h4 { color: var(--ink, #1A2A1A); text-shadow: none; }
+.book--cover.book--nocover .bc-art { display: none; }
 .dash-mini-books .book h4 { font-size: 13px; }
 .dash-mini-books .book .strand-badge { padding: 3px 7px; min-height: 16px; }
 .dash-mini-books .book .strand-badge img { max-height: 10px; }

@@ -279,22 +279,31 @@ function Book({ book, onClick, size = "md", locked = false }) {
   const s = STRANDS[book.strand];
   const thumb = book.thumb && window.TafiyaData ? window.TafiyaData.assetUrl(book.thumb) : book.thumb;
   if (thumb) {
-    // Real cover-thumbnail variant (used by the library-backed dashboards).
+    // Packaged book-cover variant — mirrors the Tafiya reader's front cover:
+    // strand wordmark on top, cover art shown *contained* (never cropped),
+    // typeset title + level below, on a clean card. Used by the dashboards.
     return (
       <div
         className={"book book--cover" + (locked ? " book--locked" : "")}
         onClick={onClick}
         role="button"
       >
-        <img className="book-cover-img" src={thumb} alt="" onError={(e) => { e.currentTarget.parentNode.classList.add("book--nocover"); e.currentTarget.remove(); }} />
+        <div className="bc-top">
+          <StrandLogo strand={book.strand} height={12} dark />
+        </div>
+        <div className="bc-art">
+          <img className="book-cover-img" src={thumb} alt="" onError={(e) => { const p = e.currentTarget.closest(".book--cover"); if (p) p.classList.add("book--nocover"); e.currentTarget.remove(); }} />
+        </div>
         {locked && (
           <div className="book-locktag" aria-label="Subscriber only">
             <span className="book-lockicon" aria-hidden="true">🔒</span>
             Subscriber only
           </div>
         )}
-        <div className="book-cover-cap"><h4>{book.title}</h4></div>
-        <div className="level-tag">L{book.level}</div>
+        <div className="bc-meta">
+          <h4 className="bc-title">{book.title}</h4>
+          <div className="bc-sub">Level {book.level}</div>
+        </div>
       </div>
     );
   }

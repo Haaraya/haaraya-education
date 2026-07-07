@@ -12,13 +12,6 @@ function Hero({ onNavigate }) {
     <React.Fragment>
     <section className="hero">
       <div className="hero-frame">
-        <span className="hero-bracket tl"></span>
-        <span className="hero-bracket tr"></span>
-        <span className="hero-bracket bl"></span>
-        <span className="hero-bracket br"></span>
-        <div className="hero-ticks">
-          <span></span><span></span><span></span>
-        </div>
 
         <div className="hero-body">
           <div className="hero-headline">
@@ -59,36 +52,7 @@ function Hero({ onNavigate }) {
 
       </section>
 
-      <section className="stats-section">
-        <div className="wrap">
-          <div className="stats-ledger-band" aria-hidden="true">
-            <span className="stats-ledger-line"></span>
-            <span className="stats-ledger-label">Passport Record · Summary</span>
-            <span className="stats-ledger-line"></span>
-          </div>
-
-          <div className="hero-trust-strip">
-            {[
-              { num: "469",  lbl: "Books planned across the journey" },
-              { num: "12",   lbl: "Levels, first words to fluent" },
-              { num: "10",   lbl: "Reading strands, interleaved" },
-              { num: "100%", lbl: "Audio narration on every book" },
-            ].map((t, i) => (
-              <div className="hero-trust-item" key={i}>
-                <span className="entry">Entry · {String(i + 1).padStart(2, "0")} / 04</span>
-                <span className="num">{t.num}</span>
-                <span className="rule" aria-hidden="true"></span>
-                <span className="lbl">{t.lbl}</span>
-                <span className="seal" aria-hidden="true">
-                  <span className="seal-inner">HE</span>
-                </span>
-                <span className="corner tl" aria-hidden="true"></span>
-                <span className="corner br" aria-hidden="true"></span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <section className="stats-section" style={{ display: "none" }} aria-hidden="true"></section>
 
       <section style={{ display: "none" }} aria-hidden="true"></section>
     </React.Fragment>
@@ -108,7 +72,7 @@ function HeroPassportPreview() {
 function HowItWorks() {
   const steps = [
     { n: 1, title: "Open a passport",   desc: "Each child gets a Reading Passport that grows with them — their reading identity, in one place." },
-    { n: 2, title: "Read and listen",   desc: "Illustrated Nigerian books with audio narration on every page. Readable books, audio pages, and printable keepsakes. Not a worksheet dump." },
+    { n: 2, title: "Read and explore",  desc: "Illustrated Nigerian books across ten strands. Readable books and printable keepsakes. Not a worksheet dump." },
     { n: 3, title: "Collect stamps",    desc: "Finish a book, earn a stamp. Finish a level, earn a badge. The journey becomes a keepsake." },
     { n: 4, title: "Move up 12 levels", desc: "From first words to confident reader. Parents, teachers, and the system all guide what's next." },
   ];
@@ -547,7 +511,7 @@ function DashChildPreview({ onNavigate }) {
     const code = b.book_code || b.code;
     const uiKey = window.TafiyaBooks ? TafiyaBooks.strandUiOf(b) : "tafiya";
     const s = (window.STRANDS && window.STRANDS[uiKey]) || {};
-    return { id: code, title: b.title, author: b.book_type || "", strand: uiKey, level: window.TafiyaBooks ? TafiyaBooks.levelNum(b) : b.level, c: s.color, bg: s.bg, thumb: b.thumbnail_image_path || "" };
+    return { id: code, title: b.title, author: b.book_type || "", strand: uiKey, level: window.TafiyaBooks ? TafiyaBooks.levelNum(b) : b.level, c: s.color, bg: s.bg, thumb: b.thumbnail_image_path || b.cover_image_path || "" };
   };
 
   // Signed-in reader's name + avatar colour (friendly demo fallback for visitors).
@@ -588,7 +552,6 @@ function DashChildPreview({ onNavigate }) {
           <a onClick={() => onNavigate("passport")}><span className="nav-icon" /> My Passport</a>
           <a onClick={() => onNavigate("library")}><span className="nav-icon" /> Library</a>
           <a><span className="nav-icon" /> Assignments</a>
-          <a><span className="nav-icon" /> Audio</a>
         </nav>
       </aside>
       <div className="dash-main">
@@ -891,6 +854,7 @@ function Footer() {
               <a href="#">12-level journey</a>
               <a href="#">Reading Passport</a>
               <a href="#">Library</a>
+              <a href="#">Haaraya Odyssey</a>
             </div>
           </div>
           <div>
@@ -898,7 +862,7 @@ function Footer() {
             <div className="links">
               <a href="#">Parents</a>
               <a href="#">Schools</a>
-              <a href="#">Diaspora families</a>
+              <a href="#">Families</a>
               <a href="#">Reading clubs &amp; churches</a>
               <a href="#">NGOs</a>
             </div>
@@ -907,7 +871,6 @@ function Footer() {
             <h5>Company</h5>
             <div className="links">
               <a href="#">About Haaraya</a>
-              <a href="#">Authors &amp; characters</a>
               <a href="#">Press</a>
               <a href="#">Contact</a>
               <a href="#">Careers</a>

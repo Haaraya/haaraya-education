@@ -18,7 +18,7 @@ const ODY_PATHWAY = [
 
 const ODY_MILESTONES = [
   { n: 1,   cap: "Set sail",       note: "Your first great book",  state: "done" },
-  { n: 10,  cap: "Bronze",         note: "First certificate",      state: "done" },
+  { n: 10,  cap: "Bronze",         note: "First milestone",         state: "done" },
   { n: 25,  cap: "Silver",         note: "Finding your stride",    state: "done" },
   { n: 50,  cap: "Halfway",        note: "Gold reader",            state: "now"  },
   { n: 75,  cap: "Voyager",        note: "The long haul",          state: "next" },
@@ -45,14 +45,6 @@ const ODY_ACHIEVEMENTS = [
   { name: "Odyssey Explorer", req: "6 categories", medal: "medal-explorer", glyph: "✦", state: "now" },
   { name: "Master Reader",   req: "75 books",  medal: "medal-master",   glyph: "75", state: "next" },
   { name: "Grand Voyager",   req: "100 books", medal: "medal-voyager",  glyph: "100", state: "next" },
-];
-
-const ODY_CERTS = [
-  { n: 10,  t: "First Milestone" },
-  { n: 25,  t: "Quarter Voyage" },
-  { n: 50,  t: "Halfway Mariner" },
-  { n: 75,  t: "Seasoned Voyager" },
-  { n: 100, t: "The Full Odyssey" },
 ];
 
 /* ============================================================
@@ -117,10 +109,9 @@ function OdysseyHero({ onNavigate }) {
           <div className="ody-hero-copy">
             <img
               className="ody-hero-logo"
-              src="assets/odyssey-logo-white-trim.png"
-              alt="Haaraya Odyssey"
+              src="assets/odyssey-logo-forest.png"
+              alt="Haaraya Odyssey — The 100 Book Challenge"
             />
-            <h1>The <span className="gold">100 Book</span> Challenge.</h1>
             <p className="ody-hero-tag">One Incredible Journey</p>
             <p className="ody-hero-sub">
               You can read anything now, so this is where reading becomes truly yours.
@@ -132,33 +123,27 @@ function OdysseyHero({ onNavigate }) {
               <button className="btn btn-gold btn-lg" onClick={() => onNavigate("odyssey-library")}>
                 Start the Odyssey <span aria-hidden="true">→</span>
               </button>
-              <button className="btn btn-ghost-light btn-lg" onClick={() => onNavigate("odyssey-library")}>
+              <button className="btn btn-ghost-dark btn-lg" onClick={() => onNavigate("odyssey-library")}>
                 Explore the Library
               </button>
             </div>
             <div className="ody-hero-meta">
               <div className="m"><span className="n">100</span><span className="l">Books</span></div>
               <div className="m"><span className="n">10</span><span className="l">Worlds to Explore</span></div>
-              <div className="m"><span className="n">6</span><span className="l">Achievement Ranks</span></div>
             </div>
           </div>
 
-          {/* [PLACEHOLDER: ODYSSEY MAP] / [PLACEHOLDER: ODYSSEY PASSPORT]
-              The image below is the temporary Tafiya journey artwork, kept only as a
-              stand-in. New Odyssey map & passport artwork will be produced elsewhere
-              and dropped into this slot; do not generate replacements here. */}
+          {/* Odyssey hero artwork */}
           <div className="ody-hero-art">
             <span className="ody-art-corner tl" aria-hidden="true"></span>
             <span className="ody-art-corner tr" aria-hidden="true"></span>
             <span className="ody-art-corner bl" aria-hidden="true"></span>
             <span className="ody-art-corner br" aria-hidden="true"></span>
-            <span className="ody-art-ph" aria-hidden="true">[PLACEHOLDER: ODYSSEY MAP + PASSPORT]</span>
-            <image-slot
-              id="odyssey-hero"
-              shape="rect"
-              placeholder="[PLACEHOLDER: ODYSSEY MAP + PASSPORT]: new Odyssey artwork goes here (temporary Tafiya map shown)"
-              src="assets/journey.png"
-            ></image-slot>
+            <img
+              className="ody-hero-img"
+              src="assets/odyssey_hero.png"
+              alt="An open storybook beside a lantern, compass and golden medals, looking out over an island sea at sunset"
+            />
           </div>
         </div>
       </div>
@@ -200,7 +185,7 @@ function OdysseyJourney() {
         <SectionHeader
           eyebrow="The reading journey"
           title="One hundred books. One great voyage."
-          lede="Every book moves you farther across your Odyssey map. Collect a certificate at each milestone and a badge for every rank you reach."
+          lede="Every book moves you farther across your Odyssey map, earning a badge for every rank you reach."
         />
         <div className="ody-journey-track" style={{ "--ody-progress": "42%" }}>
           {ODY_MILESTONES.map(m => (
@@ -325,36 +310,11 @@ function OdysseyAchievements() {
   );
 }
 
-function OdysseyCertificates() {
-  return (
-    <section className="ody-section ody-band-cream">
-      <div className="wrap">
-        <SectionHeader
-          center
-          eyebrow="Keepsakes"
-          title="Stamps, certificates and keepsakes."
-          lede="Every milestone leaves a mark: a passport stamp for each book, an expedition certificate at every stage, and printable keepsakes for the bedroom wall or the classroom display."
-        />
-        <div className="ody-certs">
-          {ODY_CERTS.map(c => (
-            <div key={c.n} className="ody-cert">
-              <div className="ody-cert-ph">[Certificate design to be supplied later]</div>
-              <div className="n">{c.n}<small>books</small></div>
-              <div className="t">{c.t}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function OdysseyParentsTeachers() {
   const points = [
     { h: "Track progress",       p: "See books read, streaks and categories at a glance, for one child or a whole class." },
-    { h: "Celebrate milestones", p: "Get a nudge whenever a child earns a badge or reaches a certificate milestone." },
+    { h: "Celebrate milestones", p: "Get a nudge whenever a child earns a badge or reaches a reading milestone." },
     { h: "Encourage independence", p: "The Odyssey is child-led. Readers choose their own books from a curated, age-right shelf." },
-    { h: "Printable certificates", p: "Generate and print milestone certificates for the wall, assembly or report card." },
   ];
   return (
     <section className="ody-section ody-band-sand">
@@ -411,15 +371,193 @@ function OdysseyCTA({ onNavigate }) {
         <h2>Your <span className="gold">odyssey</span> is waiting.</h2>
         <p>One hundred books. A lifetime of reading. It begins with a single page.</p>
         <div className="ody-cta-actions">
-          <button className="btn btn-gold btn-lg" onClick={() => onNavigate("odyssey-library")}>
-            Start the Odyssey <span aria-hidden="true">→</span>
+          <button className="btn btn-gold btn-lg btn-logo" aria-label="Start the Odyssey" onClick={() => onNavigate("odyssey-library")}>
+            <img className="btn-logo-odyssey" src="assets/odyssey-logo-forest.png" alt="The Odyssey" />
+            <span aria-hidden="true">→</span>
           </button>
-          <button className="btn btn-ghost-light btn-lg" onClick={() => onNavigate("home")}>
-            Back to Haaraya
+          <button className="btn btn-ghost-dark btn-lg btn-logo" aria-label="Back to Haaraya Literacy" onClick={() => onNavigate("home")}>
+            <img className="btn-logo-literacy" src="assets/logo-haaraya-literacy.png" alt="Haaraya Literacy" />
           </button>
         </div>
       </div>
     </section>
+  );
+}
+
+/* ============================================================
+   SIX STAGES / MEDAL CASE  (ported from the standalone Odyssey pages)
+   ============================================================ */
+const ODY_STAGE_DATA = (window.ODYSSEY && window.ODYSSEY.stages) ? window.ODYSSEY : {
+  totalBooks: 100, completedBooks: 22, currentBook: 23, reader: "Amaka",
+  stages: [
+    { name: "Wonder Stage",   medal: "Nsude Wonder",   medalFile: "odyssey_nsude_wonder.png",  start: 1,  end: 15  },
+    { name: "Explorer Stage", medal: "Ocean Explorer", medalFile: "odyssey_ocean_explorer.png", start: 16, end: 30  },
+    { name: "Story Stage",    medal: "Story Spell",    medalFile: "odyssey_story_spell.png",    start: 31, end: 45  },
+    { name: "Quest Stage",    medal: "Code Quest",     medalFile: "odyssey_code_quest.png",     start: 46, end: 60  },
+    { name: "Spark Stage",    medal: "Power Spark",    medalFile: "odyssey_power_spark.png",     start: 61, end: 80  },
+    { name: "Legend Stage",   medal: "Odyssey Legend", medalFile: "odyssey_legend.png",          start: 81, end: 100 }
+  ]
+};
+const ODY_LIGHT_IMG = {
+  empty:   "assets/odyssey-booklight-empty.png",
+  complete:"assets/odyssey-booklight-complete.png",
+  current: "assets/odyssey-booklight-current.png",
+};
+function odyLightState(n, O) {
+  if (n < O.currentBook) return "complete";
+  if (n === O.currentBook) return "current";
+  return "empty";
+}
+
+function OdysseyStages({ onNavigate }) {
+  const O = ODY_STAGE_DATA;
+  return (
+    <section className="ody-section ody-band-cream">
+      <div className="wrap">
+        <div className="odh-stages">
+          <div className="odh-stages-head">
+            <div className="eb">The Journey</div>
+            <h2>Six stages, six medals</h2>
+            <p>Travel stage by stage. Each one ends with a satin-gold medal for your case.</p>
+          </div>
+          <div className="odh-stage-row">
+            {O.stages.map((s, i) => {
+              let st, tag;
+              if (O.completedBooks >= s.end) { st = "done"; tag = "Unlocked"; }
+              else if (O.currentBook >= s.start && O.currentBook <= s.end) {
+                const done = Math.max(0, Math.min(s.end, O.completedBooks) - (s.start - 1));
+                st = "prog"; tag = `${done} / ${s.end - s.start + 1}`;
+              } else { st = "locked"; tag = "Locked"; }
+              return (
+                <div key={s.name} className={`odh-stage-card ${st}`}>
+                  <div className="medal"><img src={`assets/${s.medalFile}`} alt={`${s.medal} medal`} /></div>
+                  <div className="snum">Stage {i + 1}</div>
+                  <div className="sname">{s.name}</div>
+                  <div className="srange">Books {s.start}–{s.end}</div>
+                  <div className="stag">{tag}</div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="ody-stages-cta">
+            <button className="btn btn-gold btn-lg" onClick={() => onNavigate("odyssey-medals")}>
+              See my Medal Case <span aria-hidden="true">→</span>
+            </button>
+            <div className="ody-stages-note">
+              <h3>One hundred books. One great voyage.</h3>
+              <p>Every book moves you farther across your Odyssey map, earning a badge for every rank you reach.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function OdysseyMedals({ onNavigate }) {
+  const Footer = window.Footer;
+  const O = ODY_STAGE_DATA;
+  const pct = Math.round((O.completedBooks / O.totalBooks) * 100);
+  const unlocked = O.stages.filter(s => O.completedBooks >= s.end).length;
+  const titles = window.ODYSSEY_TITLES || {};
+  const codes = window.ODYSSEY_CODES || {};
+  const openBook = (code) => { if (code) onNavigate("odyssey-reader", { bookCode: code }); };
+  const lockSvg = (
+    <span className="lock">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#f6dfa1" strokeWidth="2">
+        <rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" />
+      </svg>
+    </span>
+  );
+  return (
+    <main className="odx ody-medals-page">
+      <section className="odm-head">
+        <div className="odx-wrap">
+          <button className="btn btn-ghost-dark btn-sm ody-medals-back" onClick={() => onNavigate("odyssey")}>← The Odyssey</button>
+          <p className="odm-eyebrow">Your Collection</p>
+          <h1>My Odyssey Medals</h1>
+          <p className="sub">Read 100 books. Light every book-light. Unlock every medal.</p>
+          <div className="odm-prog">
+            <div className="odm-prog-top">
+              <div className="n"><b>{O.completedBooks}</b> of {O.totalBooks} books completed</div>
+              <div className="pct">{pct}%</div>
+            </div>
+            <div className="odm-bar"><span style={{ width: pct + "%" }}></span></div>
+          </div>
+          <div className="odm-summary">
+            <div className="st"><div className="v"><em>{unlocked}</em> / 6</div><div className="l">Medals unlocked</div></div>
+            <div className="st"><div className="v">{O.completedBooks}</div><div className="l">Book-lights lit</div></div>
+            <div className="st"><div className="v">{O.totalBooks - O.completedBooks}</div><div className="l">Books to go</div></div>
+          </div>
+        </div>
+      </section>
+
+      <section className="odm-case-wrap">
+        <div className="odm-case">
+          <div className="odm-case-inner">
+            <div className="odm-crest">
+              <img className="odm-crest-logo" src="assets/odyssey-logo-white-trim.png" alt="The Odyssey · 100 Book Challenge" />
+              <span className="lbl">{O.reader ? `${O.reader}'s Medal Case` : "The Odyssey Medal Case"}</span>
+            </div>
+            <div className="odm-stations">
+              {O.stages.map((s, i) => {
+                const isLegend = i === O.stages.length - 1;
+                const total = s.end - s.start + 1;
+                const doneInStage = Math.max(0, Math.min(s.end, O.completedBooks) - (s.start - 1));
+                let state, statusTxt;
+                if (O.completedBooks >= s.end) { state = "unlocked"; statusTxt = "Medal unlocked"; }
+                else if (O.currentBook >= s.start && O.currentBook <= s.end) { state = "progress"; statusTxt = `${doneInStage} of ${total} read`; }
+                else { state = "locked"; statusTxt = "Locked"; }
+                const lights = [];
+                for (let n = s.start; n <= s.end; n++) {
+                  const ls = odyLightState(n, O);
+                  const bookTitle = titles[n] || ("Book " + n);
+                  const code = codes[n] || "";
+                  const clickable = (ls === "complete" || ls === "current") && code;
+                  const verb = ls === "current" ? "Continue reading" : "Open book";
+                  lights.push(
+                    <span
+                      key={n}
+                      className={"bl " + ls + (clickable ? " bl-link" : "")}
+                      tabIndex={0}
+                      role={clickable ? "button" : undefined}
+                      onClick={clickable ? () => openBook(code) : undefined}
+                      onKeyDown={clickable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openBook(code); } } : undefined}
+                      aria-label={`Book ${n}: ${bookTitle}`}
+                    >
+                      <img src={ODY_LIGHT_IMG[ls]} alt="" />
+                      <span className="bl-tip"><b>Book {n}</b>{bookTitle}{clickable ? <span className="bl-tip-go">{verb} →</span> : null}</span>
+                    </span>
+                  );
+                }
+                return (
+                  <React.Fragment key={s.name}>
+                    <div className={`odm-st ${state} ${isLegend ? "legend" : ""}`}>
+                      <div className="odm-slot">
+                        <img src={`assets/${s.medalFile}`} alt={`${s.medal} medal`} />
+                        {state === "unlocked" ? null : lockSvg}
+                      </div>
+                      <div className="s-no">Stage {i + 1}{isLegend ? " · Final" : ""}</div>
+                      <div className="s-name">{s.medal}</div>
+                      <div className="s-range">{s.name} · Books {s.start}–{s.end}</div>
+                      <div className="s-status"><span className="dot"></span>{statusTxt}</div>
+                      <div className="odm-lights">{lights}</div>
+                    </div>
+                    {(i === 1 || i === 3) ? <div className="odm-st-divider"></div> : null}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+            <div className="odm-legend-key">
+              <span className="k"><span className="sw"><img src={ODY_LIGHT_IMG.complete} alt="" /></span>Book read</span>
+              <span className="k"><span className="sw"><img src={ODY_LIGHT_IMG.current} alt="" /></span>Reading now</span>
+              <span className="k"><span className="sw"><img src={ODY_LIGHT_IMG.empty} alt="" /></span>Not yet</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      {Footer ? <Footer /> : null}
+    </main>
   );
 }
 
@@ -428,13 +566,10 @@ function OdysseyScreen({ onNavigate }) {
   return (
     <main className="ody-page">
       <OdysseyHero onNavigate={onNavigate} />
+      <OdysseyStages onNavigate={onNavigate} />
       <OdysseyPathwayBand />
-      <OdysseyJourney />
       <OdysseyDashboard />
       <OdysseyCategories />
-      <OdysseyAchievements />
-      <OdysseyCertificates />
-      <OdysseyParentsTeachers />
       <OdysseyShipmateScribe />
       <OdysseyCTA onNavigate={onNavigate} />
       {Footer ? <Footer /> : null}
@@ -443,5 +578,5 @@ function OdysseyScreen({ onNavigate }) {
 }
 
 Object.assign(window, {
-  OdysseySection, OdysseyScreen,
+  OdysseySection, OdysseyScreen, OdysseyMedals,
 });
