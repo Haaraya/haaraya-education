@@ -168,18 +168,21 @@
 
 /* ===== STORY PAGE ===== */
 .tfr .story { padding: 4cqh 8.5cqw; justify-content: flex-start; gap: 4cqh; overflow: hidden; }
+/* Constant illustration size on every page — it never grows or shrinks to
+   accommodate text, so it stays put from page to page. */
 .tfr .story-img {
-  position: relative; width: 100%; height: 58cqh; flex: 0 1 auto; min-height: 0;
+  position: relative; width: 100%; height: 58cqh; flex: 0 0 58cqh; min-height: 0;
   display: flex; align-items: center; justify-content: center; overflow: hidden;
 }
 .tfr .story-img img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
+/* The text takes the fixed band below and auto-fits (font-size driven by JS in
+   TfrPage) so short and long passages both fill it without moving the image. */
 .tfr .story-text {
-  position: relative; width: 100%; flex: 0 0 auto;
+  position: relative; width: 100%; flex: 1 1 0; min-height: 0; overflow: hidden;
   font-weight: 700; font-size: 6cqw; line-height: 1.27; color: var(--tfr-ink);
   text-align: left; text-wrap: pretty;
 }
-.tfr .story-text.is-single { text-align: center; font-size: 8cqw; line-height: 1.15; }
-.tfr .story-text.is-single.is-xl { font-size: 14cqw; }
+.tfr .story-text.is-single { text-align: center; line-height: 1.15; }
 .tfr .story-text.is-empty { color: var(--tfr-ink-faint); font-style: italic; }
 
 /* Keep the reader's own typography (Andika) on titles — the host app's
@@ -445,8 +448,8 @@
 .tfl-thumb {
   position: relative;
   width: 100%;
-  aspect-ratio: 148 / 210;
-  background: var(--cream, #FAFAF7);
+  aspect-ratio: 1 / 1;
+  background: #fff;
   border: 1px solid var(--sand, #EEEAE2);
   border-radius: 12px;
   overflow: hidden;

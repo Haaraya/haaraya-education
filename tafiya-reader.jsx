@@ -94,23 +94,37 @@ function TfrPage({ page, local }) {
   const text = tfrText(page.page_text);
   const textRef = useRefTfr(null);
   const [single, setSingle] = useStateTfr(false);
-  // Detect whether the text lands on a single visual line; if so we centre
-  // it and size it up (helps the sparse lower-level pages read big & bold).
+  // The illustration is a CONSTANT size on every page (see .story-img). The
+  // TEXT is what flexes: we auto-fit its font size to the fixed band below
+  // the image — growing a short sentence to fill it, shrinking a long one to
+  // fit — so the image never moves or resizes as you turn pages.
   useEffectTfr(() => {
-    const measure = () => {
-      const el = textRef.current;
-      if (!el) return;
-      const lh = parseFloat(getComputedStyle(el).lineHeight) || 0;
-      setSingle(!!text && lh > 0 && el.scrollHeight <= lh * 1.6);
+    const el = textRef.current;
+    if (!el) return;
+    const fit = () => {
+      el.style.fontSize = "";               // fall back to the CSS base size
+      if (!text) { setSingle(false); return; }
+      const base = parseFloat(getComputedStyle(el).fontSize) || 16;
+      const lh = parseFloat(getComputedStyle(el).lineHeight) || base * 1.27;
+      setSingle(el.scrollHeight <= lh * 1.6); // single short line → centre it
+      const avail = el.clientHeight;
+      const min = base * 0.5, max = base * 2.4;
+      let size = base, guard = 0;
+      while (size < max && el.scrollHeight <= avail && guard++ < 120) {
+        size += 1; el.style.fontSize = size + "px";
+      }
+      while (size > min && el.scrollHeight > avail && guard++ < 240) {
+        size -= 1; el.style.fontSize = size + "px";
+      }
     };
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
   }, [text]);
   return (
     <div className="surface story">
       <TfrImage className="story-img" path={page.image_path} local={local} label={"illustration · page " + page.page_number} />
-      <p ref={textRef} className={"story-text" + (text ? "" : " is-empty") + (single ? " is-single" : "") + (single && text.trim().split(/\s+/).length <= 2 ? " is-xl" : "")}>{text || "Story text will appear here"}</p>
+      <p ref={textRef} className={"story-text" + (text ? "" : " is-empty") + (single ? " is-single" : "")}>{text || "Story text will appear here"}</p>
     </div>
   );
 }

@@ -71,10 +71,10 @@ function HeroPassportPreview() {
 
 function HowItWorks() {
   const steps = [
-    { n: 1, title: "Open a passport",   desc: "Each child gets a Reading Passport that grows with them — their reading identity, in one place." },
-    { n: 2, title: "Read and explore",  desc: "Illustrated Nigerian books across ten strands. Readable books and printable keepsakes. Not a worksheet dump." },
-    { n: 3, title: "Collect stamps",    desc: "Finish a book, earn a stamp. Finish a level, earn a badge. The journey becomes a keepsake." },
-    { n: 4, title: "Move up 12 levels", desc: "From first words to confident reader. Parents, teachers, and the system all guide what's next." },
+    { n: 1, title: "Open a passport",   img: "assets/how-coin-passport.png", desc: "Each child gets a Reading Passport that grows with them — their reading identity, in one place." },
+    { n: 2, title: "Read and explore",  img: "assets/how-coin-explore.png",  desc: "Illustrated Nigerian books across ten strands. Readable books and printable keepsakes. Not a worksheet dump." },
+    { n: 3, title: "Collect stamps",    img: "assets/how-coin-stamps.png",   desc: "Finish a book, earn a stamp. Finish a level, earn a badge. The journey becomes a keepsake." },
+    { n: 4, title: "Move up 12 levels", img: "assets/how-coin-levels.png",   desc: "From first words to confident reader. Parents, teachers, and the system all guide what's next." },
   ];
   return (
     <section className="section-cream tight how-section">
@@ -90,10 +90,9 @@ function HowItWorks() {
           <span className="steps-route" aria-hidden="true"></span>
           {steps.map((s, i) => (
             <div className="step" key={s.n}>
-              <div className="step-stamp" aria-hidden="true">
-                <span className="step-stamp-ring"></span>
-                <span className="step-stamp-num">{s.n}</span>
-                <span className="step-stamp-label">CHKPT</span>
+              <div className="step-coin">
+                <img src={s.img} alt="" />
+                <span className="step-coin-num" aria-hidden="true">{s.n}</span>
               </div>
               <h4>{s.title}</h4>
               <p>{s.desc}</p>
