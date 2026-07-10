@@ -1,12 +1,12 @@
 /* ============================================================
    Haaraya — Odyssey Library
    The 100 Book Odyssey: long-form chapter books across three
-   streams (Knowledge, Classics, Estate Fiction) and three
-   levels (13–15). A filterable catalogue of typographic covers
-   plus a calm chapter reader.
+   streams (Knowledge, Classics, Estate Fiction) and six
+   stages (by book number). A filterable catalogue of typographic
+   covers plus a calm chapter reader.
 
    Data:
-     data/odyssey-catalog.json        — 99 book summaries
+     data/odyssey-catalog.json        — 100 book summaries
      data/odyssey/<CODE>.json         — chapters + pages per book
    ============================================================ */
 const { useState: useStateOL, useEffect: useEffectOL, useMemo: useMemoOL, useRef: useRefOL } = React;
@@ -19,6 +19,33 @@ const OL_STREAMS = {
   "Estate Fiction": { key: "st", label: "Tafiya Tales", ink: "#3a2708", accent: "#c17d1a", soft: "#f8ecd7", tag: "Estate stories" },
 };
 function olStream(name) { return OL_STREAMS[name] || OL_STREAMS["Knowledge"]; }
+
+/* ---- the ten worlds (accent + collectible token, shared with the Odyssey map) ---- */
+const OL_WORLDS = {
+  stories:   { key: "stories",   label: "Tafiya Tales", accent: "#228B22", token: "assets/w-stories.png"   },
+  adventure: { key: "adventure", label: "Adventure", accent: "#E65100", token: "assets/w-adventure.png" },
+  mystery:   { key: "mystery",   label: "Mystery",   accent: "#5E35B1", token: "assets/w-mystery.png"   },
+  science:   { key: "science",   label: "Science",   accent: "#00838F", token: "assets/w-science.png"   },
+  nature:    { key: "nature",    label: "Nature",    accent: "#2E7D32", token: "assets/w-nature.png"    },
+  history:   { key: "history",   label: "History",   accent: "#8D6E63", token: "assets/w-history.png"   },
+  biography: { key: "biography", label: "Biography", accent: "#283593", token: "assets/w-biography.png" },
+  geography: { key: "geography", label: "Geography", accent: "#0277BD", token: "assets/w-geography.png" },
+  poetry:    { key: "poetry",    label: "Poetry",    accent: "#AD1457", token: "assets/w-poetry.png"    },
+  culture:   { key: "culture",   label: "Culture",   accent: "#B26A00", token: "assets/w-culture.png"   },
+};
+const OL_WORLD_ORDER = ["stories","adventure","mystery","science","nature","history","biography","geography","poetry","culture"];
+function olWorld(key) { return OL_WORLDS[key] || OL_WORLDS.stories; }
+
+/* ---- Odyssey stages (by book number) ---- */
+const OL_STAGES = [
+  { no: 1, name: "Wonder",   start: 1,  end: 15  },
+  { no: 2, name: "Explorer", start: 16, end: 30  },
+  { no: 3, name: "Story",    start: 31, end: 45  },
+  { no: 4, name: "Quest",    start: 46, end: 60  },
+  { no: 5, name: "Spark",    start: 61, end: 80  },
+  { no: 6, name: "Legend",   start: 81, end: 100 },
+];
+function olStageOf(n) { return OL_STAGES.find(st => n >= st.start && n <= st.end) || OL_STAGES[OL_STAGES.length - 1]; }
 
 /* ---- tiny data layer (cached) ---- */
 const OL_cache = { catalog: null, books: {} };
@@ -40,14 +67,14 @@ async function olLoadBook(code) {
    BOOK COVER — typographic, per-stream
    ============================================================ */
 function OdysseyCover({ book, onOpen }) {
-  const s = olStream(book.stream);
+  const w = olWorld(book.world);
   const soon = book.status === "coming_soon";
   return (
-    <button className={"olc olc--" + s.key + (book.capstone ? " olc--capstone" : "")} type="button" onClick={() => onOpen(book.code)}
-      style={{ "--ol-ink": s.ink, "--ol-accent": s.accent }}>
+    <button className={"olc olc--world" + (book.capstone ? " olc--capstone" : "")} type="button" onClick={() => onOpen(book.code)}
+      style={{ "--ol-ink": "#241a10", "--ol-accent": w.accent }}>
       <span className="olc-spine" aria-hidden="true"></span>
       <span className="olc-top">
-        <span className="olc-stream">{book.capstone ? "The Final Book" : s.label}</span>
+        <span className="olc-stream">{book.capstone ? "The Final Book" : w.label}</span>
         <span className="olc-num">{String(book.n).padStart(2, "0")}</span>
       </span>
       <span className="olc-title">{book.title}</span>
@@ -56,13 +83,12 @@ function OdysseyCover({ book, onOpen }) {
           <span className="olc-soon">Coming soon</span>
         ) : (
           <React.Fragment>
-            <span className="olc-lvl">Level {book.level}</span>
+            <span className="olc-lvl">Stage {olStageOf(book.n).no}</span>
             <span className="olc-dot" aria-hidden="true">•</span>
             <span className="olc-ch">{book.chapterCount} chapters</span>
           </React.Fragment>
         )}
       </span>
-      <span className="olc-emblem" aria-hidden="true">✦</span>
     </button>
   );
 }
@@ -70,11 +96,11 @@ function OdysseyCover({ book, onOpen }) {
 /* ============================================================
    LIBRARY SCREEN
    ============================================================ */
-function OdysseyLibraryScreen({ onNavigate, initialLevel, initialStream }) {
+function OdysseyLibraryScreen({ onNavigate, initialLevel, initialStream, initialWorld }) {
   const [catalog, setCatalog] = useStateOL(null);
   const [q, setQ] = useStateOL("");
-  const [level, setLevel] = useStateOL(initialLevel ? String(initialLevel) : "all");
-  const [stream, setStream] = useStateOL(initialStream || "all");
+  const [stage, setStage] = useStateOL("all");
+  const [world, setWorld] = useStateOL(initialWorld || "all");
 
   useEffectOL(() => { olLoadCatalog().then(setCatalog); }, []);
 
@@ -82,17 +108,17 @@ function OdysseyLibraryScreen({ onNavigate, initialLevel, initialStream }) {
     if (!catalog) return [];
     const needle = q.trim().toLowerCase();
     return catalog.filter(b => {
-      if (level !== "all" && String(b.level) !== level) return false;
-      if (stream !== "all" && b.stream !== stream) return false;
+      if (stage !== "all" && String(olStageOf(b.n).no) !== stage) return false;
+      if (world !== "all" && b.world !== world) return false;
       if (needle && !(b.title.toLowerCase().includes(needle) || b.code.toLowerCase().includes(needle))) return false;
       return true;
     });
-  }, [catalog, q, level, stream]);
+  }, [catalog, q, stage, world]);
 
   const openBook = (code) => onNavigate("odyssey-reader", { bookCode: code });
 
-  const levels = ["13", "14", "15"];
-  const streams = Object.keys(OL_STREAMS);
+  const stages = ["1", "2", "3", "4", "5", "6"];
+  const activeWorld = world !== "all" ? olWorld(world) : null;
 
   return (
     <div className="ol-screen">
@@ -100,12 +126,30 @@ function OdysseyLibraryScreen({ onNavigate, initialLevel, initialStream }) {
         <div className="ol-head-wrap">
           <button className="ol-back" type="button" onClick={() => onNavigate("odyssey")}>← The Odyssey</button>
           <div className="ol-head-titles">
-            <span className="ol-eyebrow">The 100 Book Odyssey</span>
-            <h1 className="ol-h1">The Odyssey Library</h1>
-            <p className="ol-sub">Ninety-nine great books to carry you from Level 13 to the top of the climb — knowledge, classics, and stories from the estate.</p>
+            <img className="ol-logo" src="assets/odyssey-logo-forest.png" alt="The 100 Book Odyssey · The Odyssey Library" />
+            <p className="ol-sub">One hundred great books across ten worlds — from Stories and Adventure to Science, History and Poetry. Explore one world, or read the whole map.</p>
           </div>
         </div>
       </header>
+
+      <div className="ol-worlds-wrap">
+        <div className="ol-worlds-head">
+          <span className="ol-worlds-title">Explore by world</span>
+          <button className={"ol-worlds-all" + (world === "all" ? " on" : "")} onClick={() => setWorld("all")}>All worlds</button>
+        </div>
+        <div className="ol-worlds" role="group" aria-label="World">
+          {OL_WORLD_ORDER.map(k => {
+            const w = OL_WORLDS[k];
+            return (
+              <button key={k} className={"ol-world" + (world === k ? " on" : "")}
+                style={{ "--w": w.accent }} onClick={() => setWorld(world === k ? "all" : k)}>
+                <span className="ol-world-tok-wrap"><img className="ol-world-tok" src={w.token} alt="" loading="lazy" /></span>
+                <span className="ol-world-lbl">{w.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       <div className="ol-controls">
         <div className="ol-search">
@@ -113,18 +157,9 @@ function OdysseyLibraryScreen({ onNavigate, initialLevel, initialStream }) {
           <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="Search by title or code…" />
         </div>
         <div className="ol-filters">
-          <div className="ol-seg" role="group" aria-label="Level">
-            <button className={level === "all" ? "on" : ""} onClick={() => setLevel("all")}>All levels</button>
-            {levels.map(l => <button key={l} className={level === l ? "on" : ""} onClick={() => setLevel(l)}>L{l}</button>)}
-          </div>
-          <div className="ol-seg" role="group" aria-label="Stream">
-            <button className={stream === "all" ? "on" : ""} onClick={() => setStream("all")}>All streams</button>
-            {streams.map(s => (
-              <button key={s} className={stream === s ? "on" : ""} onClick={() => setStream(s)}
-                style={stream === s ? { background: olStream(s).accent, borderColor: olStream(s).accent } : {}}>
-                {olStream(s).label}
-              </button>
-            ))}
+          <div className="ol-seg" role="group" aria-label="Stage">
+            <button className={stage === "all" ? "on" : ""} onClick={() => setStage("all")}>All stages</button>
+            {stages.map(l => <button key={l} className={stage === l ? "on" : ""} onClick={() => setStage(l)}>S{l}</button>)}
           </div>
         </div>
       </div>
@@ -133,7 +168,7 @@ function OdysseyLibraryScreen({ onNavigate, initialLevel, initialStream }) {
         <div className="ol-loading">Opening the library…</div>
       ) : (
         <React.Fragment>
-          <div className="ol-count">{filtered.length} {filtered.length === 1 ? "book" : "books"}</div>
+          <div className="ol-count">{filtered.length} {filtered.length === 1 ? "book" : "books"}{activeWorld ? " in " + activeWorld.label : ""}</div>
           <div className="ol-grid">
             {filtered.map(b => <OdysseyCover key={b.code} book={b} onOpen={openBook} />)}
           </div>

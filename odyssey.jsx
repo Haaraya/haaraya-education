@@ -18,10 +18,10 @@ const ODY_PATHWAY = [
 
 /* "How it fits" — collectible storybook milestone plaques */
 const ODY_FIT = [
-  { k: "Learn to Read",        s: "Phonics & first words",     token: "assets/odyssey-tokens/learn.png", theme: "green" },
-  { k: "Become a Reader",      s: "12 levels, fluent at last", token: "assets/odyssey-tokens/become.png",  theme: "olive" },
-  { k: "The Haaraya Odyssey",  s: "Reading to learn",          token: "assets/odyssey-tokens/odyssey.png", theme: "navy", hero: true },
-  { k: "Read 100 Great Books", s: "A lifetime of reading",     token: "assets/odyssey-tokens/books.png",   theme: "gold" },
+  { k: "Learn to Read",        s: "Phonics & first words",     token: "assets/learn.png", theme: "green" },
+  { k: "Become a Reader",      s: "12 levels, fluent at last", token: "assets/become.png",  theme: "olive" },
+  { k: "The Haaraya Odyssey",  s: "Reading to learn",          token: "assets/odyssey.png", theme: "navy", hero: true },
+  { k: "Read 100 Great Books", s: "A lifetime of reading",     token: "assets/books.png",   theme: "gold" },
 ];
 
 const ODY_MILESTONES = [
@@ -34,16 +34,16 @@ const ODY_MILESTONES = [
 ];
 
 const ODY_CATEGORIES = [
-  { key: "stories",   name: "Stories",   cls: "ody-cat-stories",   desc: "Novels, tales and worlds to get lost inside.",            n: 18, token: "assets/odyssey-tokens/w-stories.png"   },
-  { key: "adventure", name: "Adventure", cls: "ody-cat-adventure", desc: "Journeys, quests and daring escapes.",                    n: 12, token: "assets/odyssey-tokens/w-adventure.png" },
-  { key: "mystery",   name: "Mystery",   cls: "ody-cat-mystery",   desc: "Clues, puzzles and secrets to unravel.",                  n: 8,  token: "assets/odyssey-tokens/w-mystery.png"   },
-  { key: "science",   name: "Science",   cls: "ody-cat-science",   desc: "How the world works, from atoms to galaxies.",            n: 11, token: "assets/odyssey-tokens/w-science.png"   },
-  { key: "nature",    name: "Nature",    cls: "ody-cat-nature",    desc: "Animals, plants and the living planet.",                  n: 10, token: "assets/odyssey-tokens/w-nature.png"    },
-  { key: "history",   name: "History",   cls: "ody-cat-history",   desc: "Empires, heroes and the story of us.",                    n: 9,  token: "assets/odyssey-tokens/w-history.png"   },
-  { key: "biography", name: "Biography", cls: "ody-cat-biography", desc: "Real lives that changed the world.",                      n: 8,  token: "assets/odyssey-tokens/w-biography.png" },
-  { key: "geography", name: "Geography", cls: "ody-cat-geography", desc: "Places, peoples and journeys across the map.",            n: 7,  token: "assets/odyssey-tokens/w-geography.png" },
-  { key: "poetry",    name: "Poetry",    cls: "ody-cat-poetry",    desc: "Rhythm, verse and words that sing.",                      n: 9,  token: "assets/odyssey-tokens/w-poetry.png"    },
-  { key: "culture",   name: "Culture",   cls: "ody-cat-culture",   desc: "Traditions, festivals and life across Nigeria.",          n: 8,  token: "assets/odyssey-tokens/w-culture.png"   },
+  { key: "stories",   name: "Tafiya Tales", cls: "ody-cat-stories",   desc: "Novels, tales and worlds to get lost inside.",            n: 18, token: "assets/w-stories.png"   },
+  { key: "adventure", name: "Adventure", cls: "ody-cat-adventure", desc: "Journeys, quests and daring escapes.",                    n: 12, token: "assets/w-adventure.png" },
+  { key: "mystery",   name: "Mystery",   cls: "ody-cat-mystery",   desc: "Clues, puzzles and secrets to unravel.",                  n: 8,  token: "assets/w-mystery.png"   },
+  { key: "science",   name: "Science",   cls: "ody-cat-science",   desc: "How the world works, from atoms to galaxies.",            n: 11, token: "assets/w-science.png"   },
+  { key: "nature",    name: "Nature",    cls: "ody-cat-nature",    desc: "Animals, plants and the living planet.",                  n: 10, token: "assets/w-nature.png"    },
+  { key: "history",   name: "History",   cls: "ody-cat-history",   desc: "Empires, heroes and the story of us.",                    n: 9,  token: "assets/w-history.png"   },
+  { key: "biography", name: "Biography", cls: "ody-cat-biography", desc: "Real lives that changed the world.",                      n: 8,  token: "assets/w-biography.png" },
+  { key: "geography", name: "Geography", cls: "ody-cat-geography", desc: "Places, peoples and journeys across the map.",            n: 7,  token: "assets/w-geography.png" },
+  { key: "poetry",    name: "Poetry",    cls: "ody-cat-poetry",    desc: "Rhythm, verse and words that sing.",                      n: 9,  token: "assets/w-poetry.png"    },
+  { key: "culture",   name: "Culture",   cls: "ody-cat-culture",   desc: "Traditions, festivals and life across Nigeria.",          n: 8,  token: "assets/w-culture.png"   },
 ];
 
 const ODY_ACHIEVEMENTS = [
@@ -276,7 +276,7 @@ function OdysseyDashboard() {
   );
 }
 
-function OdysseyCategories() {
+function OdysseyCategories({ onNavigate }) {
   return (
     <section className="ody-section ody-band-sand">
       <div className="wrap">
@@ -287,15 +287,15 @@ function OdysseyCategories() {
         />
         <div className="ody-cats">
           {ODY_CATEGORIES.map(c => (
-            <article key={c.key} className={`ody-cat ${c.cls}`}>
-              <span className="ody-cat-count">{c.n} books</span>
+            <button key={c.key} type="button" className={`ody-cat ${c.cls}`}
+              onClick={() => onNavigate && onNavigate("odyssey-library", { world: c.key })}>
               <div className="ody-cat-token">
                 <img src={c.token} alt="" loading="lazy" />
               </div>
               <h4>{c.name}</h4>
               <p>{c.desc}</p>
               <span className="ody-cat-go">Explore this world <span aria-hidden="true">→</span></span>
-            </article>
+            </button>
           ))}
         </div>
       </div>
@@ -365,7 +365,7 @@ function OdysseyShipmateScribe() {
           center
           eyebrow="Shipmate Scribe"
           title="The Captain speaks. The Shipmate writes."
-          lede="After every book, jot a few Captain’s Notes. Your loyal Shipmate Scribe spins them into a short adventure log for your Odyssey — in your own words, never invented."
+          lede="After every book, jot a few Captain’s Notes. Your loyal Shipmate Scribe spins them into a short adventure log for your Odyssey."
         />
         <div className="ody-scribe-cta">
           {ScribeUI ? (
@@ -584,7 +584,7 @@ function OdysseyScreen({ onNavigate }) {
       <OdysseyHero onNavigate={onNavigate} />
       <OdysseyStages onNavigate={onNavigate} />
       <OdysseyPathwayBand />
-      <OdysseyCategories />
+      <OdysseyCategories onNavigate={onNavigate} />
       <OdysseyShipmateScribe />
       <OdysseyCTA onNavigate={onNavigate} />
       {Footer ? <Footer /> : null}

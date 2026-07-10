@@ -297,7 +297,7 @@ function App() {
   }, []);
 
   // Hash-based router (access-gated)
-  const validScreens = ["home","passport","child","parent","library","reader","teacher","school","admin","odyssey","odyssey-library","odyssey-reader", "odyssey-medals"];
+  const validScreens = ["home","passport","child","parent","library","reader","teacher","school","admin","odyssey","odyssey-library","odyssey-reader","odyssey-medals"];
   const [screen, setScreen] = useStateApp(() => {
     // Default: always open on Home (accessible to every role) so a downloaded /
     // shared copy lands predictably regardless of the last session role.
@@ -317,7 +317,18 @@ function App() {
     }
     return dest;
   });
-  const [params, setParams] = useStateApp({});
+  const [params, setParams] = useStateApp(() => {
+    // One-time deep-link handoff: a standalone page (e.g. My Odyssey Medals)
+    // can open a specific book by stashing its code alongside haaraya:landing.
+    try {
+      const bookCode = sessionStorage.getItem("haaraya:landing-book");
+      if (bookCode) {
+        sessionStorage.removeItem("haaraya:landing-book");
+        return { bookCode: bookCode };
+      }
+    } catch (e) { /* ignore */ }
+    return {};
+  });
 
   useEffectApp(() => {
     const onHash = () => {
@@ -386,6 +397,8 @@ function App() {
     school:   "08 School Admin Dashboard",
     admin:    "09 Haaraya Admin Dashboard",
     odyssey:  "10 Haaraya Odyssey",
+    "odyssey-library": "11 Odyssey Library",
+    "odyssey-reader":  "12 Odyssey Reader",
     "odyssey-medals":  "13 Odyssey Medal Case",
   })[screen];
 
@@ -415,7 +428,7 @@ function App() {
       {booted && screen === "school"   && <SchoolAdminDashScreen onNavigate={navigate} />}
       {booted && screen === "admin"    && <HaarayaAdminDashScreen onNavigate={navigate} />}
       {booted && screen === "odyssey"  && <OdysseyScreen onNavigate={navigate} />}
-      {booted && screen === "odyssey-library" && <OdysseyLibraryScreen onNavigate={navigate} initialLevel={params.levelId} initialStream={params.stream} />}
+      {booted && screen === "odyssey-library" && <OdysseyLibraryScreen onNavigate={navigate} initialLevel={params.levelId} initialStream={params.stream} initialWorld={params.world} />}
       {booted && screen === "odyssey-reader"  && <OdysseyBookReader code={params.bookCode} onNavigate={navigate} />}
       {booted && screen === "odyssey-medals"  && <OdysseyMedals onNavigate={navigate} />}
 
