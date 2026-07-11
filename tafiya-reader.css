@@ -530,22 +530,7 @@
   max-width: 460px;
   flex: 1 1 320px;
 }
-.tfl-sample-link {
-  border: none;
-  background: none;
-  padding: 0;
-  font: inherit;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--forest, #2E9D4F);
-  cursor: pointer;
-  white-space: nowrap;
-  text-decoration: underline;
-  text-decoration-color: transparent;
-  transition: text-decoration-color .15s ease;
-}
-.tfl-sample-link:hover { text-decoration-color: currentColor; }
-.tfl-sample-link.active { color: var(--ink, #22351F); }
+.tfl-sample-chip { flex: 0 0 auto; white-space: nowrap; }
 .tfl-search-icon {
   position: absolute;
   left: 16px;

@@ -1300,12 +1300,12 @@ function LibraryScreen({ onNavigate, initialLevel }) {
               <button className="tfl-search-clear" onClick={() => setQuery("")} aria-label="Clear search">×</button>
             )}
           </div>
-          <button
-            className={"tfl-sample-link" + (sampleOnly ? " active" : "")}
+          <span
+            className={`filter-chip tfl-sample-chip ${sampleOnly ? "active" : ""}`}
             onClick={() => setSampleOnly(s => !s)}
           >
-            {sampleOnly ? "Showing sample books" : `Sample books · ${window.TafiyaData ? window.TafiyaData.SAMPLE_LIMIT : 15} to try free`}
-          </button>
+            {`Sample books · ${window.TafiyaData ? window.TafiyaData.SAMPLE_LIMIT : 15} free`}
+          </span>
         </div>
 
         {/* Strand filter — one shared 6-col grid so both rows align on the right.
