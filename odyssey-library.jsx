@@ -33,7 +33,7 @@ const OL_WORLDS = {
   poetry:    { key: "poetry",    label: "Poetry",    accent: "#AD1457", token: "assets/w-poetry.png"    },
   culture:   { key: "culture",   label: "Culture",   accent: "#B26A00", token: "assets/w-culture.png"   },
 };
-const OL_WORLD_ORDER = ["stories","adventure","mystery","science","nature","history","biography","geography","poetry","culture"];
+const OL_WORLD_ORDER = Object.keys(OL_WORLDS).sort((a, b) => OL_WORLDS[a].label.localeCompare(OL_WORLDS[b].label));
 function olWorld(key) { return OL_WORLDS[key] || OL_WORLDS.stories; }
 
 /* ---- Odyssey stages (by book number) ---- */
