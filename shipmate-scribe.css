@@ -213,9 +213,37 @@
 .nextup-scribe .q { font-size: 17px; }
 
 /* ---- Odyssey page: Captain's Log section ---- */
+.ody-scribe-preview {
+  margin: 6px auto 30px; max-width: min(880px, 92%);
+}
+.ody-scribe-preview img {
+  display: block; width: 100%; height: auto; border-radius: 10px;
+  box-shadow: 0 24px 60px rgba(10,20,30,.42), 0 3px 10px rgba(10,20,30,.28);
+}
+.ody-scribe-preview figcaption {
+  margin-top: 12px; text-align: center;
+  font-family: var(--font-display, Georgia, serif); font-style: italic;
+  font-size: 15px; color: var(--ink-warm-mid, #6b5a3c);
+}
 .ody-scribe-cta {
   display: flex; align-items: center; gap: 22px; flex-wrap: wrap; justify-content: center;
   text-align: center; max-width: 720px; margin: 0 auto;
+}
+.ody-scribe-pick {
+  display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; justify-content: center;
+}
+.ody-scribe-pick-field {
+  display: flex; flex-direction: column; gap: 6px; text-align: left;
+}
+.ody-scribe-pick-field > span {
+  font-size: 13px; font-weight: 600; letter-spacing: .02em;
+  color: rgba(255,255,255,.72);
+}
+.ody-scribe-pick-field select {
+  min-width: 260px; max-width: 340px; padding: 10px 14px;
+  font: inherit; font-size: 15px; color: var(--ink, #2a2118);
+  background: #fffdf7; border: 1px solid rgba(255,255,255,.28);
+  border-radius: 8px; cursor: pointer;
 }
 .ody-scribe-demo {
   font: inherit; font-weight: 800; font-size: 15px; cursor: pointer;

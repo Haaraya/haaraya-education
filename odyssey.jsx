@@ -5,7 +5,7 @@
    Extends the existing Haaraya component + design system.
    ============================================================ */
 
-const { useState: useStateOdy } = React;
+const { useState: useStateOdy, useEffect: useEffectOdy } = React;
 
 /* Shared data ------------------------------------------------ */
 
@@ -131,8 +131,8 @@ function OdysseyHero({ onNavigate }) {
               <button className="btn btn-gold btn-lg" onClick={() => onNavigate("odyssey-library")}>
                 Start the Odyssey <span aria-hidden="true">→</span>
               </button>
-              <button className="btn btn-ghost-dark btn-lg" onClick={() => onNavigate("odyssey-library")}>
-                Explore the Library
+              <button className="btn btn-ghost-dark btn-lg" onClick={() => onNavigate("odyssey-log")}>
+                View Your Captain's Log
               </button>
             </div>
             <div className="ody-hero-meta">
@@ -356,10 +356,30 @@ function OdysseyParentsTeachers() {
 
 function OdysseyShipmateScribe() {
   const [open, setOpen] = useStateOdy(false);
+  const [catalog, setCatalog] = useStateOdy([]);
+  const [pickCode, setPickCode] = useStateOdy("");
   const ScribeUI = window.ShipmateScribeUI;
-  const demoBook = { book_code: "book_012", book_title: "The Red Cap", book_number: 12, level: "Level 3" };
+
+  useEffectOdy(() => {
+    let alive = true;
+    fetch("data/odyssey-catalog.json")
+      .then(r => r.json())
+      .then(list => {
+        if (!alive || !Array.isArray(list) || !list.length) return;
+        setCatalog(list);
+        setPickCode(list[0].code);
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  const entry = catalog.find(b => b.code === pickCode) || null;
+  const demoBook = entry
+    ? { book_code: entry.code, book_title: entry.title, book_number: entry.n, level: "Level " + entry.level }
+    : { book_code: "demo", book_title: "This book", book_number: null, level: "Level 3" };
+
   return (
-    <section className="ody-section ody-band-deep">
+    <section className="ody-section ody-band-deep" id="captains-log">
       <div className="wrap">
         <SectionHeader
           center
@@ -367,11 +387,27 @@ function OdysseyShipmateScribe() {
           title="The Captain speaks. The Shipmate writes."
           lede="After every book, jot a few Captain’s Notes. Your loyal Shipmate Scribe spins them into a short adventure log for your Odyssey."
         />
+        <figure className="ody-scribe-preview">
+          <img src="assets/captains-log-demo.png" alt="A sample Captain's Log entry for “Down the Rabbit Hole” — Captain's Notes on the left, the Shipmate Scribe's log yarn on the right." />
+          <figcaption>A finished entry, spun from a young Captain’s notes.</figcaption>
+        </figure>
         <div className="ody-scribe-cta">
           {ScribeUI ? (
-            <button className="ody-scribe-demo" type="button" onClick={() => setOpen(true)}>
-              <span aria-hidden="true">&#x1F58B;</span> Try the Captain’s Log
-            </button>
+            <div className="ody-scribe-pick">
+              {catalog.length ? (
+                <label className="ody-scribe-pick-field">
+                  <span>Which book are you logging?</span>
+                  <select value={pickCode} onChange={e => setPickCode(e.target.value)}>
+                    {catalog.map(b => (
+                      <option key={b.code} value={b.code}>{`Book ${b.n} — ${b.title}`}</option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              <button className="ody-scribe-demo" type="button" onClick={() => setOpen(true)}>
+                <span aria-hidden="true">&#x1F58B;</span> Try the Captain’s Log
+              </button>
+            </div>
           ) : null}
         </div>
       </div>
@@ -459,6 +495,9 @@ function OdysseyStages({ onNavigate }) {
             <button className="btn btn-gold btn-lg" onClick={() => onNavigate("odyssey-medals")}>
               See my Medal Case <span aria-hidden="true">→</span>
             </button>
+            <button className="btn btn-ghost-dark btn-lg" onClick={() => onNavigate("odyssey-log")}>
+              My Captain's Log
+            </button>
             <div className="ody-stages-note">
               <h3>One hundred books. One great voyage.</h3>
               <p>Every book moves you farther across your Odyssey map, earning a badge for every rank you reach.</p>
@@ -492,8 +531,7 @@ function OdysseyMedals({ onNavigate }) {
           <button className="btn btn-ghost-dark btn-sm ody-medals-back" onClick={() => onNavigate("odyssey")}>← The Odyssey</button>
           <p className="odm-eyebrow">Your Collection</p>
           <h1>My Odyssey Medals</h1>
-          <p className="sub">Read 100 books. Light every book-light. Unlock every medal.</p>
-          <div className="odm-prog">
+          <p className="sub">Read 100 books. Light every book-light. Unlock every medal.</p>          <div className="odm-prog">
             <div className="odm-prog-top">
               <div className="n"><b>{O.completedBooks}</b> of {O.totalBooks} books completed</div>
               <div className="pct">{pct}%</div>
@@ -505,6 +543,9 @@ function OdysseyMedals({ onNavigate }) {
             <div className="st"><div className="v">{O.completedBooks}</div><div className="l">Book-lights lit</div></div>
             <div className="st"><div className="v">{O.totalBooks - O.completedBooks}</div><div className="l">Books to go</div></div>
           </div>
+          <button className="btn btn-ghost-dark btn-sm odm-log-link" onClick={() => onNavigate("odyssey-log")}>
+            View my Captain's Log →
+          </button>
         </div>
       </section>
 

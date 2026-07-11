@@ -1,0 +1,111 @@
+/* ============================================================
+   My Captain's Log — everything lives on the illustrated page
+   (assets/captains-log-page-clean.png, 1448x1086). All positions
+   below are percentages of that image so they scale with it.
+   ============================================================ */
+
+.ody-log-page {
+  background:
+    radial-gradient(120% 90% at 50% -10%, rgba(185,138,60,.10), transparent 55%),
+    linear-gradient(180deg, var(--parch-hi) 0%, var(--parch) 100%);
+  min-height: 100vh;
+  padding-bottom: 60px;
+}
+
+.odl-back { display: block; width: max-content; margin: 24px auto 0; }
+
+.odl-hero {
+  position: relative;
+  width: min(1100px, 94vw);
+  margin: 18px auto 0;
+}
+.odl-hero-img { display: block; width: 100%; height: auto; border-radius: 6px; }
+
+/* shared positioning system: absolute, percentage of the hero image */
+.odl-header-overlay, .odl-entry-overlay, .odl-status {
+  position: absolute; inset: 0;
+}
+.odl-hit { position: absolute; background: none; border: none; cursor: pointer; padding: 0; }
+.odl-hit-add   { left: 41.7%; top: 21%;   width: 17%;   height: 4.3%; }
+.odl-hit-edit  { left: 71.5%; top: 82.3%; width: 10.7%; height: 4.7%; }
+
+.odl-ov { position: absolute; }
+
+.odl-ov-chip1 {
+  left: 31.5%; top: 29.4%; width: 17%; height: 3.6%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-body); font-weight: 800; font-size: clamp(8px, .95vw, 13px);
+  letter-spacing: .02em; text-transform: uppercase; color: var(--case-navy, #16324a);
+  text-align: center; white-space: nowrap;
+  background: #fdf8ea; border: 1px solid var(--satin-dk, #b98a3c); border-radius: 999px;
+}
+.odl-ov-chip2 {
+  left: 50.5%; top: 29.4%; width: 16.5%; height: 3.6%;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  font-family: var(--font-body); font-weight: 800; font-size: clamp(8px, .95vw, 13px);
+  letter-spacing: .02em; text-transform: uppercase; color: #fff;
+  text-align: center; white-space: nowrap;
+  background: #1f6b46; border: 1px solid var(--satin-dk, #b98a3c); border-radius: 999px;
+}
+.odl-ov-booktitle {
+  left: 37%; top: 34.9%; width: 26%; height: 2.8%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(7px, .8vw, 11.5px); font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--satin-deep, #8f6a2b); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.odl-ov-title {
+  left: 34%; top: 37.2%; width: 32%; height: 7%;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  font-family: var(--font-display, serif); color: var(--case-navy, #16324a);
+  font-size: clamp(11px, 1.9vw, 27px); line-height: 1.1; margin: 0;
+}
+
+.odl-ov-notes {
+  left: 20.6%; top: 53.5%; width: 19.5%; height: 17%;
+  overflow: hidden; text-align: left;
+  font-family: var(--font-display, Georgia, serif); font-style: italic;
+  color: #3a2f1f; font-size: clamp(8px, 1.05vw, 14.5px); line-height: 1.7;
+}
+.odl-ov-notes p { margin: 0 0 .5em; }
+
+.odl-ov-yarn {
+  left: 46.5%; top: 53.5%; width: 32.5%; height: 19%;
+  overflow: hidden; text-align: left;
+  font-family: var(--font-display, Georgia, serif);
+  color: #3a2f1f; font-size: clamp(8px, 1.05vw, 14.5px); line-height: 1.65;
+}
+.odl-ov-yarn p { margin: 0; }
+
+.odl-ov-note {
+  left: 40%; top: 81.8%; width: 23%; height: 3.6%;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  font-family: var(--font-display, Georgia, serif); font-style: italic;
+  color: #4a3a12; font-size: clamp(7px, .85vw, 12px); line-height: 1.25;
+  white-space: nowrap; overflow: hidden;
+}
+
+.odl-ov-date {
+  left: 25.7%; top: 82.5%; width: 12%; height: 3%;
+  display: flex; align-items: center; gap: 6px;
+  font-size: clamp(7px, .85vw, 12px); font-style: italic; font-weight: 700;
+  color: var(--ink-warm-mid, #6b5a3c);
+}
+.odl-quill-ic { width: 12px; height: 12px; color: var(--satin-deep, #8f6a2b); flex: none; }
+
+.odl-status {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; gap: 16px; padding: 0 15%;
+  top: 30%; height: 55%;
+  color: var(--ink-warm-mid); font-size: clamp(11px, 1.3vw, 16px); line-height: 1.6;
+}
+
+.odl-pager {
+  display: flex; align-items: center; justify-content: center; gap: 18px;
+  margin-top: 22px; font-family: var(--font-body);
+}
+.odl-pager button {
+  background: none; border: none; cursor: pointer;
+  font-weight: 800; font-size: 14px; color: var(--case-navy, #16324a);
+}
+.odl-pager button:disabled { opacity: .35; cursor: default; }
+.odl-pager span { font-size: 13px; color: var(--ink-warm-mid); font-weight: 700; }
