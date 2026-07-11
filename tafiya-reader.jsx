@@ -1211,6 +1211,7 @@ function LibraryScreen({ onNavigate, initialLevel }) {
   const [strandFilter, setStrandFilter] = useStateTfr("all");
   const [levelFilter, setLevelFilter] = useStateTfr(initialLevel ? Number(initialLevel) : "all");
   const [query, setQuery] = useStateTfr("");
+  const [sampleOnly, setSampleOnly] = useStateTfr(false);
 
   // Role gates which books open; visitors get the free samples only.
   const [role, setRole] = useStateTfr(() => (window.HaarayaSession ? HaarayaSession.role() : "visitor"));
@@ -1271,6 +1272,7 @@ function LibraryScreen({ onNavigate, initialLevel }) {
     .filter(matchesQuery)
     .filter(b => levelFilter === "all" || levelNum(b) === levelFilter)
     .filter(b => strandFilter === "all" || tfrStrandUi(b) === strandFilter)
+    .filter(b => !sampleOnly || freeSet.has(codeOf(b)))
     .sort(byProgramme);
 
   return (
@@ -1278,24 +1280,32 @@ function LibraryScreen({ onNavigate, initialLevel }) {
       <div className="wrap" style={{ padding: "64px 32px 80px" }}>
         <SectionHeader
           eyebrow="The library"
-          title="Explore the Haaraya reading journey."
+          title="Haaraya Reading Library."
           lede="Tap any book to open it in the Tafiya reader — cover, story pages, and reading notes."
         />
 
         {/* Search by book name or code */}
-        <div className="tfl-search">
-          <span className="tfl-search-icon" aria-hidden="true">⌕</span>
-          <input
-            type="search"
-            className="tfl-search-input"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Search by book name or code…"
-            aria-label="Search books by name or code"
-          />
-          {query && (
-            <button className="tfl-search-clear" onClick={() => setQuery("")} aria-label="Clear search">×</button>
-          )}
+        <div className="tfl-search-row">
+          <div className="tfl-search">
+            <span className="tfl-search-icon" aria-hidden="true">⌕</span>
+            <input
+              type="search"
+              className="tfl-search-input"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search by book name or code…"
+              aria-label="Search books by name or code"
+            />
+            {query && (
+              <button className="tfl-search-clear" onClick={() => setQuery("")} aria-label="Clear search">×</button>
+            )}
+          </div>
+          <button
+            className={"tfl-sample-link" + (sampleOnly ? " active" : "")}
+            onClick={() => setSampleOnly(s => !s)}
+          >
+            {sampleOnly ? "Showing sample books" : `Sample books · ${window.TafiyaData ? window.TafiyaData.SAMPLE_LIMIT : 15} to try free`}
+          </button>
         </div>
 
         {/* Strand filter — one shared 6-col grid so both rows align on the right.
@@ -1370,7 +1380,6 @@ function LibraryScreen({ onNavigate, initialLevel }) {
                       : null}
                     <span className="tfl-thumb-ph" style={(b.thumbnail_image_path || b.cover_image_path) ? { display: "none" } : undefined}>{code}</span>
                     {done && <span className="tfl-tag tfl-tag--done" title="You finished this book">✓ Read</span>}
-                    {!done && free && <span className="tfl-tag tfl-tag--free">Free</span>}
                     {locked && <span className="tfl-lock" aria-label="Subscriber only">🔒</span>}
                   </div>
                   <div className="tfl-code">{code}</div>

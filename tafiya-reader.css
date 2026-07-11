@@ -516,13 +516,36 @@
 }
 
 /* Search by book name / code */
+.tfl-search-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
 .tfl-search {
   position: relative;
   display: flex;
   align-items: center;
   max-width: 460px;
-  margin-top: 24px;
+  flex: 1 1 320px;
 }
+.tfl-sample-link {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--forest, #2E9D4F);
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color .15s ease;
+}
+.tfl-sample-link:hover { text-decoration-color: currentColor; }
+.tfl-sample-link.active { color: var(--ink, #22351F); }
 .tfl-search-icon {
   position: absolute;
   left: 16px;

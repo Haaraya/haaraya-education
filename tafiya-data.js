@@ -535,7 +535,7 @@
   function getCatalogEntry(code) { return (_catalogCache || TAFIYA_CATALOG).find(function (b) { return codeOf(b) === code; }) || null; }
 
   // ---- Free samples: first N books in catalogue order ----
-  var SAMPLE_LIMIT = 6;
+  var SAMPLE_LIMIT = 15;
   function levelNum(b) { var m = String(b.level || "").match(/\d+/); return m ? +m[0] : (typeof b.level === "number" ? b.level : 999); }
   // Strand taxonomy — resolve a book to its UI strand key, and rank strands in
   // pedagogical reading order so the catalogue sequences sensibly.
@@ -560,11 +560,17 @@
     return "tafiya";
   }
   function strandRank(b) { var i = STRAND_UI_ORDER.indexOf(strandKeyOf(b)); return i < 0 ? 99 : i; }
-  // Programme sequence = the numeric suffix of the book code (e.g. S-01-010 → 10,
-  // H-01-040 → 40). Within a level this interleaves the strands in teaching order.
+  // Programme sequence = global v4_2 teaching order, joined to each book by its
+  // Book_Code via window.HAARAYA_PROGRESSION. This interleaves strands exactly as
+  // the curriculum intends. Books with no mapping fall back to level/code order.
+  function progNum(b) { var m = window.HAARAYA_PROGRESSION; var c = codeOf(b); return (m && m[c] != null) ? m[c] : null; }
   function seqNum(b) { var m = String(codeOf(b)).split("-").pop(); var n = parseInt(m, 10); return isNaN(n) ? 999999 : n; }
   function sortedCatalog(list) {
     return (list || getCatalog()).filter(function (b) { return codeOf(b); }).slice().sort(function (a, b) {
+      var pa = progNum(a), pb = progNum(b);
+      if (pa != null && pb != null) return pa - pb;
+      if (pa != null) return -1;
+      if (pb != null) return 1;
       return (levelNum(a) - levelNum(b)) || (seqNum(a) - seqNum(b)) || codeOf(a).localeCompare(codeOf(b), undefined, { numeric: true });
     });
   }
