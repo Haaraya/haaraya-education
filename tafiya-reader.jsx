@@ -1304,7 +1304,7 @@ function LibraryScreen({ onNavigate, initialLevel }) {
             className={`filter-chip tfl-sample-chip ${sampleOnly ? "active" : ""}`}
             onClick={() => setSampleOnly(s => !s)}
           >
-            {`Sample books · ${window.TafiyaData ? window.TafiyaData.SAMPLE_LIMIT : 15} free`}
+            Sample books
           </span>
         </div>
 
