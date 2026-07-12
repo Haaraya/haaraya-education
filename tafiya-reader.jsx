@@ -94,27 +94,30 @@ function TfrPage({ page, local }) {
   const text = tfrText(page.page_text);
   const textRef = useRefTfr(null);
   const [single, setSingle] = useStateTfr(false);
-  // The illustration is a CONSTANT size on every page (see .story-img). The
-  // TEXT is what flexes: we auto-fit its font size to the fixed band below
-  // the image — growing a short sentence to fill it, shrinking a long one to
-  // fit — so the image never moves or resizes as you turn pages.
+  // The illustration is a CONSTANT size on every page (see .story-img), and so
+  // is the STORY TEXT: every page renders at the same base size (6cqw, set in
+  // .story-text) so the reading experience doesn't lurch between pages. The
+  // only exception is a passage long enough to overflow the fixed band — that
+  // one steps DOWN in fixed increments just far enough to fit. Short passages
+  // are never grown, so the common case is a single, standardized size.
   useEffectTfr(() => {
     const el = textRef.current;
     if (!el) return;
     const fit = () => {
-      el.style.fontSize = "";               // fall back to the CSS base size
+      el.style.fontSize = "";               // reset to the CSS base size
       if (!text) { setSingle(false); return; }
       const base = parseFloat(getComputedStyle(el).fontSize) || 16;
       const lh = parseFloat(getComputedStyle(el).lineHeight) || base * 1.27;
       setSingle(el.scrollHeight <= lh * 1.6); // single short line → centre it
       const avail = el.clientHeight;
-      const min = base * 0.5, max = base * 2.4;
+      if (el.scrollHeight <= avail) return;  // fits at the standard size → done
+      // Overflow only: step down in fixed 5% increments (deterministic, so
+      // passages of similar length land on the same size) until it fits.
+      const min = base * 0.6;
       let size = base, guard = 0;
-      while (size < max && el.scrollHeight <= avail && guard++ < 120) {
-        size += 1; el.style.fontSize = size + "px";
-      }
-      while (size > min && el.scrollHeight > avail && guard++ < 240) {
-        size -= 1; el.style.fontSize = size + "px";
+      while (size > min && el.scrollHeight > avail && guard++ < 40) {
+        size = Math.max(min, size - base * 0.05);
+        el.style.fontSize = size + "px";
       }
     };
     fit();

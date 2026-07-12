@@ -180,7 +180,7 @@
 .tfr .story-text {
   position: relative; width: 100%; flex: 1 1 0; min-height: 0; overflow: hidden;
   font-weight: 700; font-size: 6cqw; line-height: 1.27; color: var(--tfr-ink);
-  text-align: left; text-wrap: pretty;
+  text-align: justify; text-align-last: center; text-wrap: pretty; hyphens: auto;
 }
 .tfr .story-text.is-single { text-align: center; line-height: 1.15; }
 .tfr .story-text.is-empty { color: var(--tfr-ink-faint); font-style: italic; }
