@@ -16,12 +16,16 @@ exclude:
   - Gemfile
   - Gemfile.lock
 
-  # Scratch + working material not used by the live site
-  - uploads
-  - tools
-  - import_sources
-  - design_handoff_haaraya_platform
-  - supabase
+  # Scratch + working material not used by the live site.
+  # NOTE: trailing slashes scope these to the FOLDER only. Without the
+  # slash, a bare entry like `supabase` also matches the root file
+  # `supabase-client.js` (name starts with "supabase"), which silently
+  # dropped it from the build and 404'd the whole Supabase data layer.
+  - uploads/
+  - tools/
+  - import_sources/
+  - design_handoff_haaraya_platform/
+  - supabase/
 
   # One-off exports / reports / alternate source copies
   - "Haaraya Home (Standalone Source).html"
