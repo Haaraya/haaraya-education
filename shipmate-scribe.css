@@ -109,6 +109,17 @@
 .sc-note-input::placeholder { color: #a8977a; }
 .sc-note-input:focus { outline: 2px solid var(--sc-gold); outline-offset: 1px; border-color: transparent; }
 
+/* ---- Spin the Yarn creative brief (book-specific) ---- */
+.sc-yarn-brief {
+  display: flex; gap: 10px; align-items: flex-start;
+  margin-top: 16px; padding: 12px 14px;
+  background: rgba(245,197,24,.1); border: 1px solid rgba(245,197,24,.28);
+  border-radius: 12px;
+  font-family: var(--font-display, Georgia, serif); font-style: italic;
+  font-size: 14.5px; line-height: 1.55; color: #ffe9a6;
+}
+.sc-yarn-brief-ic { font-style: normal; font-size: 15px; line-height: 1.5; flex: none; }
+
 /* ---- spin button ---- */
 .sc-spin-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 20px; }
 .sc-btn {

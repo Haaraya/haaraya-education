@@ -52,12 +52,18 @@
 
   // ---- comprehension heuristic (never punitive) ----------------
   function wc(s) { return String(s || "").trim().split(/\s+/).filter(Boolean).length; }
-  function comprehensionSignal(notes) {
+  // `fields` defaults to the generic NOTE_FIELDS, but the Scribe passes the
+  // book's own fields when a book has authored questions, so the signal is
+  // measured against whatever questions the child was actually asked.
+  function comprehensionSignal(notes, fields) {
     notes = notes || {};
-    var filled = NOTE_FIELDS.filter(function (f) { return String(notes[f.key] || "").trim().length > 0; }).length;
-    var words = NOTE_FIELDS.reduce(function (a, f) { return a + wc(notes[f.key]); }, 0);
-    if (filled >= 5 && words >= 22) return "strong";
-    if (filled >= 3 && words >= 8) return "adequate";
+    fields = (fields && fields.length) ? fields : NOTE_FIELDS;
+    var total = fields.length || 1;
+    var filled = fields.filter(function (f) { return String(notes[f.key] || "").trim().length > 0; }).length;
+    var words = fields.reduce(function (a, f) { return a + wc(notes[f.key]); }, 0);
+    // Scale thresholds to the number of questions (books have 3, generic has 6).
+    if (filled >= total && words >= total * 4) return "strong";
+    if (filled >= Math.ceil(total / 2) && words >= total * 1.5) return "adequate";
     return "thin";
   }
 
@@ -128,6 +134,23 @@
   // Deterministic, no-AI fallback: assemble the child's OWN words into
   // a warm log. Never invents facts — it only reorders what they wrote.
   function templateSpin(input) {
+    // Book-question path: assemble the child's OWN answers to whatever
+    // questions they were asked. Never invents facts.
+    var qa = (input.qa || []).filter(function (p) { return tidy(p.answer); });
+    if (qa.length) {
+      var first2 = (input.person || "first") !== "third";
+      var Cap = first2 ? "I" : "The Captain";
+      var parts2 = [Cap + " charted a course through \u201C" + (input.book_title || "this book") + ".\u201D"];
+      qa.forEach(function (p) { parts2.push(cap(tidy(p.answer))); });
+      var text2 = parts2.join(" ");
+      return {
+        title: (input.book_title ? tidy(input.book_title) : "The Voyage") + " \u2014 Log",
+        text: text2,
+        shipmate_note: "Another page of your Odyssey, Captain \u2014 written in your own hand.",
+        need_more_clue: false,
+        source: "template",
+      };
+    }
     var n = input.notes || {};
     var first = (input.person || "first") !== "third";
     var I = first ? "I" : "The Captain";
@@ -157,7 +180,14 @@
     var res = await fetch(EDGE_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + EDGE_KEY, "apikey": EDGE_KEY },
-      body: JSON.stringify({ notes: input.notes, book_title: input.book_title, voice_level: input.voice_level, person: input.person }),
+      body: JSON.stringify({
+        notes: input.notes,
+        qa: input.qa || null,
+        spin_prompt: input.spin_prompt || null,
+        book_title: input.book_title,
+        voice_level: input.voice_level,
+        person: input.person,
+      }),
     });
     if (!res.ok) throw new Error("edge " + res.status);
     var d = await res.json();
@@ -172,16 +202,27 @@
     var voice = input.voice_level === "older_reader" ? "Older reader: richer vocabulary is fine." : "Younger reader: simple, warm, short sentences.";
     var person = input.person === "third" ? "Third person, call the child 'the Captain'." : "First person, as the Captain ('I ...').";
     var system = "You are Shipmate Scribe, the loyal log-writer for a child reading the 100 Book Odyssey. Turn the child's Captain's Notes into a short, magical Odyssey Log Entry. Rules: Do not invent major plot events, characters, settings, or lessons. Use only the facts provided. You may make the language more vivid and polished. Age-appropriate. 80-130 words. Make the child feel like the Captain of a reading adventure. Do not sound like a quiz or worksheet. Do not correct harshly. If the notes are too thin, ask for one more clue instead of writing the log. Output exactly: 'Title:' line, 'Odyssey Log Entry:' line, 'Shipmate Note:' line.";
-    var user = [
-      "Book: " + (input.book_title || "(untitled)"), voice, person, "",
-      "Captain's Notes:",
-      "- What happened: " + (n.what_happened || "(blank)"),
-      "- Who mattered most: " + (n.who_mattered_most || "(blank)"),
-      "- Trouble/surprise/lesson/big idea: " + (n.big_idea || "(blank)"),
-      "- What I noticed: " + (n.what_i_noticed || "(blank)"),
-      "- One word I found: " + (n.new_word || "(blank)"),
-      "- How it made me feel: " + (n.feeling || "(blank)"),
-    ].join("\n");
+    var qa = (input.qa || []).filter(function (p) { return tidy(p.question); });
+    var user;
+    if (qa.length) {
+      // Book-specific questions: give the model each question + the child's answer.
+      var lines = ["Book: " + (input.book_title || "(untitled)"), voice, person, ""];
+      if (input.spin_prompt) lines.push("Creative brief (shape the log this way): " + input.spin_prompt, "");
+      lines.push("Captain's Notes (the child's answers):");
+      qa.forEach(function (p) { lines.push("- " + tidy(p.question) + " \u2192 " + (tidy(p.answer) || "(blank)")); });
+      user = lines.join("\n");
+    } else {
+      user = [
+        "Book: " + (input.book_title || "(untitled)"), voice, person, "",
+        "Captain's Notes:",
+        "- What happened: " + (n.what_happened || "(blank)"),
+        "- Who mattered most: " + (n.who_mattered_most || "(blank)"),
+        "- Trouble/surprise/lesson/big idea: " + (n.big_idea || "(blank)"),
+        "- What I noticed: " + (n.what_i_noticed || "(blank)"),
+        "- One word I found: " + (n.new_word || "(blank)"),
+        "- How it made me feel: " + (n.feeling || "(blank)"),
+      ].join("\n");
+    }
     var raw = await window.claude.complete({ system: system, messages: [{ role: "user", content: user }], max_tokens: 600 });
     var grab = function (label) {
       var re = new RegExp(label + "\\s*:\\s*([\\s\\S]*?)(?=\\n(?:Title|Odyssey Log Entry|Shipmate Note)\\s*:|$)", "i");

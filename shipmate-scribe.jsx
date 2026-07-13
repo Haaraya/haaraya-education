@@ -91,9 +91,9 @@ function OdysseyLog({ log, book, onRespin, onEdit, spinning }) {
 }
 
 /* ---- Teacher / parent assessment strip ---- */
-function ScribeTeacherPanel({ notes, signal, status }) {
+function ScribeTeacherPanel({ notes, signal, status, fields }) {
   const S = window.ShipmateScribe;
-  const fields = (S && S.NOTE_FIELDS) || [];
+  fields = (fields && fields.length) ? fields : ((S && S.NOTE_FIELDS) || []);
   const sigLabel = { thin: "Thin — may need a chat", adequate: "Adequate", strong: "Strong", unknown: "—" }[signal] || "—";
   return (
     <details className="sc-teacher">
@@ -125,11 +125,14 @@ function ScribeTeacherPanel({ notes, signal, status }) {
    ============================================================ */
 function ShipmateScribePanel({ book, onClose, onSaved, embedded }) {
   const S = window.ShipmateScribe;
-  const fields = (S && S.NOTE_FIELDS) || [];
   book = book || {};
   const bookCode = book.book_code || book.code || "unknown";
 
   const [phase, setPhase] = useStateSc("notes"); // notes | log
+  // Fields default to the generic NOTE_FIELDS; a book with authored
+  // questions swaps in its own set once loaded (see effect below).
+  const [fields, setFields] = useStateSc(() => (S && S.NOTE_FIELDS) || []);
+  const [spinPrompt, setSpinPrompt] = useStateSc("");
   const [notes, setNotes] = useStateSc({});
   const [voice, setVoice] = useStateSc(() => {
     const m = String(book.level || "").match(/\d+/);
@@ -156,11 +159,25 @@ function ShipmateScribePanel({ book, onClose, onSaved, embedded }) {
     return () => { alive = false; };
   }, [bookCode]);
 
+  // Load this book's own Captain's Log questions (if authored in Supabase).
+  // Falls back silently to the generic NOTE_FIELDS when the book has none.
+  useEffectSc(() => {
+    let alive = true;
+    const LP = window.HaarayaLogPrompts;
+    if (!LP) return;
+    LP.getForBook(book).then(pack => {
+      if (!alive || !pack) return;
+      setFields(pack.fields);
+      setSpinPrompt(pack.spinPrompt || "");
+    }).catch(() => { /* keep generic fallback */ });
+    return () => { alive = false; };
+  }, [bookCode, book.book_number]);
+
   const setNote = (k, v) => setNotes(n => Object.assign({}, n, { [k]: v }));
 
   const filledCount = fields.filter(f => String(notes[f.key] || "").trim()).length;
   const canSpin = filledCount >= 2 && !spinning;
-  const signal = S ? S.comprehensionSignal(notes) : "unknown";
+  const signal = S ? S.comprehensionSignal(notes, fields) : "unknown";
 
   async function persist(nextLog, versionBump) {
     if (!S) return;
@@ -188,7 +205,10 @@ function ShipmateScribePanel({ book, onClose, onSaved, embedded }) {
     if (!S) return;
     setSpinning(true);
     try {
-      const out = await S.spin({ notes, book_title: book.book_title || book.title, voice_level: voice, person: person });
+      // Send question→answer pairs so the log reflects the exact questions
+      // asked (book-specific or generic), plus the book's creative brief.
+      const qa = fields.map(f => ({ question: f.label, answer: notes[f.key] || "" }));
+      const out = await S.spin({ notes, qa, spin_prompt: spinPrompt, book_title: book.book_title || book.title, voice_level: voice, person: person });
       out._v = (log && log._v ? log._v + 1 : 1);
       setLog(out);
       setPhase("log");
@@ -225,6 +245,12 @@ function ShipmateScribePanel({ book, onClose, onSaved, embedded }) {
           <ScribeVoice voice={voice} person={person} onVoice={setVoice} onPerson={setPerson} />
           <div className="sc-section-label">Captain’s Notes</div>
           <CaptainsNotes notes={notes} setNote={setNote} fields={fields} />
+          {spinPrompt ? (
+            <div className="sc-yarn-brief">
+              <span className="sc-yarn-brief-ic" aria-hidden="true">✨</span>
+              <span>{spinPrompt}</span>
+            </div>
+          ) : null}
           <div className="sc-spin-row">
             <button type="button" className="sc-btn spin" onClick={() => doSpin(false)} disabled={!canSpin}>
               <span className="sc-btn-star" aria-hidden="true">✦</span>
@@ -244,7 +270,7 @@ function ShipmateScribePanel({ book, onClose, onSaved, embedded }) {
           {saved && !log.need_more_clue ? (
             <div className="sc-complete">Entry saved. Another book conquered.</div>
           ) : null}
-          <ScribeTeacherPanel notes={notes} signal={signal} status={saved && !log.need_more_clue ? "complete" : "in_progress"} />
+          <ScribeTeacherPanel notes={notes} signal={signal} status={saved && !log.need_more_clue ? "complete" : "in_progress"} fields={fields} />
         </React.Fragment>
       )}
     </div>

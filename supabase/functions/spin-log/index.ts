@@ -7,8 +7,11 @@
 //    supabase functions deploy spin-log --no-verify-jwt
 //    supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
 //
-//  The client posts { notes, book_title, voice_level, person } and
-//  gets back { title, text, shipmate_note, need_more_clue }.
+//  The client posts { notes, qa, spin_prompt, book_title, voice_level,
+//  person } and gets back { title, text, shipmate_note, need_more_clue }.
+//  `qa` is a list of { question, answer } pairs for the book's own
+//  Captain's Log questions; when present it takes precedence over the
+//  legacy fixed `notes` keys. `spin_prompt` is the book's creative brief.
 //
 //  GUARDRAIL: the model is instructed to use ONLY the facts in the
 //  child's notes — it may polish language but must not invent plot,
@@ -45,13 +48,36 @@ Odyssey Log Entry: <the log entry, or empty if you need more>
 Shipmate Note: <one warm sentence to the Captain; if the notes are too thin, put your single request for one more clue here and leave the Log Entry empty>`;
 
 function buildUserPrompt(body: any): string {
-  const n = body.notes || {};
   const voice = body.voice_level === "older_reader"
     ? "Older reader: a slightly richer vocabulary is fine."
     : "Younger reader: simple, warm, short sentences.";
   const person = body.person === "third"
     ? "Write in the third person, calling the child 'the Captain'."
     : "Write in the first person, as the Captain ('I ...').";
+
+  // Preferred path: book-specific question/answer pairs.
+  const qa = Array.isArray(body.qa)
+    ? body.qa.filter((p: any) => p && String(p.question || "").trim())
+    : [];
+  if (qa.length) {
+    const lines = [
+      `Book: ${body.book_title || "(untitled)"}`,
+      voice,
+      person,
+      "",
+    ];
+    if (body.spin_prompt) {
+      lines.push(`Creative brief (shape the log this way, grounded only in the answers): ${body.spin_prompt}`, "");
+    }
+    lines.push("Captain's Notes (the child's own answers to this book's questions):");
+    qa.forEach((p: any) => {
+      lines.push(`- ${String(p.question).trim()} \u2192 ${String(p.answer || "").trim() || "(blank)"}`);
+    });
+    return lines.join("\n");
+  }
+
+  // Legacy fallback: the six fixed generic note fields.
+  const n = body.notes || {};
   const lines = [
     `Book: ${body.book_title || "(untitled)"}`,
     voice,
