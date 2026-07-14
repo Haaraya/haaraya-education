@@ -61,7 +61,7 @@ function TfrImage({ path, alt, label, className, local }) {
   }
   return (
     <div className={className}>
-      <img src={src} alt={alt || ""} onError={() => setFailed(true)} />
+      <img src={src} alt={alt || ""} onError={(e) => { const img = e.currentTarget; if (!img.dataset.extSwap && /\.(png|webp)$/i.test(img.src)) { img.dataset.extSwap = "1"; img.src = /\.png$/i.test(img.src) ? img.src.replace(/\.png$/i, ".webp") : img.src.replace(/\.webp$/i, ".png"); return; } setFailed(true); }} />
     </div>
   );
 }
@@ -572,7 +572,7 @@ function TfrNextUp({ book, nextBook, onStartNext, onLibrary }) {
           <div className="nextup-card">
             <div className="nextup-mini">
               {nextBook.thumbnail_image_path
-                ? <img src={tfrSrc(nextBook.thumbnail_image_path)} alt="" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                ? <img src={tfrSrc(nextBook.thumbnail_image_path)} alt="" onError={(e) => { const img = e.currentTarget; if (!img.dataset.extSwap && /\.(png|webp)$/i.test(img.src)) { img.dataset.extSwap = "1"; img.src = /\.png$/i.test(img.src) ? img.src.replace(/\.png$/i, ".webp") : img.src.replace(/\.webp$/i, ".png"); return; } img.style.display = "none"; }} />
                 : <span className="ph">{nextCode}</span>}
             </div>
             <div className="nextup-info">
@@ -1389,7 +1389,7 @@ function LibraryScreen({ onNavigate, initialLevel }) {
                 >
                   <div className="tfl-thumb">
                     {(b.thumbnail_image_path || b.cover_image_path)
-                      ? <img src={tfrSrc(b.thumbnail_image_path || b.cover_image_path)} alt="" onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextSibling && (e.currentTarget.nextSibling.style.display = ""); }} />
+                      ? <img src={tfrSrc(b.thumbnail_image_path || b.cover_image_path)} alt="" onError={(e) => { const img = e.currentTarget; if (!img.dataset.extSwap && /\.(png|webp)$/i.test(img.src)) { img.dataset.extSwap = "1"; img.src = /\.png$/i.test(img.src) ? img.src.replace(/\.png$/i, ".webp") : img.src.replace(/\.webp$/i, ".png"); return; } img.style.display = "none"; img.nextSibling && (img.nextSibling.style.display = ""); }} />
                       : null}
                     <span className="tfl-thumb-ph" style={(b.thumbnail_image_path || b.cover_image_path) ? { display: "none" } : undefined}>{code}</span>
                     {done && <span className="tfl-tag tfl-tag--done" title="You finished this book">✓ Read</span>}
