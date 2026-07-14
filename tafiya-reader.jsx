@@ -975,6 +975,16 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
   };
   const prev = () => go(index - 1);
 
+  // Every page swap reuses the same .surface DOM node, so its scrollTop
+  // carries over — a long previous page would leave the next one scrolled to
+  // the bottom. Reset to the top whenever the screen changes.
+  useEffectTfr(() => {
+    const node = bookRef.current;
+    if (!node) return;
+    node.scrollTop = 0;
+    node.querySelectorAll(".surface").forEach(el => { el.scrollTop = 0; });
+  }, [index, status]);
+
   // Keyboard nav.
   useEffectTfr(() => {
     const onKey = (e) => {

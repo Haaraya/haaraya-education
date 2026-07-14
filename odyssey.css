@@ -222,12 +222,13 @@
 }
 .ody-hero-art image-slot { display:block; width: 100%; height: 460px; }
 .ody-hero-img { display:block; width: 100%; height: auto; }
-.ody-stages-cta { text-align: center; margin-top: 36px; }
+.ody-stages-cta { text-align: center; margin-top: 36px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.ody-stages-cta > button { margin: 0; }
 .ody-stages-note { max-width: 640px; margin: 22px auto 0; text-align: center; }
 .ody-stages-note h3 { font-family: var(--font-display); color: var(--case-navy); font-size: 28px; margin: 0 0 8px; }
 .ody-stages-note p { color: var(--ink-warm-mid); font-size: 16px; line-height: 1.55; margin: 0; }
 .ody-medals-page { background: var(--parch); }
-.ody-medals-back { margin-bottom: 18px; }
+.ody-medals-back { margin-bottom: 18px; display: block; width: max-content; margin-left: auto; margin-right: auto; }
 .ody-art-ph {
   position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
   z-index: 4; font-family: var(--font-mono, ui-monospace, monospace);

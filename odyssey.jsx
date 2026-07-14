@@ -387,10 +387,6 @@ function OdysseyShipmateScribe() {
           title="The Captain speaks. The Shipmate writes."
           lede="After every book, jot a few Captain’s Notes. Your loyal Shipmate Scribe spins them into a short adventure log for your Odyssey."
         />
-        <figure className="ody-scribe-preview">
-          <img src="assets/captains-log-demo.png" alt="A sample Captain's Log entry for “Down the Rabbit Hole” — Captain's Notes on the left, the Shipmate Scribe's log yarn on the right." />
-          <figcaption>A finished entry, spun from a young Captain’s notes.</figcaption>
-        </figure>
         <div className="ody-scribe-cta">
           {ScribeUI ? (
             <div className="ody-scribe-pick">

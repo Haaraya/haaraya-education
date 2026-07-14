@@ -205,7 +205,11 @@ function OdysseyBookReader({ code, onNavigate }) {
 
   useEffectOL(() => {
     try { if (book) localStorage.setItem("haaraya:ody:pos:" + code, String(chIdx)); } catch (e) { /* ignore */ }
+    // The reader column grows with content, so the *window* (not .olr-scroll)
+    // is usually the real scroller — reset both to the top on chapter change.
     if (scrollRef.current) scrollRef.current.scrollTo({ top: 0, behavior: "instant" });
+    try { window.scrollTo({ top: 0, behavior: "instant" }); } catch (e) { window.scrollTo(0, 0); }
+    if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
   }, [chIdx, book, code]);
 
   if (!book) return <div className="olr-loading">Opening the book…</div>;
@@ -303,7 +307,7 @@ function OdysseyBookReader({ code, onNavigate }) {
           <button className="olr-navbtn" type="button" disabled={isFirst} onClick={() => setChIdx(i => Math.max(0, i - 1))}>← Previous</button>
           <span className="olr-foot-pos">Chapter {ch.num} / {book.chapters.length}</span>
           {isLast ? (
-            <button className="olr-navbtn primary" type="button" onClick={() => onNavigate("odyssey-library")}>Finish ✦</button>
+            <button className="olr-navbtn primary" type="button" onClick={() => onNavigate("odyssey-log", { bookCode: book.code, bookTitle: book.title, bookNumber: n, level: "Level 8" })}>Finish ✦</button>
           ) : (
             <button className="olr-navbtn primary" type="button" onClick={() => setChIdx(i => Math.min(book.chapters.length - 1, i + 1))}>Next →</button>
           )}

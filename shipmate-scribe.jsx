@@ -10,6 +10,45 @@
    ============================================================ */
 const { useState: useStateSc, useEffect: useEffectSc, useRef: useRefSc } = React;
 
+/* Clean a spun log for display. Strips any stray markdown and, if the server
+   parser missed markdown-wrapped labels and dumped the whole reply into .text,
+   re-splits the Title / Odyssey Log Entry / Shipmate Note back apart. Safe to
+   run on already-saved entries. */
+function scCleanLog(log) {
+  if (!log) return log;
+  const stripMd = (s) => String(s || "")
+    .replace(/\*\*/g, "")
+    .replace(/`+/g, "")
+    .replace(/^\s*#{1,6}\s*/gm, "")
+    .replace(/\*/g, "")
+    .trim();
+
+  const raw = stripMd([log.title, log.text, log.shipmate_note].filter(Boolean).join("\n"));
+  const grab = (labels) => {
+    const re = new RegExp(
+      "(?:" + labels + ")\\s*:\\s*([\\s\\S]*?)(?=\\n?\\s*(?:Title|Odyssey Log Entry|Log Entry|Shipmate Note)\\s*:|$)",
+      "i"
+    );
+    const m = raw.match(re);
+    return m ? m[1].trim() : "";
+  };
+
+  let title = log.title || "";
+  let text = log.text || "";
+  let note = log.shipmate_note || "";
+
+  if (/(?:Odyssey Log Entry|Log Entry|Shipmate Note|Title)\s*:/i.test(raw)) {
+    title = grab("Title") || title;
+    text = grab("Odyssey Log Entry|Log Entry") || text;
+    note = grab("Shipmate Note") || note;
+    if (!grab("Title")) {
+      const head = raw.split(/\n/)[0].trim();
+      if (head && !/:/.test(head) && head.length <= 80) title = head;
+    }
+  }
+  return Object.assign({}, log, { title: stripMd(title), text: stripMd(text), shipmate_note: stripMd(note) });
+}
+
 function ScribeMark() {
   return (
     <div className="sc-mark">
@@ -67,17 +106,18 @@ function CaptainsNotes({ notes, setNote, fields }) {
 
 /* ---- The spun log ---- */
 function OdysseyLog({ log, book, onRespin, onEdit, spinning }) {
+  const c = scCleanLog(log) || {};
   return (
     <div className="sc-log">
       <div className="sc-log-wax" aria-hidden="true">✦</div>
       <div className="sc-log-book">{book.book_number ? "Book " + book.book_number : "Odyssey"}</div>
-      <h3 className="sc-log-title">{log.title || (book.book_title || "The Voyage")}</h3>
+      <h3 className="sc-log-title">{c.title || (book.book_title || "The Voyage")}</h3>
       <div className="sc-log-rule" aria-hidden="true"></div>
-      <p className="sc-log-text">{log.text}</p>
-      {log.shipmate_note ? (
+      <p className="sc-log-text">{c.text}</p>
+      {c.shipmate_note ? (
         <div className="sc-log-note">
           <span className="sc-log-note-q" aria-hidden="true">&#x1F58B;</span>
-          <span>{log.shipmate_note}</span>
+          <span>{c.shipmate_note}</span>
         </div>
       ) : null}
       <div className="sc-log-actions">
@@ -208,14 +248,20 @@ function ShipmateScribePanel({ book, onClose, onSaved, embedded }) {
       // Send question→answer pairs so the log reflects the exact questions
       // asked (book-specific or generic), plus the book's creative brief.
       const qa = fields.map(f => ({ question: f.label, answer: notes[f.key] || "" }));
-      const out = await S.spin({ notes, qa, spin_prompt: spinPrompt, book_title: book.book_title || book.title, voice_level: voice, person: person });
-      out._v = (log && log._v ? log._v + 1 : 1);
+      const raw = await S.spin({ notes, qa, spin_prompt: spinPrompt, book_title: book.book_title || book.title, voice_level: voice, person: person });
+      const out = Object.assign({}, scCleanLog(raw), { _v: (log && log._v ? log._v + 1 : 1), need_more_clue: raw && raw.need_more_clue });
       setLog(out);
-      setPhase("log");
       if (!out.need_more_clue) {
-        await persist(out, isRespin);
+        const savedRow = await persist(out, isRespin);
         setSaved(true);
+        // The finished entry belongs on the illustrated logbook page, not in
+        // this writing card. Hand it back and close so it renders there.
+        if (onSaved) onSaved((savedRow && savedRow.book_code) || bookCode);
+        if (onClose) { onClose(); return; }
+        setPhase("log");
       } else {
+        // Scribe needs one more clue — stay open and show its request.
+        setPhase("log");
         setSaved(false);
       }
     } catch (e) {
@@ -286,3 +332,4 @@ function ShipmateScribePanel({ book, onClose, onSaved, embedded }) {
 
 // Export the UI under its own global; the data layer keeps window.ShipmateScribe.
 window.ShipmateScribeUI = ShipmateScribePanel;
+window.scCleanLog = scCleanLog;

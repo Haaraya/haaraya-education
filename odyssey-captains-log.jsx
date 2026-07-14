@@ -27,27 +27,68 @@ function OdlQuill({ className }) {
   );
 }
 
-function OdysseyCaptainsLog({ onNavigate }) {
+function OdysseyCaptainsLog({ onNavigate, initialBook }) {
   const S = window.ShipmateScribe;
   const ScribeUI = window.ShipmateScribeUI;
   const [rows, setRows] = useStateLog(null); // null = loading
   const [idx, setIdx] = useStateLog(0);
   const [editing, setEditing] = useStateLog(null);
+  const [autoHandled, setAutoHandled] = useStateLog(false);
+  const [pendingSelect, setPendingSelect] = useStateLog(null);
 
   const reload = React.useCallback(() => {
     if (!S) { setRows([]); return; }
     S.load(S.readerKey()).then(m => {
       const list = Object.values(m || {})
         .filter(r => r && r.spun_log_entry && r.spun_log_entry.text)
-        .sort((a, b) => (b.book_number || 0) - (a.book_number || 0)); // most recent first
+        .sort((a, b) => {
+          // Most recently written first, so the book you just logged leads
+          // (falls back to book number when timestamps are missing/equal).
+          const ta = Date.parse(a.updated_at || a.date_finished || "") || 0;
+          const tb = Date.parse(b.updated_at || b.date_finished || "") || 0;
+          if (tb !== ta) return tb - ta;
+          return (b.book_number || 0) - (a.book_number || 0);
+        });
       setRows(list);
     }).catch(() => setRows([]));
   }, [S]);
 
   useEffectLog(() => { reload(); }, [reload]);
 
+  // Arriving straight from finishing a book (initialBook set). Run once, after
+  // entries load: if this book already has a log entry, show it on the logbook
+  // page; if not, open the Scribe so the Captain can write it. Never re-fires,
+  // so the reader is free to close the writer afterwards.
+  useEffectLog(() => {
+    if (autoHandled || rows === null || !initialBook || !initialBook.book_code) return;
+    const i = rows.findIndex(r => r.book_code === initialBook.book_code && r.spun_log_entry && r.spun_log_entry.text);
+    if (i >= 0) setIdx(i);
+    else setEditing(initialBook);
+    setAutoHandled(true);
+  }, [autoHandled, rows, initialBook && initialBook.book_code]);
+
+  // After the Scribe saves an entry, jump the logbook page to that book so the
+  // Captain sees their new entry on the open-book page.
+  useEffectLog(() => {
+    if (!pendingSelect || rows === null) return;
+    const i = rows.findIndex(r => r.book_code === pendingSelect);
+    if (i >= 0) setIdx(i);
+    setPendingSelect(null);
+  }, [pendingSelect, rows]);
+
   const row = rows && rows.length ? rows[Math.min(idx, rows.length - 1)] : null;
-  const log = row ? (row.spun_log_entry || {}) : {};
+  const log = row ? (window.scCleanLog ? window.scCleanLog(row.spun_log_entry || {}) : (row.spun_log_entry || {})) : {};
+  // The yarn box is a fixed size on the logbook page. Trim long (already-saved)
+  // entries to whole sentences within a word budget so they never clip.
+  const fitYarn = (t) => {
+    const words = String(t || "").trim().split(/\s+/);
+    if (words.length <= 70) return String(t || "").trim();
+    let out = words.slice(0, 70).join(" ");
+    const stop = Math.max(out.lastIndexOf("."), out.lastIndexOf("!"), out.lastIndexOf("?"));
+    if (stop > 40) out = out.slice(0, stop + 1); else out = out.replace(/[,;:\s]+$/, "") + "…";
+    return out;
+  };
+  const yarnText = fitYarn(log.text);
   const when = row && row.updated_at ? new Date(row.updated_at) : null;
   const whenTxt = when && !isNaN(when) ? when.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "";
   const world = row ? odlWorldFor(row.book_code) : "";
@@ -95,7 +136,7 @@ function OdysseyCaptainsLog({ onNavigate }) {
             </div>
 
             <div className="odl-ov odl-ov-yarn">
-              <p>{log.text || "This entry has notes but no finished log yet."}</p>
+              <p>{yarnText || "This entry has notes but no finished log yet."}</p>
             </div>
 
             {log.shipmate_note ? <span className="odl-ov odl-ov-note">{log.shipmate_note}</span> : null}
@@ -107,7 +148,7 @@ function OdysseyCaptainsLog({ onNavigate }) {
         )}
       </section>
 
-      {rows && rows.length > 1 ? (
+      {rows && rows.length ? (
         <div className="odl-pager">
           <button type="button" disabled={idx <= 0} onClick={() => setIdx(i => Math.max(0, i - 1))}>‹ Newer entry</button>
           <span>Entry {idx + 1} of {rows.length}</span>
@@ -119,7 +160,7 @@ function OdysseyCaptainsLog({ onNavigate }) {
         <ScribeUI
           book={editing}
           onClose={() => { setEditing(null); reload(); }}
-          onSaved={reload}
+          onSaved={(code) => { if (code) setPendingSelect(code); reload(); }}
         />
       ) : null}
     </main>

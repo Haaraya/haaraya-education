@@ -432,7 +432,7 @@ function App() {
       {booted && screen === "odyssey-library" && <OdysseyLibraryScreen onNavigate={navigate} initialLevel={params.levelId} initialStream={params.stream} initialWorld={params.world} />}
       {booted && screen === "odyssey-reader"  && <OdysseyBookReader code={params.bookCode} onNavigate={navigate} />}
       {booted && screen === "odyssey-medals"  && <OdysseyMedals onNavigate={navigate} />}
-      {booted && screen === "odyssey-log"     && <OdysseyCaptainsLog onNavigate={navigate} />}
+      {booted && screen === "odyssey-log"     && <OdysseyCaptainsLog onNavigate={navigate} initialBook={params.bookCode ? { book_code: params.bookCode, book_title: params.bookTitle, book_number: params.bookNumber, level: params.level } : null} />}
 
       <PublisherMark />
 

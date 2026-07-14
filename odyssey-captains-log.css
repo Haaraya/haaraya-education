@@ -32,7 +32,7 @@
 .odl-ov { position: absolute; }
 
 .odl-ov-chip1 {
-  left: 31.5%; top: 29.4%; width: 17%; height: 3.6%;
+  left: 31.5%; top: 32.2%; width: 17%; height: 3.6%;
   display: flex; align-items: center; justify-content: center;
   font-family: var(--font-body); font-weight: 800; font-size: clamp(8px, .95vw, 13px);
   letter-spacing: .02em; text-transform: uppercase; color: var(--case-navy, #16324a);
@@ -40,7 +40,7 @@
   background: #fdf8ea; border: 1px solid var(--satin-dk, #b98a3c); border-radius: 999px;
 }
 .odl-ov-chip2 {
-  left: 50.5%; top: 29.4%; width: 16.5%; height: 3.6%;
+  left: 50.5%; top: 32.2%; width: 16.5%; height: 3.6%;
   display: flex; align-items: center; justify-content: center; gap: 4px;
   font-family: var(--font-body); font-weight: 800; font-size: clamp(8px, .95vw, 13px);
   letter-spacing: .02em; text-transform: uppercase; color: #fff;
@@ -48,13 +48,13 @@
   background: #1f6b46; border: 1px solid var(--satin-dk, #b98a3c); border-radius: 999px;
 }
 .odl-ov-booktitle {
-  left: 37%; top: 34.9%; width: 26%; height: 2.8%;
+  left: 37%; top: 38%; width: 26%; height: 2.8%;
   display: flex; align-items: center; justify-content: center;
   font-size: clamp(7px, .8vw, 11.5px); font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
   color: var(--satin-deep, #8f6a2b); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .odl-ov-title {
-  left: 34%; top: 37.2%; width: 32%; height: 7%;
+  left: 34%; top: 40.5%; width: 32%; height: 7%;
   display: flex; align-items: center; justify-content: center; text-align: center;
   font-family: var(--font-display, serif); color: var(--case-navy, #16324a);
   font-size: clamp(11px, 1.9vw, 27px); line-height: 1.1; margin: 0;
