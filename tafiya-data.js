@@ -458,6 +458,8 @@
     if (raw.startsWith("/storage/v1/object/public/")) return SUPABASE_URL + raw;
     let clean = raw.replace(/^\/+/, "");
     if (clean.startsWith(STORAGE_BUCKET + "/")) clean = clean.slice(STORAGE_BUCKET.length + 1);
+    // All Supabase book assets were flattened to .webp (pngs deleted for quota).
+    clean = clean.replace(/\.png$/i, ".webp");
     clean = encodeURI(clean).replace(/#/g, "%23");
     return SUPABASE_URL + "/storage/v1/object/public/" + STORAGE_BUCKET + "/" + clean;
   }
