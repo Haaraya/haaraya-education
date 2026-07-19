@@ -277,8 +277,8 @@
 
 /* ---------- Page review (QA) panel ---------- */
 .tfr .tfr-review-toggle.is-on {
-  background: var(--forest, #1f7a34);
-  border-color: var(--forest, #1f7a34);
+  background: var(--forest, var(--forest-dark));
+  border-color: var(--forest, var(--forest-dark));
   color: #fff;
 }
 /* When the rail is open, let the book + rail sit side by side. */
@@ -336,7 +336,7 @@
   padding: 9px 10px; resize: vertical; min-height: 88px;
   color: var(--tfr-ink, #142a14); background: #fff;
 }
-.tfr-rv-note:focus { outline: 2px solid var(--forest, #1f7a34); outline-offset: 1px; border-color: transparent; }
+.tfr-rv-note:focus { outline: 2px solid var(--forest, var(--forest-dark)); outline-offset: 1px; border-color: transparent; }
 .tfr-rv-by { margin-top: auto; font-size: 12px; color: var(--tfr-ink-faint, #9AB39A); }
 .tfr-rv-by strong { color: var(--tfr-ink-soft, #5b6b5b); font-weight: 800; }
 
@@ -364,10 +364,10 @@
   border: 1px solid var(--tfr-line, #ddd); border-radius: 9px; padding: 7px 9px; background: #fff;
   max-width: 60%;
 }
-.tfr-rv-select:focus { outline: 2px solid var(--forest, #1f7a34); outline-offset: 1px; }
+.tfr-rv-select:focus { outline: 2px solid var(--forest, var(--forest-dark)); outline-offset: 1px; }
 .tfr-rv-by .tfr-rv-textbtn {
   margin-left: 8px; background: none; border: none; padding: 0; cursor: pointer;
-  font: inherit; font-size: 12px; font-weight: 800; color: var(--forest, #1f7a34); text-decoration: underline;
+  font: inherit; font-size: 12px; font-weight: 800; color: var(--forest, var(--forest-dark)); text-decoration: underline;
 }
 /* messages (checking / no-access) */
 .tfr-rv-msg { font-size: 13px; color: var(--tfr-ink-soft, #5b6b5b); display: flex; flex-direction: column; gap: 8px; }
@@ -375,7 +375,7 @@
 .tfr-rv-msg-dim { color: var(--tfr-ink-faint, #9AB39A); }
 .tfr-rv-textbtn {
   align-self: flex-start; background: none; border: none; padding: 0; cursor: pointer;
-  font: inherit; font-size: 12.5px; font-weight: 800; color: var(--forest, #1f7a34); text-decoration: underline;
+  font: inherit; font-size: 12.5px; font-weight: 800; color: var(--forest, var(--forest-dark)); text-decoration: underline;
 }
 /* sign-in */
 .tfr-rv-signin { display: flex; flex-direction: column; gap: 10px; }
@@ -384,10 +384,10 @@
   font: inherit; font-size: 13.5px; border: 1px solid var(--tfr-line, #ddd); border-radius: 9px;
   padding: 10px 11px; background: #fff; color: var(--tfr-ink, #142a14);
 }
-.tfr-rv-input:focus { outline: 2px solid var(--forest, #1f7a34); outline-offset: 1px; border-color: transparent; }
+.tfr-rv-input:focus { outline: 2px solid var(--forest, var(--forest-dark)); outline-offset: 1px; border-color: transparent; }
 .tfr-rv-signin-btn {
   font: inherit; font-size: 14px; font-weight: 800; cursor: pointer;
-  background: var(--forest, #1f7a34); color: #fff; border: none; border-radius: 999px;
+  background: var(--forest, var(--forest-dark)); color: #fff; border: none; border-radius: 999px;
   padding: 10px 16px; min-height: 44px;
 }
 .tfr-rv-signin-btn:disabled { opacity: .6; cursor: default; }
@@ -537,11 +537,11 @@
   justify-content: center;
   padding: 0 20px;
   white-space: nowrap;
-  background: var(--forest, #2E9D4F);
+  background: var(--forest, var(--forest));
   color: #fff;
-  border-color: var(--forest, #2E9D4F);
+  border-color: var(--forest, var(--forest));
 }
-.tfl-sample-chip:hover { border-color: var(--forest, #2E9D4F); color: #fff; }
+.tfl-sample-chip:hover { border-color: var(--forest, var(--forest)); color: #fff; }
 .tfl-search-icon {
   position: absolute;
   left: 16px;
@@ -562,7 +562,7 @@
   transition: border-color .15s ease;
 }
 .tfl-search-input::placeholder { color: var(--ink-mid, #7A8A78); }
-.tfl-search-input:focus { border-color: var(--forest, #2E9D4F); }
+.tfl-search-input:focus { border-color: var(--forest, var(--forest)); }
 .tfl-search-input::-webkit-search-cancel-button { display: none; }
 .tfl-search-clear {
   position: absolute;

@@ -10,7 +10,7 @@
   --pp-page: #E8F5E8;
   --pp-page-dk: #C9E5C9;
   --pp-page-line: #9CC79C;
-  --pp-gold: #C9A227;
+  --pp-gold: var(--yellow-dk);
   --pp-gold-dk: #8E6F12;
   --pp-emboss: #FFF6D6;
 }
@@ -465,7 +465,7 @@
    deep green + cream + gold · level colours = identity · status = progress
    ============================================================ */
 .ppx {
-  --gold: #C9A227;
+  --gold: var(--yellow-dk);
   --gold-dk: #8E6F12;
   --st-complete: #1C7A3D;
   --st-progress: #E0A12E;
@@ -1234,11 +1234,11 @@ button.pplv-levelstamp.is-link:hover { transform: translateY(-2px) scale(1.03); 
 .ppop-meta {
   font-family: var(--font-body); font-weight: 800;
   font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
-  color: var(--gold-dk, #b8860b); margin-bottom: 8px;
+  color: var(--gold-dk, var(--yellow-dk)); margin-bottom: 8px;
 }
 .ppop-title {
   font-family: var(--font-display); font-size: 26px; line-height: 1.1;
-  color: var(--deep-forest, #0f3d17); margin-bottom: 8px;
+  color: var(--deep-forest, var(--deep-forest)); margin-bottom: 8px;
 }
 .ppop-date { font-size: 13px; color: var(--ink-mid); margin-bottom: 18px; }
 .ppop-open { width: 100%; }
@@ -1296,7 +1296,7 @@ button.pplv-levelstamp.is-link:hover { transform: translateY(-2px) scale(1.03); 
 .rdr-celebrate-kicker {
   font-family: var(--font-body); font-weight: 900;
   font-size: 13px; letter-spacing: .12em; text-transform: uppercase;
-  color: var(--gold-dk, #b8860b); margin-bottom: 18px;
+  color: var(--gold-dk, var(--yellow-dk)); margin-bottom: 18px;
 }
 .rdr-celebrate-stampwrap {
   width: 132px; height: 132px; margin: 0 auto 18px;
@@ -1309,7 +1309,7 @@ button.pplv-levelstamp.is-link:hover { transform: translateY(-2px) scale(1.03); 
 }
 .rdr-celebrate-title {
   font-family: var(--font-display); font-size: 28px; line-height: 1.1;
-  color: var(--deep-forest, #0f3d17); margin-bottom: 8px;
+  color: var(--deep-forest, var(--deep-forest)); margin-bottom: 8px;
 }
 .rdr-celebrate-sub { font-size: 14px; color: var(--ink-mid); }
 .pplv-rewards .pplv-bonus-wrap { flex: 1; min-width: 0; }

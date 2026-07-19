@@ -14,7 +14,7 @@
   --d-parch-hi:     #FBF4DE;   /* cards */
   --d-line:         #E4D7B4;   /* borders */
   --d-side:         #3B4A2B;   /* sidebar */
-  --d-accent:       #C9A227;   /* gold */
+  --d-accent:       var(--yellow-dk);   /* gold */
   --d-accent-bright:#E6C860;
   --d-accent-deep:  #9A7A18;
   --d-olive:        #6E8B48;
@@ -102,7 +102,7 @@ main:has(> .wrap > .dash.role-adult) {
    ============================================================ */
 .nd-page {
   --d-parch:#F5ECD0; --d-parch-hi:#FBF4DE; --d-line:#E4D7B4;
-  --d-accent:#C9A227; --d-accent-bright:#E6C860; --d-accent-deep:#9A7A18;
+  --d-accent:var(--yellow-dk); --d-accent-bright:#E6C860; --d-accent-deep:#9A7A18;
   --d-olive:#6E8B48; --d-olive-deep:#4E6733; --d-olive-ink:#3B4E27;
   --d-ink:#3E3A26; --d-ink-mid:#6A6449; --d-ink-soft:#8B8060;
   --d-sage-soft:#D9E2BF; --d-track:#DEE6C8;
