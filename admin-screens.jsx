@@ -509,12 +509,15 @@ function AdminOps({ live }) {
           <h3>Platform operations</h3>
           <div className="sub">People · organisations · access · progress — live from Supabase</div>
         </div>
-        <div style={{ textAlign: "right", fontSize: 13 }}>
+        <div style={{ textAlign: "right", fontSize: 13, display: "flex", alignItems: "center", gap: 12, justifyContent: "flex-end" }}>
           {signedIn
             ? <span style={{ color: isStaff ? "#1A6E1A" : "#B71C1C", fontWeight: 800 }}>
                 {isStaff ? "✓ " : "⚠ "}{me.name}{me.role ? ` · ${me.role}` : ""}
               </span>
             : <span style={{ color: "var(--ink-soft)" }}>Not signed in</span>}
+          {signedIn && (
+            <button className="btn btn-ghost-dark btn-sm" onClick={async () => { await window.HaarayaAuth.signOut(); setNonce(n => n + 1); }}>Sign out</button>
+          )}
         </div>
       </div>
 
@@ -535,9 +538,8 @@ function AdminOps({ live }) {
         <div className="adash-card" style={{ marginBottom: 16 }}>
           <h5>Signed in — but not a Haaraya admin</h5>
           <p style={{ fontSize: 14, color: "var(--ink-mid)", margin: "0 0 8px", lineHeight: 1.5 }}>
-            You’re signed in as <strong>{me.name}</strong>{me.role ? ` (role: ${me.role})` : " (no role found)"}. Operational data is limited to accounts with role <code>haaraya_admin</code>. Promote this account in Supabase:
+            You’re signed in as <strong>{me.name}</strong>, but this account doesn’t have Haaraya admin access. If you believe this is a mistake, contact your Haaraya administrator.
           </p>
-          <pre style={{ fontSize: 12, background: "rgba(0,0,0,.05)", padding: "8px 10px", borderRadius: 6, overflowX: "auto", margin: "0 0 8px" }}>update public.users set role = 'haaraya_admin' where email = '{me.email}';</pre>
           <button className="btn btn-ghost-dark btn-sm" onClick={async () => { await window.HaarayaAuth.signOut(); setNonce(n => n + 1); }}>Sign out</button>
         </div>
       )}
