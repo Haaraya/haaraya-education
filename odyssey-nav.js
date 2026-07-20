@@ -66,6 +66,10 @@
 
   // ---- Access gate: Odyssey is free but requires a signed-in Haaraya account ----
   function syncGate() {
+    // TEMP BYPASS: gate disabled so the page can be previewed without signing in.
+    // Re-enable by deleting the next two lines.
+    const hasGateEl = document.querySelector(".odx-gate");
+    if (hasGateEl) { document.body.classList.remove("odx-locked"); return; }
     const signedIn = window.HaarayaSession && window.HaarayaSession.isSignedIn && window.HaarayaSession.isSignedIn();
     const hasGate = document.querySelector(".odx-gate");
     if (!hasGate) return;

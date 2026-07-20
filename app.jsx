@@ -142,14 +142,32 @@ function SignInPanel({ open, currentRole, onChoose, onClose }) {
   const S = window.HaarayaSession;
   const accounts = S ? S.accounts : {};
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     if (busy) return;
     if (!/.+@.+\..+/.test(email.trim())) { setError("Please enter a valid email address."); return; }
     if (!password) { setError("Please enter your password."); return; }
     setError(""); setBusy(true);
-    // Prototype: simulate an auth round-trip, then route to the matching dashboard.
-    setTimeout(() => onChoose(inferRoleFromEmail(email)), 650);
+    // Real Supabase auth: verify credentials, then route by the role stored on
+    // the user's public.users profile row. Falls back to the email heuristic if
+    // the auth stack isn't available (e.g. an offline/standalone copy).
+    if (!window.HaarayaAuth) {
+      setTimeout(() => onChoose(inferRoleFromEmail(email)), 400);
+      return;
+    }
+    try {
+      await window.HaarayaAuth.signIn({ email: email.trim(), password });
+      const accounts = (window.HaarayaSession && window.HaarayaSession.accounts) || {};
+      let roleKey = inferRoleFromEmail(email);
+      try {
+        const profile = await window.HaarayaAuth.getProfile();
+        if (profile && profile.role && accounts[profile.role]) roleKey = profile.role;
+      } catch (e2) { /* keep the email-inferred fallback */ }
+      onChoose(roleKey);
+    } catch (err) {
+      setBusy(false);
+      setError((err && err.message) ? err.message : "Sign in failed. Check your email and password.");
+    }
   };
 
   return (
@@ -208,7 +226,7 @@ function SignInPanel({ open, currentRole, onChoose, onClose }) {
           <div className="signin-demo">
             <p className="signin-demo-note">One-tap access for demos — no password needed.</p>
             <div className="signin-list">
-              {ROLE_ORDER.filter(r => r !== "visitor" && r !== "admin").map(role => {
+              {ROLE_ORDER.filter(r => r !== "visitor").map(role => {
                 const a = accounts[role];
                 if (!a) return null;
                 const active = role === currentRole;
@@ -294,6 +312,28 @@ function App() {
     const onSession = (e) => setSession(e.detail);
     window.addEventListener("haaraya:session", onSession);
     return () => window.removeEventListener("haaraya:session", onSession);
+  }, []);
+
+  // ---- Real Supabase session restore ----
+  // On load, if the browser already holds a valid Supabase session, adopt the
+  // role from that user's public.users profile so a refresh keeps them signed in.
+  useEffectApp(() => {
+    if (!window.HaarayaAuth || !window.HaarayaSession) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const sess = await window.HaarayaAuth.getSession();
+        if (!sess || cancelled) return;
+        const accounts = window.HaarayaSession.accounts || {};
+        let roleKey = null;
+        try {
+          const p = await window.HaarayaAuth.getProfile();
+          if (p && p.role && accounts[p.role]) roleKey = p.role;
+        } catch (e) { /* ignore */ }
+        if (!cancelled && roleKey) window.HaarayaSession.signInAs(roleKey);
+      } catch (e) { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   // Hash-based router (access-gated)
@@ -384,7 +424,10 @@ function App() {
     window.location.hash = dest;
     window.scrollTo({ top: 0, behavior: "instant" });
   };
-  const signOut = () => applyRole("visitor");
+  const signOut = () => {
+    if (window.HaarayaAuth) { try { window.HaarayaAuth.signOut(); } catch (e) { /* ignore */ } }
+    applyRole("visitor");
+  };
 
   const screenLabel = ({
     home:     "01 Home",
@@ -405,7 +448,7 @@ function App() {
 
   return (
     <div data-screen-label={screenLabel}>
-      {screen !== "reader" && (
+      {!["reader", "child", "parent", "teacher", "school", "admin"].includes(screen) && (
         <Nav
           current={screen}
           onNavigate={navigate}
