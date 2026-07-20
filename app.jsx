@@ -208,7 +208,7 @@ function SignInPanel({ open, currentRole, onChoose, onClose }) {
           <div className="signin-demo">
             <p className="signin-demo-note">One-tap access for demos — no password needed.</p>
             <div className="signin-list">
-              {ROLE_ORDER.filter(r => r !== "visitor").map(role => {
+              {ROLE_ORDER.filter(r => r !== "visitor" && r !== "admin").map(role => {
                 const a = accounts[role];
                 if (!a) return null;
                 const active = role === currentRole;

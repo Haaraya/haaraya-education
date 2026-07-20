@@ -292,7 +292,7 @@ function Book({ book, onClick, size = "md", locked = false }) {
           <StrandLogo strand={book.strand} height={12} dark />
         </div>
         <div className="bc-art">
-          <img className="book-cover-img" src={thumb} alt="" onError={(e) => { const img = e.currentTarget; if (!img.dataset.extSwap && /\.(png|webp)$/i.test(img.src)) { img.dataset.extSwap = "1"; img.src = /\.png$/i.test(img.src) ? img.src.replace(/\.png$/i, ".webp") : img.src.replace(/\.webp$/i, ".png"); return; } const p = img.closest(".book--cover"); if (p) p.classList.add("book--nocover"); img.remove(); }} />
+          <img className="book-cover-img" src={thumb} alt="" onError={(e) => { const p = e.currentTarget.closest(".book--cover"); if (p) p.classList.add("book--nocover"); e.currentTarget.remove(); }} />
         </div>
         {locked && (
           <div className="book-locktag" aria-label="Subscriber only">
