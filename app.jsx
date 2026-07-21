@@ -108,6 +108,16 @@ function canAccess(role, screen) {
   return (ROLE_ACCESS[role] || ROLE_ACCESS.visitor).includes(screen);
 }
 
+// Last in-app navigation (screen + params), so a refresh can rebuild screens
+// that need per-visit params — chiefly the book reader, whose book code isn't
+// in the URL hash. Session-scoped: cleared when the tab closes.
+function readLastNav() {
+  try { return JSON.parse(sessionStorage.getItem("haaraya:last") || "null"); } catch (e) { return null; }
+}
+function writeLastNav(screen, params) {
+  try { sessionStorage.setItem("haaraya:last", JSON.stringify({ screen: screen, params: params || {} })); } catch (e) { /* ignore */ }
+}
+
 /* ------------ Sign-in panel (prototype role chooser) ------------ */
 
 // Infer which dashboard an email belongs to. Lets the "real" sign-in form route
@@ -366,11 +376,14 @@ function App() {
     // Session restore is async, so the role may still be "visitor" here. If the
     // hash target is accessible right now, use it; otherwise leave dest=home but
     // KEEP the hash so the post-boot effect below can restore it once the role
-    // settles. Do not strip the hash here.
+    // settles. Do not strip the hash here. Param-carrying screens (the reader)
+    // are restorable only when we have the matching persisted nav.
     const hashScreen = (window.location.hash || "").replace("#", "");
     const needsParams = ["reader", "odyssey-reader"];
-    if (dest === "home" && validScreens.includes(hashScreen) &&
-        !needsParams.includes(hashScreen) && canAccess(r, hashScreen)) {
+    const last = readLastNav();
+    const canRestoreParams = !!(last && last.screen === hashScreen && last.params);
+    if (dest === "home" && validScreens.includes(hashScreen) && canAccess(r, hashScreen) &&
+        (!needsParams.includes(hashScreen) || canRestoreParams)) {
       dest = hashScreen;
     }
     return dest;
@@ -385,6 +398,11 @@ function App() {
         return { bookCode: bookCode };
       }
     } catch (e) { /* ignore */ }
+    // Refresh restore: reuse the persisted params if they belong to the screen
+    // the URL hash points at.
+    const h = (window.location.hash || "").replace("#", "");
+    const last = readLastNav();
+    if (last && last.screen === h && last.params) return last.params;
     return {};
   });
 
@@ -426,9 +444,12 @@ function App() {
     const h = (window.location.hash || "").replace("#", "");
     if (!h) { hashRestoredRef.current = true; return; }
     const needsParams = ["reader", "odyssey-reader"];
+    const last = readLastNav();
+    const canRestoreParams = !!(last && last.screen === h && last.params);
     if (screen === "home" && validScreens.includes(h) &&
-        !needsParams.includes(h) && canAccess(role, h)) {
+        (!needsParams.includes(h) || canRestoreParams) && canAccess(role, h)) {
       hashRestoredRef.current = true;
+      if (canRestoreParams) setParams(last.params);
       setScreen(h);
     } else if (canAccess(role, h) || !validScreens.includes(h)) {
       // Either restored elsewhere or the hash isn't a real screen — stop trying.
@@ -449,6 +470,7 @@ function App() {
     }
     setParams(p);
     setScreen(key);
+    writeLastNav(key, p);
     window.location.hash = key;
     window.scrollTo({ top: 0, behavior: "instant" });
   };
