@@ -25,8 +25,17 @@
   "use strict";
 
   var COLS =
+  var BASE_COLS =
     "title,strand,level,about_text,read_to_find_out," +
     "focus_visible,focus_sound,soundbite,sound_cue,sound_cue_check";
+  // Ant hunt is additive. If the DB predates the migration, drop the column
+  // (permanently, for this session) so the whole About layer keeps working.
+  var antAvailable = true;
+  function cols() { return antAvailable ? BASE_COLS + ",about_ant_hook" : BASE_COLS; }
+  function missingAntCol(e) {
+    var m = e && (e.message || e.msg || "") + "";
+    return antAvailable && /about_ant_hook/.test(m) && /does not exist|schema cache/i.test(m);
+  }
 
   var cache = Object.create(null); // code -> page | null (negative cached too)
   var preloaded = false;
@@ -49,6 +58,7 @@
       soundbite: clean(r.soundbite),
       soundCue: clean(r.sound_cue),
       soundCueCheck: !!r.sound_cue_check,
+      antHook: clean(r.about_ant_hook),
     };
   }
 
@@ -61,7 +71,7 @@
     try {
       var res = await client
         .from("about_page_codes")
-        .select("about_pages(" + COLS + ")")
+        .select("about_pages(" + cols() + ")")
         .eq("code", code)
         .maybeSingle();
       if (res.error) throw res.error;
@@ -69,6 +79,7 @@
       cache[code] = page;   // cache hit or miss
       return page;
     } catch (e) {
+      if (missingAntCol(e)) { antAvailable = false; return get(code); } // retry once without ant col
       if (window.console) console.warn("[About] Supabase get(" + code + ") failed:", e.message || e);
       return null; // do NOT poison cache on a transient/network error
     }
@@ -83,7 +94,7 @@
       try {
         var res = await client
           .from("about_page_codes")
-          .select("code,about_pages(" + COLS + ")");
+          .select("code,about_pages(" + cols() + ")");
         if (res.error) throw res.error;
         (res.data || []).forEach(function (row) {
           cache[row.code] = rowToAbout(row.about_pages);
@@ -91,6 +102,7 @@
         preloaded = true;
         return true;
       } catch (e) {
+        if (missingAntCol(e)) { antAvailable = false; preloadPromise = null; return preload(); }
         if (window.console) console.warn("[About] Supabase preload failed:", e.message || e);
         preloadPromise = null; // allow a later retry
         return false;

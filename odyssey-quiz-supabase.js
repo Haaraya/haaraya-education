@@ -34,6 +34,15 @@
     "q1_text,q1_a,q1_b,q1_c,q1_correct," +
     "q2_text,q2_a,q2_b,q2_c,q2_correct," +
     "q3_text,q3_a,q3_b,q3_c,q3_correct";
+  var ANT_COLS = "ant_bonus_question,ant_bonus_a,ant_bonus_b,ant_bonus_c,ant_bonus_correct,ant_bonus_note,ant_pages";
+  // Ant hunt is additive. If the DB predates the migration, drop the columns
+  // (permanently, for this session) so the whole quiz layer keeps working.
+  var antAvailable = true;
+  function cols() { return antAvailable ? CHECK_COLS + "," + ANT_COLS : CHECK_COLS; }
+  function missingAntCol(e) {
+    var m = (e && (e.message || e.msg || "")) + "";
+    return antAvailable && /ant_bonus_|ant_pages/.test(m) && /does not exist|schema cache/i.test(m);
+  }
 
   var cache = Object.create(null); // code -> check | null (negative cached too)
   var preloaded = false;
@@ -61,7 +70,23 @@
     var write = (rc.write_prompt && rc.write_prompt !== "")
       ? { prompt: clean(rc.write_prompt), answer: clean(rc.write_answer) }
       : null;
-    return { questions: qs, write: write, retryNote: clean(rc.retry_note), source: "supabase" };
+    // Optional ant-hunt bonus. Pure fun — never gates progression.
+    var ant = null;
+    if (rc.ant_bonus_question && rc.ant_bonus_question !== "") {
+      var aopts = [rc.ant_bonus_a, rc.ant_bonus_b, rc.ant_bonus_c]
+        .filter(function (o) { return o != null && o !== ""; })
+        .map(clean);
+      var aans = parseInt(rc.ant_bonus_correct, 10);
+      if (isNaN(aans) || aans < 0 || aans >= aopts.length) aans = 0;
+      ant = {
+        question: clean(rc.ant_bonus_question),
+        options: aopts,
+        answer: aans,
+        pages: clean(rc.ant_pages),
+        note: clean(rc.ant_bonus_note),
+      };
+    }
+    return { questions: qs, write: write, retryNote: clean(rc.retry_note), ant: ant, source: "supabase" };
   }
 
   // Fetch a single check by any of its codes.
@@ -73,7 +98,7 @@
     try {
       var res = await client
         .from("reading_check_codes")
-        .select("reading_checks(" + CHECK_COLS + ")")
+        .select("reading_checks(" + cols() + ")")
         .eq("code", code)
         .maybeSingle();
       if (res.error) throw res.error;
@@ -82,6 +107,7 @@
       cache[code] = check;   // cache hit or miss
       return check;
     } catch (e) {
+      if (missingAntCol(e)) { antAvailable = false; return get(code); } // retry once without ant cols
       if (window.console) console.warn("[Quiz] Supabase get(" + code + ") failed:", e.message || e);
       return null; // do NOT poison cache on a transient/network error
     }
@@ -96,7 +122,7 @@
       try {
         var res = await client
           .from("reading_check_codes")
-          .select("code,reading_checks(" + CHECK_COLS + ")");
+          .select("code,reading_checks(" + cols() + ")");
         if (res.error) throw res.error;
         (res.data || []).forEach(function (row) {
           cache[row.code] = rowToCheck(row.reading_checks);
@@ -104,6 +130,7 @@
         preloaded = true;
         return true;
       } catch (e) {
+        if (missingAntCol(e)) { antAvailable = false; preloadPromise = null; return preload(); }
         if (window.console) console.warn("[Quiz] Supabase preload failed:", e.message || e);
         preloadPromise = null; // allow a later retry
         return false;

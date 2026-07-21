@@ -740,3 +740,20 @@
   .tfr .confetti { display: none; }
   .tfr .nextup-stamp, .tfr .nextup-stamp-ph, .tfr .quiz-done-seal { animation: none; }
 }
+
+/* Ant hunt — a playful, non-scoring extra. Warm amber accent to set it
+   apart from the teaching content (which uses --tfr-accent). */
+.tfr .about-hook.about-ant { background: #fdf4e3; border-color: #e7c37e; }
+.tfr .about-hook.about-ant .about-hook-label { color: #b3771a; }
+
+.tfr .quiz-ant { width: 100%; max-width: 86cqw; margin: 3cqh auto 0; padding: 2.6cqh 4cqw; border-radius: 16px; background: #fdf4e3; border: 1.5px solid #e7c37e; text-align: left; }
+.tfr .quiz-ant-label { display: block; font-weight: 800; font-size: 2.4cqw; letter-spacing: 0.1em; text-transform: uppercase; color: #b3771a; }
+.tfr .quiz-ant-q { font-weight: 700; font-size: 3.5cqw; line-height: 1.3; color: var(--tfr-ink); margin: 1.2cqh 0 2cqh; text-wrap: pretty; }
+.tfr .quiz-ant-opts { display: flex; flex-wrap: wrap; gap: 2cqw; }
+.tfr .quiz-ant-opt { flex: 1 1 22cqw; font: inherit; font-weight: 700; font-size: 3.2cqw; color: var(--tfr-ink); padding: 1.6cqh 3cqw; border-radius: 12px; background: #fff; border: 1.5px solid #e7c37e; cursor: pointer; transition: background .15s, border-color .15s, opacity .15s; }
+.tfr .quiz-ant-opt:hover:not(:disabled) { background: #fbeccb; }
+.tfr .quiz-ant-opt.correct { background: #e3f4ea; border-color: #2f9e6e; color: #1c6a49; }
+.tfr .quiz-ant-opt.wrong { background: #f9e3df; border-color: #d1614a; color: #9b3d2c; }
+.tfr .quiz-ant-opt.dim { opacity: .5; }
+.tfr .quiz-ant-opt:disabled { cursor: default; }
+.tfr .quiz-ant-fb { min-height: 3cqh; margin-top: 1.6cqh; font-weight: 700; font-size: 3cqw; color: #b3771a; }

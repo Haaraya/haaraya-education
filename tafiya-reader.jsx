@@ -176,6 +176,13 @@ function TfrAbout({ pkg, about }) {
             <p className="about-hook-text">{about.read}</p>
           </div>
         )}
+
+        {about.antHook && (
+          <div className="about-hook about-ant">
+            <span className="about-hook-label">Ant hunt</span>
+            <p className="about-hook-text">{about.antHook}</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -433,11 +440,14 @@ async function tfrResolveCheck(pkg, catalog) {
   }
 
   // 2. Generated sample — only when the DB has no authored check for this book.
-  return { questions: tfrSampleQuestions(pkg, catalog), write: null, retryNote: "", source: "sample" };
+  return { questions: tfrSampleQuestions(pkg, catalog), write: null, retryNote: "", ant: null, source: "sample" };
 }
 
-function TfrQuizDone({ total, write, onContinue }) {
+function TfrQuizDone({ total, write, ant, onContinue }) {
   const [typed, setTyped] = useStateTfr("");
+  const [antSel, setAntSel] = useStateTfr(-1);
+  const hasAnt = !!(ant && ant.question && ant.options && ant.options.length);
+  const antDone = antSel >= 0;
   return (
     <div className="surface quiz">
       <div className="quiz-done">
@@ -450,6 +460,25 @@ function TfrQuizDone({ total, write, onContinue }) {
             <input className="quiz-write-input" type="text" value={typed} onChange={e => setTyped(e.target.value)} placeholder="Try writing it…" autoComplete="off" spellCheck="false" />
           </div>
         )}
+        {hasAnt && (
+          <div className="quiz-ant">
+            <span className="quiz-ant-label">Ant hunt · just for fun</span>
+            <div className="quiz-ant-q"><TfrRichText text={ant.question} /></div>
+            <div className="quiz-ant-opts">
+              {ant.options.map((o, oi) => {
+                const st = antDone ? (oi === ant.answer ? "correct" : (oi === antSel ? "wrong" : "dim")) : "";
+                return <button key={oi} type="button" className={"quiz-ant-opt " + st} onClick={() => { if (!antDone) setAntSel(oi); }} disabled={antDone}>{o}</button>;
+              })}
+            </div>
+            <div className="quiz-ant-fb">
+              {antDone
+                ? (antSel === ant.answer
+                    ? "You found the ant!"
+                    : (ant.pages ? ("The ant was on page " + ant.pages + "!") : "Good hunting!"))
+                : "\u00a0"}
+            </div>
+          </div>
+        )}
         <div className="quiz-actions" style={{ marginTop: "3.6cqh" }}>
           <button className="quiz-btn" type="button" onClick={onContinue}>See what&rsquo;s next →</button>
         </div>
@@ -458,7 +487,7 @@ function TfrQuizDone({ total, write, onContinue }) {
   );
 }
 
-function TfrQuizCards({ questions, write, retryNote, alreadyPassed, onPass, onContinue, cue }) {
+function TfrQuizCards({ questions, write, retryNote, ant, alreadyPassed, onPass, onContinue, cue }) {
   const n = questions.length;
   const [qi, setQi] = useStateTfr(0);  const [sel, setSel] = useStateTfr(-1);
   const [st, setSt] = useStateTfr("idle"); // idle | correct | wrong
@@ -468,7 +497,7 @@ function TfrQuizCards({ questions, write, retryNote, alreadyPassed, onPass, onCo
   // turned Read aloud on (off by default). Best-effort; browsers permit
   // speechSynthesis once the child has interacted with the page.
   useEffectTfr(() => { if (!done && readAloud && questions[qi]) tfrSpeakText(questions[qi].q, cue); }, [qi, done, readAloud]);
-  if (done) return <TfrQuizDone total={n} write={write} onContinue={onContinue} />;
+  if (done) return <TfrQuizDone total={n} write={write} ant={ant} onContinue={onContinue} />;
   const q = questions[qi];
   const pick = (oi) => { if (st === "correct") return; setSel(oi); setSt("idle"); };
   const check = () => { if (sel < 0) return; setSt(sel === q.answer ? "correct" : "wrong"); };
@@ -495,7 +524,7 @@ function TfrQuizCards({ questions, write, retryNote, alreadyPassed, onPass, onCo
   );
 }
 
-function TfrQuizSheet({ questions, write, retryNote, alreadyPassed, onPass, onContinue, cue }) {
+function TfrQuizSheet({ questions, write, retryNote, ant, alreadyPassed, onPass, onContinue, cue }) {
   const n = questions.length;
   const [ans, setAns] = useStateTfr(() => questions.map(() => -1));
   const [locked, setLocked] = useStateTfr(() => questions.map(() => false));
@@ -504,7 +533,7 @@ function TfrQuizSheet({ questions, write, retryNote, alreadyPassed, onPass, onCo
   const [readAloud] = useTfrReadAloud();
   // Read the questions aloud once on arrival, only when Read aloud is on.
   useEffectTfr(() => { if (readAloud) { const txt = questions.map((q, i) => "Question " + (i + 1) + ". " + q.q).join(" "); tfrSpeakText(txt, cue); } }, [readAloud]);
-  if (done) return <TfrQuizDone total={n} write={write} onContinue={onContinue} />;
+  if (done) return <TfrQuizDone total={n} write={write} ant={ant} onContinue={onContinue} />;
   const pick = (qi, oi) => { if (locked[qi]) return; setAns(a => { const c = a.slice(); c[qi] = oi; return c; }); };
   const allAnswered = ans.every(a => a >= 0);
   const check = () => {
@@ -1114,6 +1143,7 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
                 questions={check.questions}
                 write={check.write}
                 retryNote={check.retryNote}
+                ant={check.ant}
                 cue={about ? about.soundCue : ""}
                 layout={quizLayout === "Worksheet" ? "sheet" : "cards"}
                 alreadyPassed={quizPassed}

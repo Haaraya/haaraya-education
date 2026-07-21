@@ -47,6 +47,16 @@ create table if not exists reading_checks (
   write_answer  text,
   retry_note    text,
 
+  -- Ant-hunt bonus (optional; blank question = no bonus for this book).
+  -- Not part of the reading score — pure fun.
+  ant_bonus_question text,
+  ant_bonus_a        text,
+  ant_bonus_b        text,
+  ant_bonus_c        text,
+  ant_bonus_correct  smallint check (ant_bonus_correct between 0 and 2),
+  ant_bonus_note     text,
+  ant_pages          text,
+
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now()
 );
@@ -57,6 +67,15 @@ create table if not exists reading_check_codes (
   check_id  uuid not null references reading_checks(id) on delete cascade
 );
 create index if not exists reading_check_codes_check_id_idx on reading_check_codes (check_id);
+
+-- Additive migration for databases created before the ant hunt existed.
+alter table reading_checks add column if not exists ant_bonus_question text;
+alter table reading_checks add column if not exists ant_bonus_a        text;
+alter table reading_checks add column if not exists ant_bonus_b        text;
+alter table reading_checks add column if not exists ant_bonus_c        text;
+alter table reading_checks add column if not exists ant_bonus_correct  smallint;
+alter table reading_checks add column if not exists ant_bonus_note     text;
+alter table reading_checks add column if not exists ant_pages          text;
 
 -- keep updated_at fresh
 create or replace function touch_updated_at() returns trigger as $$

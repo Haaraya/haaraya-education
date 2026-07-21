@@ -22,6 +22,7 @@ create table if not exists about_pages (
   soundbite         text,                        -- comma-separated example words
   sound_cue         text,                        -- spoken pronunciation
   sound_cue_check   boolean not null default false,  -- author flagged for review
+  about_ant_hook    text,                        -- "ant hunt" hook shown on the About page (blank = no hunt)
 
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now()
@@ -33,6 +34,9 @@ create table if not exists about_page_codes (
   page_id   uuid not null references about_pages(id) on delete cascade
 );
 create index if not exists about_page_codes_page_id_idx on about_page_codes (page_id);
+
+-- Additive migration for databases created before the ant hunt existed.
+alter table about_pages add column if not exists about_ant_hook text;
 
 -- keep updated_at fresh (shared touch fn; guarded create for standalone runs)
 create or replace function touch_updated_at() returns trigger as $$
