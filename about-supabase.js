@@ -24,7 +24,6 @@
 (function () {
   "use strict";
 
-  var COLS =
   var BASE_COLS =
     "title,strand,level,about_text,read_to_find_out," +
     "focus_visible,focus_sound,soundbite,sound_cue,sound_cue_check";

@@ -159,11 +159,15 @@ function SignInPanel({ open, currentRole, onChoose, onClose }) {
       await window.HaarayaAuth.signIn({ email: email.trim(), password });
       const accounts = (window.HaarayaSession && window.HaarayaSession.accounts) || {};
       let roleKey = inferRoleFromEmail(email);
+      let profileRow = null;
       try {
         const profile = await window.HaarayaAuth.getProfile();
-        if (profile && profile.role && accounts[profile.role]) roleKey = profile.role;
+        if (profile && profile.role) {
+          profileRow = profile;
+          if (accounts[profile.role]) roleKey = profile.role;
+        }
       } catch (e2) { /* keep the email-inferred fallback */ }
-      onChoose(roleKey);
+      onChoose(roleKey, profileRow);
     } catch (err) {
       setBusy(false);
       setError((err && err.message) ? err.message : "Sign in failed. Check your email and password.");
@@ -325,12 +329,15 @@ function App() {
         const sess = await window.HaarayaAuth.getSession();
         if (!sess || cancelled) return;
         const accounts = window.HaarayaSession.accounts || {};
-        let roleKey = null;
+        var roleKey = null;
+        var profileRow = null;
         try {
           const p = await window.HaarayaAuth.getProfile();
-          if (p && p.role && accounts[p.role]) roleKey = p.role;
+          if (p && p.role) { profileRow = p; if (accounts[p.role]) roleKey = p.role; }
         } catch (e) { /* ignore */ }
-        if (!cancelled && roleKey) window.HaarayaSession.signInAs(roleKey);
+        // A real Supabase user → live, DB-backed session (separate from demos).
+        if (!cancelled && profileRow) window.HaarayaSession.signInReal(profileRow);
+        else if (!cancelled && roleKey) window.HaarayaSession.signInAs(roleKey);
       } catch (e) { /* ignore */ }
     })();
     return () => { cancelled = true; };
@@ -344,15 +351,25 @@ function App() {
     // Exception: a one-time "landing" target set by the registration handoff,
     // which we honour once and then clear.
     let dest = "home";
+    const r = window.HaarayaSession ? window.HaarayaSession.role() : "visitor";
     try {
       const land = sessionStorage.getItem("haaraya:landing");
       if (land) {
         sessionStorage.removeItem("haaraya:landing");
-        const r = window.HaarayaSession ? window.HaarayaSession.role() : "visitor";
         if (validScreens.includes(land) && canAccess(r, land)) dest = land;
       }
     } catch (e) { /* ignore */ }
-    if (window.location.hash) {
+    // On refresh, restore the screen from the URL hash (if it's valid and the
+    // role may see it). The landing hint above still wins for the handoff case.
+    // Screens that need per-visit params (a specific book) can't be rebuilt
+    // from the hash alone, so those fall back to Home.
+    const hashScreen = (window.location.hash || "").replace("#", "");
+    const needsParams = ["reader", "odyssey-reader"];
+    if (dest === "home" && validScreens.includes(hashScreen) &&
+        canAccess(r, hashScreen) && !needsParams.includes(hashScreen)) {
+      dest = hashScreen;
+    }
+    if (dest === "home" && window.location.hash) {
       try { history.replaceState(null, "", window.location.pathname + window.location.search); } catch (e) { /* ignore */ }
     }
     return dest;
@@ -415,8 +432,12 @@ function App() {
     window.scrollTo({ top: 0, behavior: "instant" });
   };
 
-  const applyRole = (r) => {
-    const s = window.HaarayaSession.signInAs(r);
+  const applyRole = (r, profileRow) => {
+    // profileRow present → real Supabase sign-in (live data). Otherwise a demo
+    // account switch. The two paths are deliberately separate.
+    const s = profileRow
+      ? window.HaarayaSession.signInReal(profileRow)
+      : window.HaarayaSession.signInAs(r);
     setSignInOpen(false);
     const dest = ROLE_HOME[s.role] || "home";
     setParams({});
