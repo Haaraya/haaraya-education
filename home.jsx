@@ -434,7 +434,7 @@ function LibraryTeaser({ onNavigate }) {
         <SectionHeader
           center
           eyebrow="The library"
-          title="Haaraya Reading Library."
+          title="Explore the Haaraya reading journey."
           lede="Discover books across Haaraya&rsquo;s reading strands, levels, stories, poems, folktales, and practice paths."
         />
 

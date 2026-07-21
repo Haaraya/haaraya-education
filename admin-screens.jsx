@@ -44,17 +44,19 @@ function AdultSidebar({ items, footerName, footerSub, footerColor }) {
    ============================================================ */
 
 function TeacherDashScreen({ onNavigate }) {
+  const real = !!(window.HaarayaSession && HaarayaSession.isReal() && window.HaarayaPlatformDB);
+  const Api = real ? HaarayaPlatformDB : HaarayaApi;
   const TEACHER_ID = (window.HaarayaSession && HaarayaSession.userId()) || 2;
   const ME = (window.HaarayaSession && HaarayaSession.get().displayName) || "Demo Teacher";
-  const { data: teacher }    = useApi(() => HaarayaApi.getCurrentTeacher(), [TEACHER_ID]);
-  const { data: classrooms } = useApi(() => HaarayaApi.getClassroomsForTeacher(TEACHER_ID), [TEACHER_ID]);
+  const { data: teacher }    = useApi(() => Api.getCurrentTeacher(), [TEACHER_ID, real]);
+  const { data: classrooms } = useApi(() => Api.getClassroomsForTeacher(TEACHER_ID), [TEACHER_ID, real]);
   const [classIdx, setClassIdx] = useStateAdult(0);
   const classroom = (classrooms || [])[classIdx];
 
-  const { data: pupils }       = useApi(async () => classroom ? HaarayaApi.getClassReadingProgress(classroom.id) : [], [classroom && classroom.id]);
-  const { data: pathProgress } = useApi(async () => classroom ? HaarayaApi.getClassReadingPathProgress(classroom.id) : null, [classroom && classroom.id]);
-  const { data: alerts }       = useApi(async () => classroom ? HaarayaApi.getSupportAlerts(classroom.id) : [], [classroom && classroom.id]);
-  const { data: assignments }  = useApi(async () => classroom ? HaarayaApi.getAssignmentsForClassroom(classroom.id) : [], [classroom && classroom.id]);
+  const { data: pupils }       = useApi(() => classroom ? Api.getClassReadingProgress(classroom.id) : Promise.resolve([]), [classroom && classroom.id, real]);
+  const { data: pathProgress } = useApi(() => classroom ? Api.getClassReadingPathProgress(classroom.id) : Promise.resolve(null), [classroom && classroom.id, real]);
+  const { data: alerts }       = useApi(() => classroom ? Api.getSupportAlerts(classroom.id) : Promise.resolve([]), [classroom && classroom.id, real]);
+  const { data: assignments }  = useApi(() => classroom ? Api.getAssignmentsForClassroom(classroom.id) : Promise.resolve([]), [classroom && classroom.id, real]);
 
   if (!classrooms || !teacher) return null;
 
@@ -200,9 +202,12 @@ function TeacherDashScreen({ onNavigate }) {
    ============================================================ */
 
 function SchoolAdminDashScreen({ onNavigate }) {
+  const real = !!(window.HaarayaSession && HaarayaSession.isReal() && window.HaarayaPlatformDB);
+  const Api = real ? HaarayaPlatformDB : HaarayaApi;
+  const ME = (window.HaarayaSession && HaarayaSession.get().displayName) || "Demo School Admin";
   const SCHOOL_ID = (window.HaarayaSession && HaarayaSession.schoolId()) || 1;
-  const { data }      = useApi(() => HaarayaApi.getSchoolDashboard(SCHOOL_ID), [SCHOOL_ID]);
-  const { data: kpi } = useApi(() => HaarayaApi.getSchoolUsageOverview(SCHOOL_ID), [SCHOOL_ID]);
+  const { data }      = useApi(() => Api.getSchoolDashboard(SCHOOL_ID), [SCHOOL_ID, real]);
+  const { data: kpi } = useApi(() => Api.getSchoolUsageOverview(SCHOOL_ID), [SCHOOL_ID, real]);
 
   if (!data || !kpi) return null;
 
@@ -219,11 +224,12 @@ function SchoolAdminDashScreen({ onNavigate }) {
             <a>Classrooms</a>
             <a>Subscription</a>
             <a>Reports</a>
+            <a onClick={() => onNavigate("library")}>Library</a>
           </nav>
           <div className="nd-chip">
-            <Avatar name="Demo School Admin" color="#00838F" size={40} />
+            <Avatar name={ME} color="#00838F" size={40} />
             <div className="who">
-              <div className="n">Demo School Admin</div>
+              <div className="n">{ME}</div>
               <div className="l">School admin</div>
             </div>
           </div>
@@ -682,7 +688,7 @@ function HaarayaAdminDashScreen({ onNavigate }) {
   const [levelF, setLevelF] = useStateAdult("");
   const [kindF, setKindF] = useStateAdult("");
   const [inspect, setInspect] = useStateAdult(null);
-  const [tab, setTab] = useStateAdult("content");
+  const [tab, setTab] = useStateAdult("ops");
   const { data: rows } = useApi(
     () => live ? HaarayaAdminDB.catalogue({ search, strandUi: strandF, level: levelF, kind: kindF }) : [],
     [live, search, strandF, levelF, kindF]
@@ -700,17 +706,16 @@ function HaarayaAdminDashScreen({ onNavigate }) {
         <div className="nd-top">
           <div className="nd-word"><img src="assets/odyssey-seal.png" alt="Haaraya" /> Haaraya</div>
           <nav className="nd-nav">
-            <a className={tab === "content" ? "on" : ""} onClick={() => setTab("content")}>Content</a>
             <a className={tab === "ops" ? "on" : ""} onClick={() => setTab("ops")}>Operations</a>
-            <a onClick={() => onNavigate("odyssey-library")}>Odyssey library</a>
-            <a onClick={() => onNavigate("library")}>Tafiya library</a>
+            <a className={tab === "content" ? "on" : ""} onClick={() => setTab("content")}>Content</a>
           </nav>
           <div className="nd-chip">
-            <Avatar name="Haaraya Admin" color="#283593" size={40} />
+            <Avatar name="Haaraya" color="#283593" size={40} />
             <div className="who">
-              <div className="n">Haaraya Admin</div>
-              <div className="l">Owner back end</div>
+              <div className="n">Haaraya</div>
+              <div className="l">Admin</div>
             </div>
+            <button className="btn btn-ghost-dark btn-sm" style={{ marginLeft: 10 }} onClick={async () => { if (window.HaarayaAuth) { try { await window.HaarayaAuth.signOut(); } catch (e) {} } if (window.HaarayaSession) window.HaarayaSession.signOut(); onNavigate("home"); }}>Sign out</button>
           </div>
         </div>
         <div className="dash role-adult" style={{ display: "block", background: "transparent", border: "none", boxShadow: "none", padding: 0, minHeight: 0 }}>

@@ -566,7 +566,7 @@ function TfrQuizSheet({ questions, write, retryNote, ant, alreadyPassed, onPass,
 }
 function TfrQuiz(props) { return props.layout === "sheet" ? <TfrQuizSheet {...props} /> : <TfrQuizCards {...props} />; }
 
-function TfrNextUp({ book, nextBook, onStartNext, onLibrary }) {
+function TfrNextUp({ book, nextBook, onStartNext, onReread, onLibrary }) {
   const m = tfrText(book.level).match(/\d+/);
   const lvl = m ? m[0] : null;
   const stampSrc = lvl ? tfrSrc("assets/stamp-l" + lvl + ".png") : "";
@@ -613,6 +613,7 @@ function TfrNextUp({ book, nextBook, onStartNext, onLibrary }) {
           <div className="nextup-actions">
             {ScribeUI ? <button className="nextup-scribe" type="button" onClick={() => setScribeOpen(true)}><span className="q" aria-hidden="true">&#x1F58B;</span> Write your Captain’s Log</button> : null}
             <button className="quiz-btn" type="button" onClick={onStartNext}>Start “{tfrText(nextBook.title) || nextCode}” →</button>
+            <button className="quiz-btn ghost" type="button" onClick={onReread}>↺ Read it again</button>
             <button className="quiz-btn ghost" type="button" onClick={onLibrary}>Back to library</button>
           </div>
         </React.Fragment>
@@ -621,7 +622,8 @@ function TfrNextUp({ book, nextBook, onStartNext, onLibrary }) {
           <div className="nextup-meta" style={{ marginTop: "4cqh", fontSize: "3cqw" }}>You’ve reached the end of the journey for now. New books appear here as they’re published.</div>
           <div className="nextup-actions">
             {ScribeUI ? <button className="nextup-scribe" type="button" onClick={() => setScribeOpen(true)}><span className="q" aria-hidden="true">&#x1F58B;</span> Write your Captain’s Log</button> : null}
-            <button className="quiz-btn" type="button" onClick={onLibrary}>Back to library</button>
+            <button className="quiz-btn" type="button" onClick={onReread}>↺ Read it again</button>
+            <button className="quiz-btn ghost" type="button" onClick={onLibrary}>Back to library</button>
           </div>
         </React.Fragment>
       )}
@@ -1080,15 +1082,6 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
             <button className="btn btn-ghost" type="button" onClick={() => onNavigate("library")}>
               <span className="ico" aria-hidden="true">‹</span><span>Library</span>
             </button>
-            <button
-              className={"btn btn-ghost tfr-review-toggle" + (reviewMode ? " is-on" : "")}
-              type="button"
-              onClick={() => setReviewMode(v => !v)}
-              title="Toggle page review mode"
-              aria-pressed={reviewMode}
-            >
-              <span className="ico" aria-hidden="true">✓</span><span>{reviewMode ? "Reviewing" : "Review"}</span>
-            </button>
           </div>
           <div className="running">
             <span className="running-title">{tfrText(b.title) || "\u00a0"}</span>
@@ -1156,6 +1149,7 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
                 book={b}
                 nextBook={nextBook}
                 onStartNext={() => nextBook && onNavigate("reader", { bookCode: nextBook.book_code || nextBook.code })}
+                onReread={() => { setQuizPassed(false); go(0); }}
                 onLibrary={() => onNavigate("library")}
               />
             )}
@@ -1249,12 +1243,43 @@ function tfrStrandUi(b) {
   return "tafiya";
 }
 
+// Library view state that survives navigating away to the reader and back
+// (module-scoped, so it persists across mount/unmount within a session). Lets
+// "Back to library" return you to the same filters and scroll position you left.
+var TFL_STATE = { strandFilter: "all", levelFilter: "all", query: "", sampleOnly: false, scrollY: 0 };
+
 function LibraryScreen({ onNavigate, initialLevel }) {
   const [catalog, setCatalog] = useStateTfr(() => (window.TafiyaData ? window.TafiyaData.getCatalog() : []));
-  const [strandFilter, setStrandFilter] = useStateTfr("all");
-  const [levelFilter, setLevelFilter] = useStateTfr(initialLevel ? Number(initialLevel) : "all");
-  const [query, setQuery] = useStateTfr("");
-  const [sampleOnly, setSampleOnly] = useStateTfr(false);
+  const [strandFilter, setStrandFilter] = useStateTfr(TFL_STATE.strandFilter);
+  const [levelFilter, setLevelFilter] = useStateTfr(initialLevel ? Number(initialLevel) : TFL_STATE.levelFilter);
+  const [query, setQuery] = useStateTfr(TFL_STATE.query);
+  const [sampleOnly, setSampleOnly] = useStateTfr(TFL_STATE.sampleOnly);
+
+  // Persist the current filters so a return visit restores them.
+  useEffectTfr(() => {
+    TFL_STATE.strandFilter = strandFilter;
+    TFL_STATE.levelFilter = levelFilter;
+    TFL_STATE.query = query;
+    TFL_STATE.sampleOnly = sampleOnly;
+  }, [strandFilter, levelFilter, query, sampleOnly]);
+
+  // Track scroll position live, and restore it once the grid has rendered.
+  // Arriving from a specific level (e.g. the passport) is a deliberate fresh
+  // view, so it starts at the top instead of restoring.
+  const scrollRestoredRef = useRefTfr(false);
+  useEffectTfr(() => {
+    const onScroll = () => { TFL_STATE.scrollY = window.scrollY; };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => { TFL_STATE.scrollY = window.scrollY; window.removeEventListener("scroll", onScroll); };
+  }, []);
+  useEffectTfr(() => {
+    if (scrollRestoredRef.current || initialLevel) return;
+    if (catalog.length) {
+      const y = TFL_STATE.scrollY;
+      scrollRestoredRef.current = true;
+      if (y) requestAnimationFrame(() => window.scrollTo(0, y));
+    }
+  }, [catalog, initialLevel]);
 
   // Role gates which books open; visitors get the free samples only.
   const [role, setRole] = useStateTfr(() => (window.HaarayaSession ? HaarayaSession.role() : "visitor"));

@@ -5,7 +5,7 @@
    Extends the existing Haaraya component + design system.
    ============================================================ */
 
-const { useState: useStateOdy, useEffect: useEffectOdy } = React;
+const { useState: useStateOdy } = React;
 
 /* Shared data ------------------------------------------------ */
 
@@ -14,14 +14,6 @@ const ODY_PATHWAY = [
   { k: "Become a Reader",     s: "12 levels, fluent at last", state: "done" },
   { k: "The Haaraya Odyssey", s: "Reading to learn",          state: "now"  },
   { k: "Read 100 Great Books", s: "A lifetime of reading",    state: "next" },
-];
-
-/* "How it fits" — collectible storybook milestone plaques */
-const ODY_FIT = [
-  { k: "Learn to Read",        s: "Phonics & first words",     token: "assets/learn.png", theme: "green" },
-  { k: "Become a Reader",      s: "12 levels, fluent at last", token: "assets/become.png",  theme: "olive" },
-  { k: "The Haaraya Odyssey",  s: "Reading to learn",          token: "assets/odyssey.png", theme: "navy", hero: true },
-  { k: "Read 100 Great Books", s: "A lifetime of reading",     token: "assets/books.png",   theme: "gold" },
 ];
 
 const ODY_MILESTONES = [
@@ -34,16 +26,16 @@ const ODY_MILESTONES = [
 ];
 
 const ODY_CATEGORIES = [
-  { key: "stories",   name: "Tafiya Tales", cls: "ody-cat-stories",   desc: "Novels, tales and worlds to get lost inside.",            n: 18, token: "assets/w-stories.png"   },
-  { key: "adventure", name: "Adventure", cls: "ody-cat-adventure", desc: "Journeys, quests and daring escapes.",                    n: 12, token: "assets/w-adventure.png" },
-  { key: "mystery",   name: "Mystery",   cls: "ody-cat-mystery",   desc: "Clues, puzzles and secrets to unravel.",                  n: 8,  token: "assets/w-mystery.png"   },
-  { key: "science",   name: "Science",   cls: "ody-cat-science",   desc: "How the world works, from atoms to galaxies.",            n: 11, token: "assets/w-science.png"   },
-  { key: "nature",    name: "Nature",    cls: "ody-cat-nature",    desc: "Animals, plants and the living planet.",                  n: 10, token: "assets/w-nature.png"    },
-  { key: "history",   name: "History",   cls: "ody-cat-history",   desc: "Empires, heroes and the story of us.",                    n: 9,  token: "assets/w-history.png"   },
-  { key: "biography", name: "Biography", cls: "ody-cat-biography", desc: "Real lives that changed the world.",                      n: 8,  token: "assets/w-biography.png" },
-  { key: "geography", name: "Geography", cls: "ody-cat-geography", desc: "Places, peoples and journeys across the map.",            n: 7,  token: "assets/w-geography.png" },
-  { key: "poetry",    name: "Poetry",    cls: "ody-cat-poetry",    desc: "Rhythm, verse and words that sing.",                      n: 9,  token: "assets/w-poetry.png"    },
-  { key: "culture",   name: "Culture",   cls: "ody-cat-culture",   desc: "Traditions, festivals and life across Nigeria.",          n: 8,  token: "assets/w-culture.png"   },
+  { key: "stories",   name: "Stories",   cls: "ody-cat-stories",   desc: "Novels, tales and worlds to get lost inside.",            n: 18 },
+  { key: "adventure", name: "Adventure", cls: "ody-cat-adventure", desc: "Journeys, quests and daring escapes.",                    n: 12 },
+  { key: "mystery",   name: "Mystery",   cls: "ody-cat-mystery",   desc: "Clues, puzzles and secrets to unravel.",                  n: 8  },
+  { key: "science",   name: "Science",   cls: "ody-cat-science",   desc: "How the world works, from atoms to galaxies.",            n: 11 },
+  { key: "nature",    name: "Nature",    cls: "ody-cat-nature",    desc: "Animals, plants and the living planet.",                  n: 10 },
+  { key: "history",   name: "History",   cls: "ody-cat-history",   desc: "Empires, heroes and the story of us.",                    n: 9  },
+  { key: "biography", name: "Biography", cls: "ody-cat-biography", desc: "Real lives that changed the world.",                      n: 8  },
+  { key: "geography", name: "Geography", cls: "ody-cat-geography", desc: "Places, peoples and journeys across the map.",            n: 7  },
+  { key: "poetry",    name: "Poetry",    cls: "ody-cat-poetry",    desc: "Rhythm, verse and words that sing.",                      n: 9  },
+  { key: "culture",   name: "Culture",   cls: "ody-cat-culture",   desc: "Traditions, festivals and life across Nigeria.",          n: 8  },
 ];
 
 const ODY_ACHIEVEMENTS = [
@@ -131,8 +123,8 @@ function OdysseyHero({ onNavigate }) {
               <button className="btn btn-gold btn-lg" onClick={() => onNavigate("odyssey-library")}>
                 Start the Odyssey <span aria-hidden="true">→</span>
               </button>
-              <button className="btn btn-ghost-dark btn-lg" onClick={() => onNavigate("odyssey-log")}>
-                View Your Captain's Log
+              <button className="btn btn-ghost-dark btn-lg" onClick={() => onNavigate("odyssey-library")}>
+                Explore the Library
               </button>
             </div>
             <div className="ody-hero-meta">
@@ -169,22 +161,15 @@ function OdysseyPathwayBand() {
           title="The next chapter, not a new book."
           lede="The Odyssey picks up exactly where the Haaraya literacy journey ends. The natural continuation once a child can truly read."
         />
-        <div className="ody-fit">
-          {ODY_FIT.map((p, i) => (
+        <div className="ody-pathline">
+          {ODY_PATHWAY.map((p, i) => (
             <React.Fragment key={p.k}>
-              <article className={`ody-plaque theme-${p.theme} ${p.hero ? "is-hero" : ""}`}>
-                {p.hero && <span className="ody-plaque-flag">You are here</span>}
-                <div className="ody-plaque-holder">
-                  <img className="ody-plaque-token" src={p.token} alt="" loading="lazy" />
-                </div>
-                <h4 className="ody-plaque-title">{p.k}</h4>
-                <p className="ody-plaque-sub">{p.s}</p>
-              </article>
-              {i < ODY_FIT.length - 1 && (
-                <span className="ody-fit-arrow" aria-hidden="true">
-                  <svg viewBox="0 0 42 16" width="42" height="16"><path d="M2 8 H33" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeDasharray="1 6" /><path d="M31 2 L39 8 L31 14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                </span>
-              )}
+              <div className={`ody-pathline-node ${p.state}`}>
+                <span className="ring">{p.state === "done" ? "✓" : (p.state === "now" ? "★" : i + 1)}</span>
+                <span className="k">{p.k}</span>
+                <span className="s">{p.s}</span>
+              </div>
+              {i < ODY_PATHWAY.length - 1 && <span className="ody-pathline-arrow" aria-hidden="true">→</span>}
             </React.Fragment>
           ))}
         </div>
@@ -236,6 +221,7 @@ function OdysseyDashboard() {
     <section className="ody-section ody-band-cream">
       <div className="wrap">
         <SectionHeader
+          eyebrow="Your progress"
           title="Every reader gets a captain's log."
           lede="A calm, beautiful dashboard, not a leaderboard. It shows how far you've come and gently points to what's next."
         />
@@ -276,7 +262,7 @@ function OdysseyDashboard() {
   );
 }
 
-function OdysseyCategories({ onNavigate }) {
+function OdysseyCategories() {
   return (
     <section className="ody-section ody-band-sand">
       <div className="wrap">
@@ -287,15 +273,13 @@ function OdysseyCategories({ onNavigate }) {
         />
         <div className="ody-cats">
           {ODY_CATEGORIES.map(c => (
-            <button key={c.key} type="button" className={`ody-cat ${c.cls}`}
-              onClick={() => onNavigate && onNavigate("odyssey-library", { world: c.key })}>
-              <div className="ody-cat-token">
-                <img src={c.token} alt="" loading="lazy" />
-              </div>
+            <article key={c.key} className={`ody-cat ${c.cls}`}>
+              <div className="ody-cat-ic"><span></span></div>
               <h4>{c.name}</h4>
               <p>{c.desc}</p>
-              <span className="ody-cat-go">Explore this world <span aria-hidden="true">→</span></span>
-            </button>
+              <div className="count">{c.n} books</div>
+              <span className="ody-cat-go" aria-hidden="true">Explore this world →</span>
+            </article>
           ))}
         </div>
       </div>
@@ -356,54 +340,22 @@ function OdysseyParentsTeachers() {
 
 function OdysseyShipmateScribe() {
   const [open, setOpen] = useStateOdy(false);
-  const [catalog, setCatalog] = useStateOdy([]);
-  const [pickCode, setPickCode] = useStateOdy("");
   const ScribeUI = window.ShipmateScribeUI;
-
-  useEffectOdy(() => {
-    let alive = true;
-    fetch("data/odyssey-catalog.json")
-      .then(r => r.json())
-      .then(list => {
-        if (!alive || !Array.isArray(list) || !list.length) return;
-        setCatalog(list);
-        setPickCode(list[0].code);
-      })
-      .catch(() => {});
-    return () => { alive = false; };
-  }, []);
-
-  const entry = catalog.find(b => b.code === pickCode) || null;
-  const demoBook = entry
-    ? { book_code: entry.code, book_title: entry.title, book_number: entry.n, level: "Level " + entry.level }
-    : { book_code: "demo", book_title: "This book", book_number: null, level: "Level 3" };
-
+  const demoBook = { book_code: "book_012", book_title: "The Red Cap", book_number: 12, level: "Level 3" };
   return (
-    <section className="ody-section ody-band-deep" id="captains-log">
+    <section className="ody-section ody-band-deep">
       <div className="wrap">
         <SectionHeader
           center
           eyebrow="Shipmate Scribe"
           title="The Captain speaks. The Shipmate writes."
-          lede="After every book, jot a few Captain’s Notes. Your loyal Shipmate Scribe spins them into a short adventure log for your Odyssey."
+          lede="After every book, jot a few Captain’s Notes. Your loyal Shipmate Scribe spins them into a short adventure log for your Odyssey — in your own words, never invented."
         />
         <div className="ody-scribe-cta">
           {ScribeUI ? (
-            <div className="ody-scribe-pick">
-              {catalog.length ? (
-                <label className="ody-scribe-pick-field">
-                  <span>Which book are you logging?</span>
-                  <select value={pickCode} onChange={e => setPickCode(e.target.value)}>
-                    {catalog.map(b => (
-                      <option key={b.code} value={b.code}>{`Book ${b.n} — ${b.title}`}</option>
-                    ))}
-                  </select>
-                </label>
-              ) : null}
-              <button className="ody-scribe-demo" type="button" onClick={() => setOpen(true)}>
-                <span aria-hidden="true">&#x1F58B;</span> Try the Captain’s Log
-              </button>
-            </div>
+            <button className="ody-scribe-demo" type="button" onClick={() => setOpen(true)}>
+              <span aria-hidden="true">&#x1F58B;</span> Try the Captain’s Log
+            </button>
           ) : null}
         </div>
       </div>
@@ -491,9 +443,6 @@ function OdysseyStages({ onNavigate }) {
             <button className="btn btn-gold btn-lg" onClick={() => onNavigate("odyssey-medals")}>
               See my Medal Case <span aria-hidden="true">→</span>
             </button>
-            <button className="btn btn-ghost-dark btn-lg" onClick={() => onNavigate("odyssey-log")}>
-              My Captain's Log
-            </button>
             <div className="ody-stages-note">
               <h3>One hundred books. One great voyage.</h3>
               <p>Every book moves you farther across your Odyssey map, earning a badge for every rank you reach.</p>
@@ -527,7 +476,8 @@ function OdysseyMedals({ onNavigate }) {
           <button className="btn btn-ghost-dark btn-sm ody-medals-back" onClick={() => onNavigate("odyssey")}>← The Odyssey</button>
           <p className="odm-eyebrow">Your Collection</p>
           <h1>My Odyssey Medals</h1>
-          <p className="sub">Read 100 books. Light every book-light. Unlock every medal.</p>          <div className="odm-prog">
+          <p className="sub">Read 100 books. Light every book-light. Unlock every medal.</p>
+          <div className="odm-prog">
             <div className="odm-prog-top">
               <div className="n"><b>{O.completedBooks}</b> of {O.totalBooks} books completed</div>
               <div className="pct">{pct}%</div>
@@ -539,9 +489,6 @@ function OdysseyMedals({ onNavigate }) {
             <div className="st"><div className="v">{O.completedBooks}</div><div className="l">Book-lights lit</div></div>
             <div className="st"><div className="v">{O.totalBooks - O.completedBooks}</div><div className="l">Books to go</div></div>
           </div>
-          <button className="btn btn-ghost-dark btn-sm odm-log-link" onClick={() => onNavigate("odyssey-log")}>
-            View my Captain's Log →
-          </button>
         </div>
       </section>
 
@@ -621,7 +568,8 @@ function OdysseyScreen({ onNavigate }) {
       <OdysseyHero onNavigate={onNavigate} />
       <OdysseyStages onNavigate={onNavigate} />
       <OdysseyPathwayBand />
-      <OdysseyCategories onNavigate={onNavigate} />
+      <OdysseyDashboard />
+      <OdysseyCategories />
       <OdysseyShipmateScribe />
       <OdysseyCTA onNavigate={onNavigate} />
       {Footer ? <Footer /> : null}

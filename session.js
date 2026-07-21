@@ -50,13 +50,16 @@
       userId: 4, childId: null, schoolId: 1,
       color: "#00838F",
     },
-    admin: {
-      role: "admin",
-      displayName: "Demo Admin",
-      sub: "Internal · full access",
-      userId: 3, childId: null, schoolId: null,
-      color: "#283593",
-    },
+    // NOTE: no demo Haaraya-admin persona. Admin access is real-only:
+    // it comes exclusively from a Supabase sign-in via signInReal (below).
+  };
+
+  // Styling base for a REAL, signed-in Haaraya admin. Not a demo account —
+  // never selectable, only used to colour/label a live admin session.
+  const STAFF_BASE = {
+    displayName: "Haaraya Admin",
+    sub: "Owner back end",
+    color: "#283593",
   };
 
   // Friendly labels for the sign-in panel / switcher.
@@ -79,6 +82,12 @@
     } catch (e) { /* ignore */ }
     return ACCOUNTS.visitor;
   }
+
+  // Map a public.users.role to an app session role key.
+  const PROFILE_ROLE_TO_APP = {
+    parent: "parent", teacher: "teacher",
+    school_admin: "school_admin", haaraya_admin: "admin", admin: "admin", staff: "admin",
+  };
 
   let current = load();
 
@@ -116,6 +125,29 @@
       window.dispatchEvent(new CustomEvent("haaraya:session", { detail: current }));
       return current;
     },
+    // Real, Supabase-backed sign-in. Completely separate from the demo
+    // ACCOUNTS above: it builds a live session from the user's public.users
+    // profile row, flagged real:true so dashboards read HaarayaPlatformDB
+    // (live) instead of HaarayaApi (mock). Demo accounts are untouched.
+    signInReal(profileRow) {
+      const p = profileRow || {};
+      const roleKey = PROFILE_ROLE_TO_APP[p.role] || "parent";
+      const base = ACCOUNTS[roleKey] || STAFF_BASE;
+      current = {
+        role: roleKey,
+        real: true,
+        profileId: p.id || null,
+        authRole: p.role || null,
+        displayName: (p.full_name && String(p.full_name).trim()) || base.displayName,
+        sub: (p.email && String(p.email)) || base.sub,
+        userId: null, childId: null, schoolId: null,
+        color: base.color,
+      };
+      save(current.role);
+      window.dispatchEvent(new CustomEvent("haaraya:session", { detail: current }));
+      return current;
+    },
+    isReal() { return !!current.real; },
     signOut() { return this.signInAs("visitor"); },
     reset() { wipeAll(); return this.signInAs("visitor"); },
   };
