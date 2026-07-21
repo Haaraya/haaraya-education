@@ -2,7 +2,7 @@
    Haaraya — App shell + router + Tweaks
    ============================================================ */
 
-const { useState: useStateApp, useEffect: useEffectApp } = React;
+const { useState: useStateApp, useEffect: useEffectApp, useRef: useRefApp } = React;
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "direction": "Storybook",
@@ -363,14 +363,15 @@ function App() {
     // role may see it). The landing hint above still wins for the handoff case.
     // Screens that need per-visit params (a specific book) can't be rebuilt
     // from the hash alone, so those fall back to Home.
+    // Session restore is async, so the role may still be "visitor" here. If the
+    // hash target is accessible right now, use it; otherwise leave dest=home but
+    // KEEP the hash so the post-boot effect below can restore it once the role
+    // settles. Do not strip the hash here.
     const hashScreen = (window.location.hash || "").replace("#", "");
     const needsParams = ["reader", "odyssey-reader"];
     if (dest === "home" && validScreens.includes(hashScreen) &&
-        canAccess(r, hashScreen) && !needsParams.includes(hashScreen)) {
+        !needsParams.includes(hashScreen) && canAccess(r, hashScreen)) {
       dest = hashScreen;
-    }
-    if (dest === "home" && window.location.hash) {
-      try { history.replaceState(null, "", window.location.pathname + window.location.search); } catch (e) { /* ignore */ }
     }
     return dest;
   });
@@ -414,6 +415,26 @@ function App() {
       window.location.hash = dest;
     }
   }, [role]);
+
+  // Post-boot refresh restore: session restore is async, so a role-gated screen
+  // in the URL hash isn't accessible at first render. Once the role settles, if
+  // we're still sitting on Home but the hash points to a now-accessible screen,
+  // restore it. Runs at most once so it never fights manual Home navigation.
+  const hashRestoredRef = useRefApp(false);
+  useEffectApp(() => {
+    if (hashRestoredRef.current) return;
+    const h = (window.location.hash || "").replace("#", "");
+    if (!h) { hashRestoredRef.current = true; return; }
+    const needsParams = ["reader", "odyssey-reader"];
+    if (screen === "home" && validScreens.includes(h) &&
+        !needsParams.includes(h) && canAccess(role, h)) {
+      hashRestoredRef.current = true;
+      setScreen(h);
+    } else if (canAccess(role, h) || !validScreens.includes(h)) {
+      // Either restored elsewhere or the hash isn't a real screen — stop trying.
+      hashRestoredRef.current = true;
+    }
+  }, [role, screen]);
 
   const navigate = (key, p = {}) => {
     if (!validScreens.includes(key)) return;
