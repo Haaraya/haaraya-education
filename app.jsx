@@ -2,7 +2,7 @@
    Haaraya — App shell + router + Tweaks
    ============================================================ */
 
-const { useState: useStateApp, useEffect: useEffectApp } = React;
+const { useState: useStateApp, useEffect: useEffectApp, useRef: useRefApp } = React;
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "direction": "Storybook",
@@ -78,22 +78,22 @@ function PublisherMark() {
 
 // Which screens each role may navigate to.
 const ROLE_ACCESS = {
-  visitor:      ["home", "library", "passport", "reader", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals"],
-  child:        ["home", "child", "passport", "library", "reader", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals"],
-  parent:       ["home", "parent", "child", "passport", "library", "reader", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals"],
-  teacher:      ["home", "teacher", "library", "reader", "passport", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals"],
-  school_admin: ["home", "school", "library", "reader", "passport", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals"],
-  admin:        ["home", "library", "passport", "child", "reader", "parent", "teacher", "school", "admin", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals"],
+  visitor:      ["home", "library", "passport", "reader", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals", "odyssey-log"],
+  child:        ["home", "child", "passport", "library", "reader", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals", "odyssey-log"],
+  parent:       ["home", "parent", "child", "passport", "library", "reader", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals", "odyssey-log"],
+  teacher:      ["home", "teacher", "library", "reader", "passport", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals", "odyssey-log"],
+  school_admin: ["home", "school", "library", "reader", "passport", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals", "odyssey-log"],
+  admin:        ["home", "library", "passport", "child", "reader", "parent", "teacher", "school", "admin", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals", "odyssey-log"],
 };
 
 // Which links appear in the nav for each role (a subset of access, in order).
 const ROLE_NAV = {
-  visitor:      ["home", "libraries", "passport"],
-  child:        ["home", "child", "passport", "libraries"],
-  parent:       ["home", "parent", "child", "passport", "libraries"],
-  teacher:      ["home", "teacher", "libraries"],
-  school_admin: ["home", "school", "libraries"],
-  admin:        ["home", "libraries", "passport", "child", "parent", "teacher", "school", "admin"],
+  visitor:      ["home", "libraries", "passport", "pricing"],
+  child:        ["home", "child", "passport", "libraries", "pricing"],
+  parent:       ["home", "parent", "child", "passport", "libraries", "pricing"],
+  teacher:      ["home", "teacher", "libraries", "pricing"],
+  school_admin: ["home", "school", "libraries", "pricing"],
+  admin:        ["home", "libraries", "passport", "child", "parent", "teacher", "school", "admin", "pricing"],
 };
 
 // The landing screen for each role (post sign-in + redirect target).
@@ -106,6 +106,16 @@ const ROLE_ORDER = ["visitor", "child", "parent", "teacher", "school_admin", "ad
 
 function canAccess(role, screen) {
   return (ROLE_ACCESS[role] || ROLE_ACCESS.visitor).includes(screen);
+}
+
+// Last in-app navigation (screen + params), so a refresh can rebuild screens
+// that need per-visit params — chiefly the book reader, whose book code isn't
+// in the URL hash. Session-scoped: cleared when the tab closes.
+function readLastNav() {
+  try { return JSON.parse(sessionStorage.getItem("haaraya:last") || "null"); } catch (e) { return null; }
+}
+function writeLastNav(screen, params) {
+  try { sessionStorage.setItem("haaraya:last", JSON.stringify({ screen: screen, params: params || {} })); } catch (e) { /* ignore */ }
 }
 
 /* ------------ Sign-in panel (prototype role chooser) ------------ */
@@ -142,14 +152,36 @@ function SignInPanel({ open, currentRole, onChoose, onClose }) {
   const S = window.HaarayaSession;
   const accounts = S ? S.accounts : {};
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     if (busy) return;
     if (!/.+@.+\..+/.test(email.trim())) { setError("Please enter a valid email address."); return; }
     if (!password) { setError("Please enter your password."); return; }
     setError(""); setBusy(true);
-    // Prototype: simulate an auth round-trip, then route to the matching dashboard.
-    setTimeout(() => onChoose(inferRoleFromEmail(email)), 650);
+    // Real Supabase auth: verify credentials, then route by the role stored on
+    // the user's public.users profile row. Falls back to the email heuristic if
+    // the auth stack isn't available (e.g. an offline/standalone copy).
+    if (!window.HaarayaAuth) {
+      setTimeout(() => onChoose(inferRoleFromEmail(email)), 400);
+      return;
+    }
+    try {
+      await window.HaarayaAuth.signIn({ email: email.trim(), password });
+      const accounts = (window.HaarayaSession && window.HaarayaSession.accounts) || {};
+      let roleKey = inferRoleFromEmail(email);
+      let profileRow = null;
+      try {
+        const profile = await window.HaarayaAuth.getProfile();
+        if (profile && profile.role) {
+          profileRow = profile;
+          if (accounts[profile.role]) roleKey = profile.role;
+        }
+      } catch (e2) { /* keep the email-inferred fallback */ }
+      onChoose(roleKey, profileRow);
+    } catch (err) {
+      setBusy(false);
+      setError((err && err.message) ? err.message : "Sign in failed. Check your email and password.");
+    }
   };
 
   return (
@@ -208,7 +240,7 @@ function SignInPanel({ open, currentRole, onChoose, onClose }) {
           <div className="signin-demo">
             <p className="signin-demo-note">One-tap access for demos — no password needed.</p>
             <div className="signin-list">
-              {ROLE_ORDER.filter(r => r !== "visitor").map(role => {
+              {ROLE_ORDER.filter(r => r !== "visitor" && r !== "admin").map(role => {
                 const a = accounts[role];
                 if (!a) return null;
                 const active = role === currentRole;
@@ -296,28 +328,83 @@ function App() {
     return () => window.removeEventListener("haaraya:session", onSession);
   }, []);
 
+  // ---- Real Supabase session restore ----
+  // On load, if the browser already holds a valid Supabase session, adopt the
+  // role from that user's public.users profile so a refresh keeps them signed in.
+  useEffectApp(() => {
+    if (!window.HaarayaAuth || !window.HaarayaSession) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const sess = await window.HaarayaAuth.getSession();
+        if (!sess || cancelled) return;
+        const accounts = window.HaarayaSession.accounts || {};
+        var roleKey = null;
+        var profileRow = null;
+        try {
+          const p = await window.HaarayaAuth.getProfile();
+          if (p && p.role) { profileRow = p; if (accounts[p.role]) roleKey = p.role; }
+        } catch (e) { /* ignore */ }
+        // A real Supabase user → live, DB-backed session (separate from demos).
+        if (!cancelled && profileRow) window.HaarayaSession.signInReal(profileRow);
+        else if (!cancelled && roleKey) window.HaarayaSession.signInAs(roleKey);
+      } catch (e) { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   // Hash-based router (access-gated)
-  const validScreens = ["home","passport","child","parent","library","reader","teacher","school","admin","odyssey","odyssey-library","odyssey-reader", "odyssey-medals"];
+  const validScreens = ["home","passport","child","parent","library","reader","teacher","school","admin","odyssey","odyssey-library","odyssey-reader","odyssey-medals","odyssey-log"];
   const [screen, setScreen] = useStateApp(() => {
     // Default: always open on Home (accessible to every role) so a downloaded /
     // shared copy lands predictably regardless of the last session role.
     // Exception: a one-time "landing" target set by the registration handoff,
     // which we honour once and then clear.
     let dest = "home";
+    const r = window.HaarayaSession ? window.HaarayaSession.role() : "visitor";
     try {
       const land = sessionStorage.getItem("haaraya:landing");
       if (land) {
         sessionStorage.removeItem("haaraya:landing");
-        const r = window.HaarayaSession ? window.HaarayaSession.role() : "visitor";
         if (validScreens.includes(land) && canAccess(r, land)) dest = land;
       }
     } catch (e) { /* ignore */ }
-    if (window.location.hash) {
-      try { history.replaceState(null, "", window.location.pathname + window.location.search); } catch (e) { /* ignore */ }
+    // On refresh, restore the screen from the URL hash (if it's valid and the
+    // role may see it). The landing hint above still wins for the handoff case.
+    // Screens that need per-visit params (a specific book) can't be rebuilt
+    // from the hash alone, so those fall back to Home.
+    // Session restore is async, so the role may still be "visitor" here. If the
+    // hash target is accessible right now, use it; otherwise leave dest=home but
+    // KEEP the hash so the post-boot effect below can restore it once the role
+    // settles. Do not strip the hash here. Param-carrying screens (the reader)
+    // are restorable only when we have the matching persisted nav.
+    const hashScreen = (window.location.hash || "").replace("#", "");
+    const needsParams = ["reader", "odyssey-reader"];
+    const last = readLastNav();
+    const canRestoreParams = !!(last && last.screen === hashScreen && last.params);
+    if (dest === "home" && validScreens.includes(hashScreen) && canAccess(r, hashScreen) &&
+        (!needsParams.includes(hashScreen) || canRestoreParams)) {
+      dest = hashScreen;
     }
     return dest;
   });
-  const [params, setParams] = useStateApp({});
+  const [params, setParams] = useStateApp(() => {
+    // One-time deep-link handoff: a standalone page (e.g. My Odyssey Medals)
+    // can open a specific book by stashing its code alongside haaraya:landing.
+    try {
+      const bookCode = sessionStorage.getItem("haaraya:landing-book");
+      if (bookCode) {
+        sessionStorage.removeItem("haaraya:landing-book");
+        return { bookCode: bookCode };
+      }
+    } catch (e) { /* ignore */ }
+    // Refresh restore: reuse the persisted params if they belong to the screen
+    // the URL hash points at.
+    const h = (window.location.hash || "").replace("#", "");
+    const last = readLastNav();
+    if (last && last.screen === h && last.params) return last.params;
+    return {};
+  });
 
   useEffectApp(() => {
     const onHash = () => {
@@ -347,7 +434,56 @@ function App() {
     }
   }, [role]);
 
+  // Post-boot refresh restore: session restore is async, so a role-gated screen
+  // in the URL hash isn't accessible at first render. Once the role settles, if
+  // we're still sitting on Home but the hash points to a now-accessible screen,
+  // restore it. Runs at most once so it never fights manual Home navigation.
+  const hashRestoredRef = useRefApp(false);
+  useEffectApp(() => {
+    if (hashRestoredRef.current) return;
+    const h = (window.location.hash || "").replace("#", "");
+    if (!h) { hashRestoredRef.current = true; return; }
+    const needsParams = ["reader", "odyssey-reader"];
+    const last = readLastNav();
+    const canRestoreParams = !!(last && last.screen === h && last.params);
+    if (screen === "home" && validScreens.includes(h) &&
+        (!needsParams.includes(h) || canRestoreParams) && canAccess(role, h)) {
+      hashRestoredRef.current = true;
+      if (canRestoreParams) setParams(last.params);
+      setScreen(h);
+    } else if (canAccess(role, h) || !validScreens.includes(h)) {
+      // Either restored elsewhere or the hash isn't a real screen — stop trying.
+      hashRestoredRef.current = true;
+    }
+  }, [role, screen]);
+
   const navigate = (key, p = {}) => {
+    // "pricing" is a section on the home page, not a screen — go home (if needed), then scroll to it.
+    if (key === "pricing") {
+      const doScroll = () => {
+        let tries = 0;
+        const tick = () => {
+          const el = document.querySelector(".pricing");
+          if (el) {
+            const offset = (document.querySelector(".nav") || {}).offsetHeight || 72;
+            const y = el.getBoundingClientRect().top + window.scrollY - offset - 12;
+            window.scrollTo(0, y);
+            if (document.scrollingElement) document.scrollingElement.scrollTop = y;
+          } else if (tries++ < 40) {
+            setTimeout(tick, 30);
+          }
+        };
+        setTimeout(tick, 30);
+      };
+      if (screen !== "home") {
+        setParams({});
+        setScreen("home");
+        writeLastNav("home", {});
+        window.location.hash = "home";
+      }
+      doScroll();
+      return;
+    }
     if (!validScreens.includes(key)) return;
     if (!canAccess(role, key)) {
       setToast("You don't have access to that area.");
@@ -360,12 +496,17 @@ function App() {
     }
     setParams(p);
     setScreen(key);
+    writeLastNav(key, p);
     window.location.hash = key;
     window.scrollTo({ top: 0, behavior: "instant" });
   };
 
-  const applyRole = (r) => {
-    const s = window.HaarayaSession.signInAs(r);
+  const applyRole = (r, profileRow) => {
+    // profileRow present → real Supabase sign-in (live data). Otherwise a demo
+    // account switch. The two paths are deliberately separate.
+    const s = profileRow
+      ? window.HaarayaSession.signInReal(profileRow)
+      : window.HaarayaSession.signInAs(r);
     setSignInOpen(false);
     const dest = ROLE_HOME[s.role] || "home";
     setParams({});
@@ -373,7 +514,10 @@ function App() {
     window.location.hash = dest;
     window.scrollTo({ top: 0, behavior: "instant" });
   };
-  const signOut = () => applyRole("visitor");
+  const signOut = () => {
+    if (window.HaarayaAuth) { try { window.HaarayaAuth.signOut(); } catch (e) { /* ignore */ } }
+    applyRole("visitor");
+  };
 
   const screenLabel = ({
     home:     "01 Home",
@@ -386,12 +530,15 @@ function App() {
     school:   "08 School Admin Dashboard",
     admin:    "09 Haaraya Admin Dashboard",
     odyssey:  "10 Haaraya Odyssey",
+    "odyssey-library": "11 Odyssey Library",
+    "odyssey-reader":  "12 Odyssey Reader",
     "odyssey-medals":  "13 Odyssey Medal Case",
+    "odyssey-log":     "14 My Captain's Log",
   })[screen];
 
   return (
     <div data-screen-label={screenLabel}>
-      {screen !== "reader" && (
+      {!["reader", "child", "parent", "teacher", "school", "admin"].includes(screen) && (
         <Nav
           current={screen}
           onNavigate={navigate}
@@ -415,9 +562,10 @@ function App() {
       {booted && screen === "school"   && <SchoolAdminDashScreen onNavigate={navigate} />}
       {booted && screen === "admin"    && <HaarayaAdminDashScreen onNavigate={navigate} />}
       {booted && screen === "odyssey"  && <OdysseyScreen onNavigate={navigate} />}
-      {booted && screen === "odyssey-library" && <OdysseyLibraryScreen onNavigate={navigate} initialLevel={params.levelId} initialStream={params.stream} />}
+      {booted && screen === "odyssey-library" && <OdysseyLibraryScreen onNavigate={navigate} initialLevel={params.levelId} initialStream={params.stream} initialWorld={params.world} />}
       {booted && screen === "odyssey-reader"  && <OdysseyBookReader code={params.bookCode} onNavigate={navigate} />}
       {booted && screen === "odyssey-medals"  && <OdysseyMedals onNavigate={navigate} />}
+      {booted && screen === "odyssey-log"     && <OdysseyCaptainsLog onNavigate={navigate} initialBook={params.bookCode ? { book_code: params.bookCode, book_title: params.bookTitle, book_number: params.bookNumber, level: params.level } : null} />}
 
       <PublisherMark />
 

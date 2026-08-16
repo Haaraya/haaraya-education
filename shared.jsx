@@ -352,6 +352,7 @@ const NAV_LABELS = {
   home: "Home", library: "Tafiya Library", "odyssey-library": "Odyssey Library", passport: "Passport",
   child: "Child", parent: "Parent", teacher: "Teacher",
   school: "School", admin: "Admin", odyssey: "Odyssey", libraries: "Library",
+  pricing: "Pricing",
 };
 
 // Nav dropdown groups: a key that expands to a menu of child screens.
@@ -478,7 +479,7 @@ function Nav({ current, onNavigate, session, navKeys, homeScreen, onSignIn, onSi
             <React.Fragment>
               <a className="signin" href="#" onClick={handleSignIn}>Sign in</a>
               <button className="btn btn-primary btn-sm" onClick={handleWaitlist}>
-                Join the waitlist
+                Get started
               </button>
             </React.Fragment>
           )}
@@ -551,7 +552,7 @@ function Nav({ current, onNavigate, session, navKeys, homeScreen, onSignIn, onSi
             <React.Fragment>
               <a className="signin" href="#" onClick={handleSignIn}>Sign in</a>
               <button className="btn btn-primary" onClick={handleWaitlist}>
-                Join the waitlist
+                Get started
               </button>
             </React.Fragment>
           )}
