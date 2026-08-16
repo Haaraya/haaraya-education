@@ -1349,7 +1349,7 @@ function LibraryScreen({ onNavigate, initialLevel }) {
         <SectionHeader
           eyebrow="The library"
           title="Haaraya Reading Library."
-          lede="Tap any book to open it in the Tafiya reader — cover, story pages, and reading notes."
+          lede="Search or filter by level and strand, then read any book, take its reading check, and watch your level and bonuses update."
         />
 
         {/* Search by book name or code */}

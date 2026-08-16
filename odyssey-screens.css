@@ -213,10 +213,11 @@ body.odx-locked .odx-gate {
    MEDALS PAGE
    ============================================================ */
 .odm-head { padding: 46px 0 30px; text-align: center; position: relative; }
-.odm-eyebrow { display:inline-flex; align-items:center; gap:10px; font-family: var(--font-body); font-weight: 800; text-transform: uppercase; letter-spacing: .17em; font-size: 12px; color: var(--satin-deep); }
-.odm-eyebrow::before, .odm-eyebrow::after { content:""; width: 24px; height: 2px; background: var(--satin-dk); border-radius: 999px; }
+.odm-eyebrow { display:flex; align-items:center; justify-content: center; gap:10px; font-family: var(--font-body); font-weight: 800; text-transform: uppercase; letter-spacing: .17em; font-size: 12px; color: var(--satin-deep); white-space: nowrap; }
+.odm-eyebrow::before, .odm-eyebrow::after { content:""; width: 24px; height: 2px; background: var(--satin-dk); border-radius: 999px; flex: none; }
 .odm-head h1 { font-family: var(--font-display); color: var(--case-navy); font-size: clamp(32px, 4.4vw, 58px); margin: 14px 0 0; }
 .odm-head .sub { font-family: var(--font-body); font-weight: 800; color: #315066; font-size: clamp(14px,1.6vw,18px); margin: 12px 0 0; }
+.odm-log-link { margin-top: 22px; }
 
 /* progress line */
 .odm-prog { width: min(560px, 90vw); margin: 26px auto 0; }

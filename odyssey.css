@@ -203,7 +203,7 @@
 .ody-hero-meta {
   display: flex; gap: 30px; margin-top: 40px; flex-wrap: wrap;
 }
-.ody-hero-meta .m { display:flex; flex-direction:column; }
+.ody-hero-meta .m { display:flex; flex-direction:column; align-items:center; text-align:center; }
 .ody-hero-meta .n {
   font-family: var(--font-display); font-size: 32px; color: var(--ody-gold); line-height: 1;
 }
@@ -222,12 +222,13 @@
 }
 .ody-hero-art image-slot { display:block; width: 100%; height: 460px; }
 .ody-hero-img { display:block; width: 100%; height: auto; }
-.ody-stages-cta { text-align: center; margin-top: 36px; }
+.ody-stages-cta { text-align: center; margin-top: 36px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.ody-stages-cta > button { margin: 0; }
 .ody-stages-note { max-width: 640px; margin: 22px auto 0; text-align: center; }
 .ody-stages-note h3 { font-family: var(--font-display); color: var(--case-navy); font-size: 28px; margin: 0 0 8px; }
 .ody-stages-note p { color: var(--ink-warm-mid); font-size: 16px; line-height: 1.55; margin: 0; }
 .ody-medals-page { background: var(--parch); }
-.ody-medals-back { margin-bottom: 18px; }
+.ody-medals-back { margin-bottom: 18px; display: block; width: max-content; margin-left: auto; margin-right: auto; }
 .ody-art-ph {
   position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
   z-index: 4; font-family: var(--font-mono, ui-monospace, monospace);
@@ -271,42 +272,147 @@
 .ody-band-deep .section-header .lede { color: rgba(255,255,255,.78); }
 .ody-band-deep .eyebrow::before { background: var(--ody-gold); }
 
-/* ---- Pathway line (on the landing page, sand band) ---- */
-.ody-pathline {
-  display: flex; align-items: stretch; justify-content: center;
-  gap: 6px; flex-wrap: wrap; margin-top: 8px;
+/* ---- "How it fits" — collectible storybook milestone plaques ---- */
+.ody-fit {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; flex-wrap: wrap; margin-top: 14px;
 }
-.ody-pathline-node {
-  flex: 1 1 0; min-width: 150px; max-width: 230px;
+.ody-plaque {
+  /* per-theme knobs (defaults = warm cream/green) */
+  --pl-a:#f6efdb; --pl-b:#ece3c9; --pl-edge:#ddd0aa;
+  --pl-well:#e7dcbe; --pl-well-lo:#d7c9a2;
+  --pl-title:#3a3016; --pl-sub:#7a6a45; --pl-accent:#8a7a2e;
+
+  flex: 1 1 0; min-width: 190px; max-width: 260px;
+  align-self: stretch;
+  position: relative;
+  border-radius: 26px;
+  padding: 34px 24px 30px;
   text-align: center;
-  background: #fff; border: 1px solid var(--sand-dk);
-  border-radius: var(--r-lg); padding: 24px 18px 20px;
   display: flex; flex-direction: column; align-items: center;
+  background:
+    radial-gradient(120% 70% at 50% -8%, rgba(255,255,255,.55), transparent 60%),
+    linear-gradient(168deg, var(--pl-a), var(--pl-b));
+  border: 1px solid var(--pl-edge);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.6),
+    inset 0 0 0 1px rgba(255,255,255,.25),
+    0 1px 2px rgba(60,45,15,.10),
+    0 18px 34px -20px rgba(60,45,15,.45);
 }
-.ody-pathline-node .ring {
-  width: 46px; height: 46px; border-radius: 50%;
-  display: grid; place-items: center; margin-bottom: 14px;
-  font-family: var(--font-display); font-size: 18px;
-  background: var(--green-light); color: var(--forest);
-  border: 1.5px solid var(--green-mid);
+/* subtle paper fibre texture */
+.ody-plaque::before {
+  content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  opacity:.5; mix-blend-mode:multiply;
+  background-image:
+    repeating-linear-gradient(102deg, rgba(120,100,60,.05) 0 2px, transparent 2px 5px),
+    repeating-linear-gradient(9deg, rgba(120,100,60,.04) 0 3px, transparent 3px 7px);
 }
-.ody-pathline-node .k { font-family: var(--font-display); font-size: 19px; color: var(--ink); line-height: 1.15; }
-.ody-pathline-node .s { font-size: 12.5px; color: var(--ink-mid); font-weight: 600; margin-top: 6px; }
-.ody-pathline-node.now {
-  background: linear-gradient(160deg, var(--ody-night), var(--ody-night-2));
-  border-color: var(--ody-night);
+/* stitched inner frame — the "plaque" edge */
+.ody-plaque::after {
+  content:""; position:absolute; inset:9px; border-radius:19px; pointer-events:none;
+  border:1.5px dashed color-mix(in srgb, var(--pl-accent) 45%, transparent);
+  opacity:.55;
 }
-.ody-pathline-node.now .ring { background: var(--ody-gold); border-color: var(--ody-gold-dk); color: var(--ink); }
-.ody-pathline-node.now .k { color: #fff; }
-.ody-pathline-node.now .s { color: var(--ody-gold-soft); }
-.ody-pathline-node.next .ring { background: var(--sand); border-color: var(--sand-dk); color: var(--ink-soft); }
-.ody-pathline-arrow {
-  align-self: center; font-size: 24px; color: var(--ink-mute); font-weight: 700; flex: none;
+
+/* inset round holder the token is seated into */
+.ody-plaque-holder {
+  position: relative; z-index:1;
+  width: 138px; height: 138px; border-radius: 50%;
+  display: grid; place-items: center; margin-bottom: 20px;
+  background: radial-gradient(circle at 50% 38%, var(--pl-well), var(--pl-well-lo) 82%);
+  box-shadow:
+    inset 0 4px 9px rgba(50,35,10,.32),
+    inset 0 -2px 4px rgba(255,255,255,.45),
+    0 1px 0 rgba(255,255,255,.55);
+  border: 1px solid color-mix(in srgb, var(--pl-accent) 30%, transparent);
 }
-@media (max-width: 860px) {
-  .ody-pathline { flex-direction: column; align-items: stretch; }
-  .ody-pathline-node { max-width: none; }
-  .ody-pathline-arrow { transform: rotate(90deg); }
+/* the machined lip of the well */
+.ody-plaque-holder::before {
+  content:""; position:absolute; inset:7px; border-radius:50%;
+  box-shadow: inset 0 2px 5px rgba(50,35,10,.28), inset 0 -1px 2px rgba(255,255,255,.35);
+}
+.ody-plaque-token {
+  position: relative; z-index:1;
+  width: 116px; height: 116px; object-fit: contain;
+  filter: drop-shadow(0 5px 7px rgba(40,28,8,.42));
+}
+
+.ody-plaque-title {
+  position:relative; z-index:1; margin:0;
+  font-family: var(--font-display); font-size: 21px; line-height: 1.12;
+  color: var(--pl-title);
+}
+.ody-plaque-sub {
+  position:relative; z-index:1;
+  margin: 7px 0 0; font-size: 13px; font-weight: 700;
+  color: var(--pl-sub); letter-spacing:.005em;
+}
+
+/* per-theme surfaces */
+.ody-plaque.theme-green {
+  --pl-a:#eef1dc; --pl-b:#e0e8cf; --pl-edge:#cdd8b3;
+  --pl-well:#e4eccf; --pl-well-lo:#cedaad;
+  --pl-title:#33502f; --pl-sub:#5f7350; --pl-accent:#6f8a4f;
+}
+.ody-plaque.theme-olive {
+  --pl-a:#f4eed6; --pl-b:#e9e1bf; --pl-edge:#d9cfa2;
+  --pl-well:#eae1bd; --pl-well-lo:#d6c99b;
+  --pl-title:#4c5327; --pl-sub:#6f6a41; --pl-accent:#8a8140;
+}
+.ody-plaque.theme-gold {
+  --pl-a:#f8efd2; --pl-b:#f0e4bd; --pl-edge:#e6d3a0;
+  --pl-well:#f1e6c2; --pl-well-lo:#e0cd98;
+  --pl-title:#6a5320; --pl-sub:#7e7048; --pl-accent:#b7943c;
+}
+/* hero — deep navy plaque, unlocked & special */
+.ody-plaque.theme-navy {
+  --pl-a:#1b3b5a; --pl-b:#0e2135; --pl-edge:#0a1826;
+  --pl-well:#183651; --pl-well-lo:#0d2134;
+  --pl-title:#ffffff; --pl-sub:var(--ody-gold-soft); --pl-accent:var(--ody-gold);
+}
+.ody-plaque.is-hero {
+  transform: translateY(-10px);
+  padding-top: 40px;
+  border-color: color-mix(in srgb, var(--ody-gold) 55%, #0a1826);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.14),
+    inset 0 0 0 1px rgba(245,197,24,.14),
+    0 0 0 3px rgba(245,197,24,.12),
+    0 24px 44px -20px rgba(10,26,42,.7);
+}
+.ody-plaque.is-hero::after {
+  border-color: rgba(245,197,24,.4);
+}
+.ody-plaque.is-hero .ody-plaque-holder {
+  border-color: rgba(245,197,24,.4);
+  box-shadow:
+    inset 0 4px 10px rgba(0,0,0,.5),
+    inset 0 -2px 4px rgba(255,255,255,.12),
+    0 0 0 1px rgba(245,197,24,.25);
+}
+.ody-plaque-flag {
+  position:absolute; top:-13px; left:50%; transform:translateX(-50%); z-index:2;
+  font-family: var(--font-body); font-weight: 900;
+  font-size: 10.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:#3d2f00; background: linear-gradient(180deg, #ffd94a, var(--ody-gold));
+  border:1px solid var(--ody-gold-dk); border-radius:999px;
+  padding: 5px 14px; white-space:nowrap;
+  box-shadow: 0 3px 8px rgba(150,110,0,.35);
+}
+
+/* gold path-mark arrows between plaques */
+.ody-fit-arrow {
+  flex: none; align-self: center;
+  color: color-mix(in srgb, var(--ody-gold-dk) 70%, #9a8138);
+  display: grid; place-items: center;
+}
+
+@media (max-width: 1080px) {
+  .ody-fit { flex-direction: column; align-items: stretch; gap: 6px; }
+  .ody-plaque { max-width: none; }
+  .ody-plaque.is-hero { transform: none; }
+  .ody-fit-arrow svg { transform: rotate(90deg); }
 }
 
 /* ============================================================
@@ -448,31 +554,83 @@
   display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px;
 }
 .ody-cat {
-  background: #fff; border: 1px solid var(--sand-dk);
-  border-radius: var(--r-lg); padding: 24px 22px 22px;
-  position: relative; overflow: hidden;
-  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
-  cursor: default;
+  --deep: color-mix(in srgb, var(--acc) 62%, #33240f);
+  --paper: color-mix(in srgb, var(--acc) 8%, #fbf4e4);
+  --paper-2: color-mix(in srgb, var(--acc) 15%, #f3e8d0);
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  width: 100%; font: inherit; cursor: pointer; -webkit-appearance: none; appearance: none;
+  border-radius: 22px;
+  padding: 26px 18px 20px;
+  background:
+    radial-gradient(115% 70% at 50% -10%, color-mix(in srgb, var(--acc) 16%, #fff), transparent 62%),
+    linear-gradient(172deg, var(--paper), var(--paper-2));
+  border: 1.5px solid color-mix(in srgb, var(--acc) 45%, #e6d6b4);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.6),
+    0 1px 2px rgba(70,50,15,.08),
+    0 16px 30px -22px rgba(70,50,15,.5);
+  overflow: hidden;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
-.ody-cat::before {
-  content:""; position:absolute; left:0; top:0; bottom:0; width: 6px; background: var(--acc);
+/* pattern overlay removed */
+.ody-cat::before { content: none; }
+.ody-cat > * { position: relative; z-index: 1; }
+.ody-cat:hover {
+  transform: translateY(-5px);
+  border-color: var(--acc);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.6),
+    0 20px 34px -18px color-mix(in srgb, var(--acc) 55%, rgba(70,50,15,.5));
 }
-.ody-cat:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--acc); }
-.ody-cat-ic {
-  width: 46px; height: 46px; border-radius: 12px;
-  background: var(--tint); display: grid; place-items: center;
-  margin-bottom: 16px;
+
+/* book-count pill badge */
+.ody-cat-count {
+  position: absolute; top: 12px; right: 12px; z-index: 2;
+  font-family: var(--font-body); font-weight: 800;
+  font-size: 10.5px; letter-spacing: .03em;
+  color: #fff; background: var(--acc);
+  border: 1px solid color-mix(in srgb, var(--acc) 70%, #000);
+  border-radius: 999px; padding: 4px 10px;
+  box-shadow: 0 2px 6px -1px color-mix(in srgb, var(--acc) 50%, transparent);
 }
-.ody-cat-ic span { width: 16px; height: 16px; border-radius: 4px; background: var(--acc); }
-.ody-cat h4 { font-family: var(--font-display); font-size: 20px; color: var(--ink); margin: 0; }
-.ody-cat p { font-size: 13px; color: var(--ink-mid); margin: 8px 0 0; line-height: 1.5; }
-.ody-cat .count { margin-top: 14px; font-size: 12px; font-weight: 800; letter-spacing:.04em; color: var(--acc); text-transform: uppercase; }
+
+/* circular collectible token — coin only, no surrounding disc */
+.ody-cat-token {
+  width: auto; height: auto; border-radius: 0;
+  display: grid; place-items: center; margin: 2px 0 12px;
+  background: none; box-shadow: none; border: 0;
+}
+.ody-cat-token img {
+  width: 148px; height: 148px; object-fit: contain;
+  filter: drop-shadow(0 5px 8px rgba(40,28,8,.4));
+}
+
+.ody-cat h4 {
+  font-family: var(--font-display); font-size: 20px; margin: 0;
+  color: var(--deep); line-height: 1.1;
+}
+.ody-cat p {
+  font-size: 12.5px; color: #6b5a3c; margin: 7px 0 0; line-height: 1.5;
+  max-width: 22ch;
+}
+/* Explore-this-world button */
 .ody-cat-go {
-  display: block; margin-top: 10px; font-family: var(--font-body);
-  font-weight: 800; font-size: 12px; letter-spacing: .03em; color: var(--ink-soft);
-  opacity: .75; transition: color .18s ease, opacity .18s ease, transform .18s ease;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-body); font-weight: 800; font-size: 12px;
+  color: var(--deep);
+  background: color-mix(in srgb, var(--acc) 15%, #fff);
+  border: 1.5px solid color-mix(in srgb, var(--acc) 40%, transparent);
+  border-radius: 999px; padding: 8px 15px;
+  margin-top: 16px;
+  transition: background .18s ease, color .18s ease, transform .18s ease;
 }
-.ody-cat:hover .ody-cat-go { color: var(--acc); opacity: 1; transform: translateX(2px); }
+.ody-cat-go span { transition: transform .18s ease; }
+.ody-cat:hover .ody-cat-go {
+  background: var(--acc); color: #fff;
+  border-color: color-mix(in srgb, var(--acc) 70%, #000);
+}
+.ody-cat:hover .ody-cat-go span { transform: translateX(3px); }
 
 @media (max-width: 1080px) { .ody-cats { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 640px)  { .ody-cats { grid-template-columns: 1fr 1fr; } }
