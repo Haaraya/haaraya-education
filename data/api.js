@@ -570,21 +570,109 @@
   async function getAssignmentsForClassroom(classroomId) {
     await boot();
     const rows = S.assignments.filter(a => a.classroomId === classroomId);
-    return clone(rows.map(a => ({ ...a, book: a.bookId ? byId(S.books, a.bookId) : null })));
+    return clone(rows.map(a => ({
+      ...a,
+      completedPct: a.completedPct != null ? a.completedPct : (a.status === "completed" ? 100 : 0),
+      book: a.bookId ? bookLite(byId(S.books, a.bookId)) : null,
+    })));
   }
 
-  async function assignBookToClassroom(teacherUserId, classroomId, bookId) {
+  // ── book picker + assignment writes (mirror platform-supabase.js signatures) ─
+  function bookLite(b) {
+    if (!b) return null;
+    return { id: b.id, code: String(b.id), title: b.title, levelId: b.levelId, strandUi: b.strandUi };
+  }
+  async function searchBooks(query, opts) {
     await boot();
-    const row = {
-      id: Date.now(), bookId, assignedBy: teacherUserId,
-      targetType: "class", classroomId, childId: null,
-      assignmentType: "teacher_assignment",
-      status: "assigned",
+    opts = opts || {};
+    let list = S.books;
+    if (opts.level != null) list = list.filter(b => b.levelId === Number(opts.level));
+    const q = (query || "").trim().toLowerCase();
+    if (q) list = list.filter(b => (b.title || "").toLowerCase().includes(q));
+    list = list.slice(0, opts.limit || 40);
+    return clone(list.map(bookLite));
+  }
+  async function assignBook(childId, code, opts) {
+    await boot();
+    opts = opts || {};
+    const bookId = Number(code);
+    const book = byId(S.books, bookId);
+    if (!book) return { ok: false, reason: "unknown-book" };
+    const uid = sessionUserId();
+    let row = S.assignments.find(a => a.childId === childId && a.bookId === bookId);
+    if (row) {
+      row.dueOn = opts.dueDate || row.dueOn || null;
+      if (opts.status) row.status = opts.status;
+      return { ok: true, id: row.id, updated: true };
+    }
+    row = {
+      id: Date.now() + Math.floor(Math.random() * 1000),
+      bookId, assignedBy: uid, targetType: "child", classroomId: null, childId,
+      assignmentType: opts.type || "teacher_assignment",
+      status: opts.status || "assigned",
       assignedAt: new Date().toISOString().slice(0, 10),
-      dueOn: null, completedPct: 0,
+      dueOn: opts.dueDate || null, completedPct: 0,
     };
     S.assignments.push(row);
-    return clone(row);
+    return { ok: true, id: row.id };
+  }
+  async function assignBookToChildren(childIds, code, opts) {
+    let assigned = 0, failed = 0;
+    for (const cid of (childIds || [])) {
+      const r = await assignBook(cid, code, opts);
+      if (r && r.ok) assigned++; else failed++;
+    }
+    return { ok: failed === 0, assigned, failed };
+  }
+  async function assignBookToClassroom(classroomId, code, opts) {
+    await boot();
+    opts = opts || {};
+    const bookId = Number(code);
+    const book = byId(S.books, bookId);
+    if (!book) return { ok: false, reason: "unknown-book", assigned: 0 };
+    const row = {
+      id: Date.now() + Math.floor(Math.random() * 1000),
+      bookId, assignedBy: sessionUserId(),
+      targetType: "class", classroomId, childId: null,
+      assignmentType: opts.type || "teacher_assignment",
+      status: opts.status || "assigned",
+      assignedAt: new Date().toISOString().slice(0, 10),
+      dueOn: opts.dueDate || null, completedPct: 0,
+    };
+    S.assignments.push(row);
+    const pupils = S.classroomChildren.filter(r => r.classroomId === classroomId).length;
+    return { ok: true, assigned: pupils || 1 };
+  }
+  async function getAssignmentsForChild(childId) {
+    await boot();
+    const rows = S.assignments.filter(a => a.childId === childId)
+      .sort((a, b) => String(a.assignedAt).localeCompare(String(b.assignedAt)));
+    return clone(rows.map(a => {
+      const b = a.bookId ? byId(S.books, a.bookId) : null;
+      return {
+        id: a.id, status: a.status, assignmentType: a.assignmentType,
+        assignedAt: a.assignedAt || null, dueOn: a.dueOn || null,
+        book: b ? { code: String(b.id), title: b.title, strandUi: b.strandUi, levelId: b.levelId } : null,
+      };
+    }));
+  }
+  async function updateAssignmentStatus(id, status) {
+    await boot();
+    const row = S.assignments.find(a => a.id === id);
+    if (row) row.status = status;
+    return { ok: !!row };
+  }
+  async function deleteAssignment(id) {
+    await boot();
+    const i = S.assignments.findIndex(a => a.id === id);
+    if (i >= 0) S.assignments.splice(i, 1);
+    return { ok: i >= 0 };
+  }
+  async function unassignBookForClassroom(classroomId, code) {
+    await boot();
+    const bookId = Number(code);
+    S.assignments = S.assignments.filter(a => !(a.classroomId === classroomId && a.bookId === bookId));
+    return { ok: true };
   }
 
   /* ── School admin ── */
@@ -690,7 +778,9 @@
     // teacher
     getClassroomsForTeacher, getChildrenForClassroom, getClassReadingProgress,
     getClassReadingPathProgress, getSupportAlerts, getAssignmentsForClassroom,
-    assignBookToClassroom,
+    getAssignmentsForChild, searchBooks,
+    assignBook, assignBookToChildren, assignBookToClassroom,
+    updateAssignmentStatus, deleteAssignment, unassignBookForClassroom,
     // school admin
     getSchoolDashboard, getSchoolUsageOverview,
     // haaraya admin

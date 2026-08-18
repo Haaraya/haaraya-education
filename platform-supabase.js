@@ -116,7 +116,29 @@
     return mapsP;
   }
 
-  function resetCaches() { profileP = null; mapsP = null; }
+  /* books: catalogue code → uuid id (for progress/stamp writes) */
+  var bookMapP = null;
+  function bookMap() {
+    if (bookMapP) return bookMapP;
+    bookMapP = (async function () {
+      var out = { idByCode: Object.create(null) };
+      var client = sb();
+      if (!client) return out;
+      try {
+        var res = await client.from("books").select("id,book_code");
+        (res.data || []).forEach(function (r) { if (r.book_code) out.idByCode[String(r.book_code)] = r.id; });
+      } catch (e) { if (window.console) console.warn("[Platform] bookMap failed:", e.message || e); }
+      return out;
+    })();
+    return bookMapP;
+  }
+  async function bookIdByCode(code) {
+    if (!code) return null;
+    var m = await bookMap();
+    return m.idByCode[String(code)] || null;
+  }
+
+  function resetCaches() { profileP = null; mapsP = null; bookMapP = null; }
   if (window.HaarayaAuth && window.HaarayaAuth.onChange) {
     try { window.HaarayaAuth.onChange(function () { resetCaches(); }); } catch (e) { /* ignore */ }
   }
@@ -356,27 +378,88 @@
   async function getAssignmentsForClassroom(classroomId) {
     var client = sb();
     if (!client || !classroomId) return [];
-    // assignments are per-child in this schema; roll up the classroom's children.
+    // assignments are per-child in this schema; roll up the classroom's children
+    // into one row PER BOOK (a "class assignment") so the same book across N
+    // pupils reads as a single assignment with x/N completion, not N rows.
     var ids = await classroomChildIds(classroomId);
     if (!ids.length) return [];
     try {
       var res = await client
         .from("assignments")
-        .select("id,status,assignment_type,assigned_at,due_date,book:books(book_code,title,level,strand)")
+        .select("id,child_id,status,assignment_type,assigned_at,due_date,book:books(book_code,title,level,strand)")
         .in("child_id", ids);
       if (res.error) throw res.error;
-      return (res.data || []).map(function (a) {
-        return {
-          id: a.id,
-          status: clean(a.status),
-          completedPct: a.status === "completed" ? 100 : 0,
-          dueOn: a.due_date || null,
-          assignmentType: clean(a.assignment_type),
-          book: a.book ? { title: clean(a.book.title), strandUi: strandUiFromSlug(a.book.strand), levelId: num(a.book.level) } : null,
-        };
+      var byBook = Object.create(null);
+      (res.data || []).forEach(function (a) {
+        var key = a.book ? String(a.book.book_code) : ("__" + a.id);
+        var g = byBook[key];
+        if (!g) {
+          g = byBook[key] = {
+            id: a.id, bookCode: a.book ? clean(a.book.book_code) : null,
+            total: 0, completed: 0, dueOn: a.due_date || null,
+            assignmentType: clean(a.assignment_type),
+            book: a.book ? { title: clean(a.book.title), strandUi: strandUiFromSlug(a.book.strand), levelId: num(a.book.level) } : null,
+          };
+        }
+        g.total += 1;
+        if (a.status === "completed") g.completed += 1;
+        if (!g.dueOn && a.due_date) g.dueOn = a.due_date;
+      });
+      return Object.keys(byBook).map(function (k) {
+        var g = byBook[k];
+        g.completedPct = g.total ? Math.round((g.completed / g.total) * 100) : 0;
+        g.status = (g.total && g.completed === g.total) ? "completed" : (g.completed > 0 ? "started" : "assigned");
+        return g;
       });
     } catch (e) {
       if (window.console) console.warn("[Platform] getAssignmentsForClassroom failed:", e.message || e);
+      return [];
+    }
+  }
+
+  // All assignments for one child, oldest-first — the reader's "read this next"
+  // playlist ordering (step 3 consumes this). Includes the book CODE so the app
+  // can open the book without knowing its uuid.
+  async function getAssignmentsForChild(childId) {
+    var client = sb();
+    if (!client || !childId) return [];
+    try {
+      var res = await client
+        .from("assignments")
+        .select("id,status,assignment_type,assigned_at,due_date,book:books(book_code,title,level,strand)")
+        .eq("child_id", childId)
+        .order("assigned_at", { ascending: true });
+      if (res.error) throw res.error;
+      return (res.data || []).map(function (a) {
+        return {
+          id: a.id, status: clean(a.status), assignmentType: clean(a.assignment_type),
+          assignedAt: a.assigned_at || null, dueOn: a.due_date || null,
+          book: a.book ? { code: clean(a.book.book_code), title: clean(a.book.title), strandUi: strandUiFromSlug(a.book.strand), levelId: num(a.book.level) } : null,
+        };
+      });
+    } catch (e) {
+      if (window.console) console.warn("[Platform] getAssignmentsForChild failed:", e.message || e);
+      return [];
+    }
+  }
+
+  // Catalogue search for the assign-a-book picker. Filters by title substring
+  // and/or numeric level; returns light rows the modal can render + assign.
+  async function searchBooks(query, opts) {
+    var client = sb();
+    if (!client) return [];
+    opts = opts || {};
+    try {
+      var q = client.from("books").select("id,book_code,title,level,strand").order("title").limit(opts.limit || 40);
+      if (query && String(query).trim()) q = q.ilike("title", "%" + String(query).trim() + "%");
+      if (opts.level != null) q = q.eq("level", String(opts.level));
+      var res = await q;
+      if (res.error) throw res.error;
+      return (res.data || []).map(function (b) {
+        return { id: b.id, code: clean(b.book_code), title: clean(b.title), levelId: num(b.level), strandUi: strandUiFromSlug(b.strand) };
+      });
+    } catch (e) {
+      if (window.console) console.warn("[Platform] searchBooks failed:", e.message || e);
       return [];
     }
   }
@@ -461,8 +544,192 @@
     return !!p;
   }
 
+  /* ── WRITES: reading progress + passport stamps ──────────── */
+  // Upsert an in-progress / not-started row for (child, book). Resolves the
+  // book uuid from its catalogue code. Never throws — returns {ok,reason}.
+  async function upsertReadingProgress(childId, bookCode, patch) {
+    var client = sb();
+    if (!client || !childId || !bookCode) return { ok: false, reason: "args" };
+    var bookId = await bookIdByCode(bookCode);
+    if (!bookId) return { ok: false, reason: "unknown-book" };
+    patch = patch || {};
+    var nowIso = new Date().toISOString();
+    var row = {
+      child_id: childId, book_id: bookId,
+      status: patch.status || "in_progress",
+      updated_at: nowIso,
+    };
+    if (patch.currentPage != null) row.current_page = num(patch.currentPage) || 0;
+    if (row.status === "in_progress") row.started_at = patch.startedAt || nowIso;
+    try {
+      var res = await client.from("reading_progress")
+        .upsert(row, { onConflict: "child_id,book_id", ignoreDuplicates: false })
+        .select("id").maybeSingle();
+      if (res.error) throw res.error;
+      return { ok: true, id: res.data && res.data.id };
+    } catch (e) {
+      if (window.console) console.warn("[Platform] upsertReadingProgress failed:", e.message || e);
+      return { ok: false, reason: "db", error: e.message || String(e) };
+    }
+  }
+
+  // Mark a book completed (status + completed_at + times_read++) and ensure a
+  // matching book passport stamp exists.
+  async function markBookComplete(childId, bookCode) {
+    var client = sb();
+    if (!client || !childId || !bookCode) return { ok: false, reason: "args" };
+    var bookId = await bookIdByCode(bookCode);
+    if (!bookId) return { ok: false, reason: "unknown-book" };
+    var nowIso = new Date().toISOString();
+    var times = 1;
+    try {
+      var cur = await client.from("reading_progress").select("times_read")
+        .eq("child_id", childId).eq("book_id", bookId).maybeSingle();
+      if (cur.data && cur.data.times_read != null) times = (num(cur.data.times_read) || 0) + 1;
+    } catch (e) { /* first read */ }
+    try {
+      var res = await client.from("reading_progress").upsert({
+        child_id: childId, book_id: bookId, status: "completed",
+        completed_at: nowIso, updated_at: nowIso, times_read: times,
+      }, { onConflict: "child_id,book_id", ignoreDuplicates: false }).select("id").maybeSingle();
+      if (res.error) throw res.error;
+    } catch (e) {
+      if (window.console) console.warn("[Platform] markBookComplete failed:", e.message || e);
+      return { ok: false, reason: "db", error: e.message || String(e) };
+    }
+    await ensureBookStamp(childId, bookId);
+    return { ok: true };
+  }
+
+  // Insert a one-per-book stamp if the child hasn't already earned it.
+  async function ensureBookStamp(childId, bookId) {
+    var client = sb();
+    if (!client || !childId || !bookId) return;
+    try {
+      var ex = await client.from("passport_stamps").select("id")
+        .eq("child_id", childId).eq("book_id", bookId).eq("stamp_type", "book").maybeSingle();
+      if (ex.data) return;
+      var name = "Book stamp";
+      try {
+        var b = await client.from("books").select("title").eq("id", bookId).maybeSingle();
+        if (b.data && b.data.title) name = clean(b.data.title);
+      } catch (e) { /* ignore */ }
+      var ins = await client.from("passport_stamps").insert({
+        child_id: childId, book_id: bookId, stamp_name: name,
+        stamp_type: "book", earned_at: new Date().toISOString(),
+      });
+      if (ins.error) throw ins.error;
+    } catch (e) {
+      if (window.console) console.warn("[Platform] ensureBookStamp failed:", e.message || e);
+    }
+  }
+
+  /* ── WRITES: assignments ("read this next") ──────────────── */
+  // Assign a book to ONE child. Resolves the book uuid from its catalogue code
+  // and stamps assigned_by_user_id with the signed-in user. If an assignment
+  // for (child, book) already exists it is refreshed (re-assigned / new due
+  // date) rather than duplicated. Never throws — returns {ok, id, reason}.
+  async function assignBook(childId, bookCode, opts) {
+    var client = sb();
+    if (!client || !childId || !bookCode) return { ok: false, reason: "args" };
+    var bookId = await bookIdByCode(bookCode);
+    if (!bookId) return { ok: false, reason: "unknown-book" };
+    opts = opts || {};
+    var p = await profile();
+    var type = opts.type || (p && p.role === "parent" ? "parent" : "teacher");
+    if (["teacher", "parent", "automatic", "system"].indexOf(type) < 0) type = "teacher";
+    var nowIso = new Date().toISOString();
+    try {
+      var ex = await client.from("assignments").select("id")
+        .eq("child_id", childId).eq("book_id", bookId).limit(1).maybeSingle();
+      if (ex.data && ex.data.id) {
+        var upd = { assignment_type: type, assigned_at: nowIso };
+        if (opts.dueDate !== undefined) upd.due_date = opts.dueDate || null;
+        if (opts.status) upd.status = opts.status;
+        var ur = await client.from("assignments").update(upd).eq("id", ex.data.id).select("id").maybeSingle();
+        if (ur.error) throw ur.error;
+        return { ok: true, id: ex.data.id, updated: true };
+      }
+      var row = {
+        child_id: childId, book_id: bookId,
+        assigned_by_user_id: (p && p.id) || null,
+        assignment_type: type, status: opts.status || "assigned",
+        assigned_at: nowIso,
+      };
+      if (opts.dueDate) row.due_date = opts.dueDate;
+      var res = await client.from("assignments").insert(row).select("id").maybeSingle();
+      if (res.error) throw res.error;
+      return { ok: true, id: res.data && res.data.id };
+    } catch (e) {
+      if (window.console) console.warn("[Platform] assignBook failed:", e.message || e);
+      return { ok: false, reason: "db", error: e.message || String(e) };
+    }
+  }
+
+  // Assign one book to a list of children; returns a tally.
+  async function assignBookToChildren(childIds, bookCode, opts) {
+    var ids = childIds || [];
+    var assigned = 0, failed = 0;
+    for (var i = 0; i < ids.length; i++) {
+      var r = await assignBook(ids[i], bookCode, opts);
+      if (r && r.ok) assigned++; else failed++;
+    }
+    return { ok: failed === 0, assigned: assigned, failed: failed };
+  }
+
+  // Assign one book to every pupil in a classroom.
+  async function assignBookToClassroom(classroomId, bookCode, opts) {
+    var ids = await classroomChildIds(classroomId);
+    if (!ids.length) return { ok: false, reason: "empty-class", assigned: 0 };
+    return assignBookToChildren(ids, bookCode, opts);
+  }
+
+  async function updateAssignmentStatus(assignmentId, status) {
+    var client = sb();
+    if (!client || !assignmentId) return { ok: false, reason: "args" };
+    try {
+      var res = await client.from("assignments").update({ status: status }).eq("id", assignmentId).select("id").maybeSingle();
+      if (res.error) throw res.error;
+      return { ok: true };
+    } catch (e) {
+      if (window.console) console.warn("[Platform] updateAssignmentStatus failed:", e.message || e);
+      return { ok: false, reason: "db", error: e.message || String(e) };
+    }
+  }
+
+  // Unassign. When a class assignment (one book across pupils) is removed from
+  // the teacher table, pass the book code + classroom to clear it for everyone.
+  async function deleteAssignment(assignmentId) {
+    var client = sb();
+    if (!client || !assignmentId) return { ok: false, reason: "args" };
+    try {
+      var res = await client.from("assignments").delete().eq("id", assignmentId);
+      if (res.error) throw res.error;
+      return { ok: true };
+    } catch (e) {
+      if (window.console) console.warn("[Platform] deleteAssignment failed:", e.message || e);
+      return { ok: false, reason: "db", error: e.message || String(e) };
+    }
+  }
+
+  async function unassignBookForClassroom(classroomId, bookCode) {
+    var client = sb();
+    if (!client || !classroomId || !bookCode) return { ok: false, reason: "args" };
+    var bookId = await bookIdByCode(bookCode);
+    if (!bookId) return { ok: false, reason: "unknown-book" };
+    var ids = await classroomChildIds(classroomId);
+    if (!ids.length) return { ok: true, removed: 0 };
+    try {
+      var res = await client.from("assignments").delete().eq("book_id", bookId).in("child_id", ids);
+      if (res.error) throw res.error;
+      return { ok: true };
+    } catch (e) {
+      if (window.console) console.warn("[Platform] unassignBookForClassroom failed:", e.message || e);
+      return { ok: false, reason: "db", error: e.message || String(e) };
+    }
+  }
+
   window.HaarayaPlatformDB = {
-    ready: function () { return !!sb(); },
     isRealUser: isRealUser,
     profile: profile,
     resetCaches: resetCaches,
@@ -476,6 +743,10 @@
     getPassportStamps: getPassportStamps,
     getChildSummary: getChildSummary,
     getReadingPathProgress: getReadingPathProgress,
+    // progress writes
+    bookIdByCode: bookIdByCode,
+    upsertReadingProgress: upsertReadingProgress,
+    markBookComplete: markBookComplete,
     // subscription
     getSubscriptionForParent: getSubscriptionForParent,
     // teacher
@@ -485,6 +756,15 @@
     getClassReadingPathProgress: getClassReadingPathProgress,
     getSupportAlerts: getSupportAlerts,
     getAssignmentsForClassroom: getAssignmentsForClassroom,
+    getAssignmentsForChild: getAssignmentsForChild,
+    searchBooks: searchBooks,
+    // assignment writes
+    assignBook: assignBook,
+    assignBookToChildren: assignBookToChildren,
+    assignBookToClassroom: assignBookToClassroom,
+    updateAssignmentStatus: updateAssignmentStatus,
+    deleteAssignment: deleteAssignment,
+    unassignBookForClassroom: unassignBookForClassroom,
     // school admin
     getSchoolDashboard: getSchoolDashboard,
     getSchoolUsageOverview: getSchoolUsageOverview,

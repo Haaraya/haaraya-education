@@ -3112,3 +3112,46 @@ body[data-hero-variant="journey"] .hero-subject .passport-card { display: none; 
 /* 6. "How it works" title: single line on wide screens, wraps on small. */
 .hiw-title { white-space: nowrap; }
 @media (max-width: 900px) { .hiw-title { white-space: normal; } }
+
+/* ============================================================
+   Assign-a-book modal (teacher dashboard)
+   ============================================================ */
+.assign-remove { border: none; background: transparent; color: var(--ink-mute); font-size: 20px; line-height: 1; cursor: pointer; padding: 2px 8px; border-radius: 8px; transition: background .15s, color .15s; }
+.assign-remove:hover { background: #FBEAEA; color: #B23B3B; }
+.assign-ov { position: fixed; inset: 0; z-index: 3000; background: rgba(26,42,26,.42); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; padding: 24px; }
+.assign-modal { width: min(760px, 100%); max-height: 88vh; display: flex; flex-direction: column; background: var(--cream); border-radius: var(--r-lg); box-shadow: 0 30px 80px rgba(20,40,20,.35); overflow: hidden; }
+.assign-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 22px 24px 16px; border-bottom: 1px solid var(--sand); }
+.assign-head h4 { margin: 0; font-family: "Caprasimo", serif; font-weight: 400; font-size: 24px; color: var(--ink); }
+.assign-head .sub { font-size: 13px; color: var(--ink-soft); margin-top: 4px; }
+.assign-x { border: none; background: var(--sand); color: var(--ink-mid); width: 34px; height: 34px; border-radius: 50%; font-size: 22px; line-height: 1; cursor: pointer; flex: none; }
+.assign-x:hover { background: var(--sand-dk); }
+.assign-body { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 22px 24px; overflow: auto; }
+.assign-col { min-width: 0; display: flex; flex-direction: column; }
+.assign-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-soft); margin-bottom: 8px; }
+.assign-lbl .opt { font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--ink-mute); }
+.assign-search, .assign-date { width: 100%; box-sizing: border-box; padding: 11px 14px; border: 1.5px solid var(--sand-dk); border-radius: 12px; font: inherit; font-size: 15px; background: white; color: var(--ink); }
+.assign-search:focus, .assign-date:focus { outline: none; border-color: var(--forest); }
+.assign-results { margin-top: 10px; border: 1px solid var(--sand); border-radius: 12px; background: white; max-height: 260px; overflow: auto; }
+.assign-book { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; border: none; background: transparent; padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--sand); font: inherit; }
+.assign-book:last-child { border-bottom: none; }
+.assign-book:hover { background: var(--cream); }
+.assign-book.on { background: var(--green-light); }
+.assign-book .chip { width: 16px; height: 22px; border-radius: 2px 4px 4px 2px; box-shadow: inset 2px 0 0 rgba(0,0,0,.15); flex: none; }
+.assign-book .t { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.assign-book .lv { font-size: 12px; font-weight: 700; color: var(--ink-soft); flex: none; }
+.assign-empty { padding: 16px; font-size: 13px; color: var(--ink-soft); text-align: center; }
+.assign-seg { display: flex; gap: 6px; background: var(--sand); padding: 4px; border-radius: 12px; }
+.assign-seg button { flex: 1; border: none; background: transparent; padding: 9px 8px; border-radius: 9px; font: inherit; font-size: 13px; font-weight: 700; color: var(--ink-mid); cursor: pointer; }
+.assign-seg button.on { background: white; color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+.assign-note { margin-top: 10px; font-size: 13px; color: var(--ink-mid); }
+.assign-roster { margin-top: 10px; border: 1px solid var(--sand); border-radius: 12px; background: white; max-height: 180px; overflow: auto; }
+.assign-pupil { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--sand); cursor: pointer; font-size: 14px; color: var(--ink); }
+.assign-pupil:last-child { border-bottom: none; }
+.assign-pupil.on { background: var(--green-light); }
+.assign-pupil input { accent-color: var(--forest); width: 16px; height: 16px; }
+.assign-foot { border-top: 1px solid var(--sand); padding: 16px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.assign-picked { flex: 1; min-width: 160px; font-size: 13px; color: var(--ink-soft); }
+.assign-picked strong { color: var(--ink); }
+.assign-msg { font-size: 13px; font-weight: 700; color: #B23B3B; width: 100%; }
+.assign-actions { display: flex; gap: 10px; }
+@media (max-width: 640px) { .assign-body { grid-template-columns: 1fr; } }

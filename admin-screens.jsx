@@ -43,6 +43,122 @@ function AdultSidebar({ items, footerName, footerSub, footerColor }) {
    TEACHER DASHBOARD
    ============================================================ */
 
+/* Assign-a-book modal: catalogue search + target (whole class / selected
+   pupils) + optional due date. Writes through the active Api (live DB for a
+   real teacher, in-memory for the demo) and calls onDone() to refresh. */
+function AssignBookModal({ Api, classroom, pupils, onClose, onDone }) {
+  const [query, setQuery]     = useStateAdult("");
+  const [results, setResults] = useStateAdult([]);
+  const [searching, setSearching] = useStateAdult(false);
+  const [picked, setPicked]   = useStateAdult(null);
+  const [target, setTarget]   = useStateAdult("class");
+  const [selected, setSelected] = useStateAdult({});
+  const [due, setDue]         = useStateAdult("");
+  const [busy, setBusy]       = useStateAdult(false);
+  const [msg, setMsg]         = useStateAdult(null);
+  const roster = (pupils || []).map(p => p.child).filter(Boolean);
+
+  useEffectAdult(() => {
+    let alive = true;
+    setSearching(true);
+    const t = setTimeout(() => {
+      Promise.resolve(Api.searchBooks ? Api.searchBooks(query, { limit: 30 }) : [])
+        .then(r => { if (alive) { setResults(r || []); setSearching(false); } })
+        .catch(() => { if (alive) { setResults([]); setSearching(false); } });
+    }, 220);
+    return () => { alive = false; clearTimeout(t); };
+  }, [query]);
+
+  const toggle = (id) => setSelected(s => ({ ...s, [id]: !s[id] }));
+  const selectedIds = roster.filter(c => selected[c.id]).map(c => c.id);
+  const canAssign = !!picked && (target === "class" ? true : selectedIds.length > 0) && !busy;
+
+  async function doAssign() {
+    if (!canAssign) return;
+    setBusy(true); setMsg(null);
+    const opts = { dueDate: due || null };
+    let res;
+    try {
+      if (target === "class") res = await Api.assignBookToClassroom(classroom.id, picked.code, opts);
+      else res = await Api.assignBookToChildren(selectedIds, picked.code, opts);
+    } catch (e) { res = { ok: false }; }
+    setBusy(false);
+    if (res && res.ok) { onDone && onDone(); onClose && onClose(); }
+    else setMsg("Couldn't assign that book. Please try again.");
+  }
+
+  return (
+    <div className="assign-ov" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose && onClose(); }}>
+      <div className="assign-modal" role="dialog" aria-modal="true" aria-label="Assign a book">
+        <div className="assign-head">
+          <div>
+            <h4>Assign a book</h4>
+            <div className="sub">{classroom ? classroom.name : ""} · pick a book, choose who, set a due date</div>
+          </div>
+          <button className="assign-x" onClick={onClose} aria-label="Close">×</button>
+        </div>
+
+        <div className="assign-body">
+          <div className="assign-col">
+            <label className="assign-lbl">Book</label>
+            <input className="assign-search" type="text" placeholder="Search the library by title…"
+              value={query} onChange={e => setQuery(e.target.value)} autoFocus />
+            <div className="assign-results">
+              {searching && <div className="assign-empty">Searching…</div>}
+              {!searching && results.length === 0 && <div className="assign-empty">No books match “{query}”.</div>}
+              {!searching && results.map(b => {
+                const s = STRANDS[b.strandUi] || STRANDS.tafiya;
+                const on = picked && picked.code === b.code;
+                return (
+                  <button key={b.code} className={`assign-book ${on ? "on" : ""}`} onClick={() => setPicked(b)}>
+                    <span className="chip" style={{ background: s.bg }} />
+                    <span className="t">{b.title}</span>
+                    <span className="lv">L{b.levelId || "–"}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="assign-col">
+            <label className="assign-lbl">Assign to</label>
+            <div className="assign-seg">
+              <button className={target === "class" ? "on" : ""} onClick={() => setTarget("class")}>Whole class</button>
+              <button className={target === "some" ? "on" : ""} onClick={() => setTarget("some")}>Selected pupils</button>
+            </div>
+            {target === "class" && (
+              <div className="assign-note">All {roster.length} pupils in {classroom ? classroom.name : "this class"}.</div>
+            )}
+            {target === "some" && (
+              <div className="assign-roster">
+                {roster.length === 0 && <div className="assign-empty">No pupils in this class yet.</div>}
+                {roster.map(c => (
+                  <label key={c.id} className={`assign-pupil ${selected[c.id] ? "on" : ""}`}>
+                    <input type="checkbox" checked={!!selected[c.id]} onChange={() => toggle(c.id)} />
+                    <Avatar name={c.shortName || c.displayName} color={c.avatarColor} size={26} />
+                    <span>{c.displayName || c.shortName}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+            <label className="assign-lbl" style={{ marginTop: 16 }}>Due date <span className="opt">(optional)</span></label>
+            <input className="assign-date" type="date" value={due} onChange={e => setDue(e.target.value)} />
+          </div>
+        </div>
+
+        <div className="assign-foot">
+          {msg && <span className="assign-msg">{msg}</span>}
+          <div className="assign-picked">{picked ? <>Assigning <strong>{picked.title}</strong>{target === "some" ? ` · ${selectedIds.length} pupil${selectedIds.length === 1 ? "" : "s"}` : " · whole class"}</> : "Choose a book to continue"}</div>
+          <div className="assign-actions">
+            <button className="btn btn-ghost-dark btn-sm" onClick={onClose}>Cancel</button>
+            <button className="btn btn-primary btn-sm" disabled={!canAssign} onClick={doAssign}>{busy ? "Assigning…" : "Assign book"}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TeacherDashScreen({ onNavigate }) {
   const real = !!(window.HaarayaSession && HaarayaSession.isReal() && window.HaarayaPlatformDB);
   const Api = real ? HaarayaPlatformDB : HaarayaApi;
@@ -51,12 +167,14 @@ function TeacherDashScreen({ onNavigate }) {
   const { data: teacher }    = useApi(() => Api.getCurrentTeacher(), [TEACHER_ID, real]);
   const { data: classrooms } = useApi(() => Api.getClassroomsForTeacher(TEACHER_ID), [TEACHER_ID, real]);
   const [classIdx, setClassIdx] = useStateAdult(0);
+  const [assignOpen, setAssignOpen] = useStateAdult(false);
+  const [refreshKey, setRefreshKey] = useStateAdult(0);
   const classroom = (classrooms || [])[classIdx];
 
   const { data: pupils }       = useApi(() => classroom ? Api.getClassReadingProgress(classroom.id) : Promise.resolve([]), [classroom && classroom.id, real]);
   const { data: pathProgress } = useApi(() => classroom ? Api.getClassReadingPathProgress(classroom.id) : Promise.resolve(null), [classroom && classroom.id, real]);
   const { data: alerts }       = useApi(() => classroom ? Api.getSupportAlerts(classroom.id) : Promise.resolve([]), [classroom && classroom.id, real]);
-  const { data: assignments }  = useApi(() => classroom ? Api.getAssignmentsForClassroom(classroom.id) : Promise.resolve([]), [classroom && classroom.id, real]);
+  const { data: assignments }  = useApi(() => classroom ? Api.getAssignmentsForClassroom(classroom.id) : Promise.resolve([]), [classroom && classroom.id, real, refreshKey]);
 
   if (!classrooms || !teacher) return null;
 
@@ -87,7 +205,7 @@ function TeacherDashScreen({ onNavigate }) {
                 <h3><span style={{ fontFamily: '"Andika", system-ui, sans-serif' }}>{ME}</span>&rsquo;s classrooms</h3>
                 <div className="sub">{classrooms.length} {classrooms.length === 1 ? "class" : "classes"} · Term 2 · Week 6</div>
               </div>
-              <button className="btn btn-primary btn-sm">+ New assignment</button>
+              <button className="btn btn-primary btn-sm" onClick={() => setAssignOpen(true)} disabled={!classroom}>+ New assignment</button>
             </div>
 
             <div className="adash-tabs">
@@ -161,6 +279,7 @@ function TeacherDashScreen({ onNavigate }) {
                       <th>Completion</th>
                       <th>Due</th>
                       <th>Status</th>
+                      <th aria-label="Actions"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -176,12 +295,21 @@ function TeacherDashScreen({ onNavigate }) {
                             </div>
                           </td>
                           <td><StrandPill strand={b.strandUi} size="sm" /></td>
+                          <td>{b.levelId ? `L${b.levelId}` : "—"}</td>
                           <td>{a.completedPct}%</td>
                           <td style={{ color: "var(--ink-soft)" }}>{a.dueOn || "—"}</td>
                           <td>
                             <span className={`adash-pill ${a.status === "completed" ? "ok" : a.status === "started" ? "warn" : ""}`}>
                               {a.status === "completed" ? "Complete" : a.status === "started" ? "In progress" : "Not started"}
                             </span>
+                          </td>
+                          <td style={{ textAlign: "right" }}>
+                            <button className="assign-remove" title="Unassign for the whole class"
+                              onClick={async () => {
+                                if (a.bookCode && Api.unassignBookForClassroom) await Api.unassignBookForClassroom(classroom.id, a.bookCode);
+                                else if (Api.deleteAssignment) await Api.deleteAssignment(a.id);
+                                setRefreshKey(k => k + 1);
+                              }}>×</button>
                           </td>
                         </tr>
                       );
@@ -193,6 +321,15 @@ function TeacherDashScreen({ onNavigate }) {
           </div>
         </div>
       </div>
+      {assignOpen && classroom && (
+        <AssignBookModal
+          Api={Api}
+          classroom={classroom}
+          pupils={pupils || []}
+          onClose={() => setAssignOpen(false)}
+          onDone={() => setRefreshKey(k => k + 1)}
+        />
+      )}
     </main>
   );
 }
