@@ -819,6 +819,8 @@ function TfrReviewPanel(props) {
    ============================================================ */
 function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
   const code = bookCode || "T4-NF-01";
+  const _role = window.HaarayaSession ? window.HaarayaSession.role() : "visitor";
+  const _dashScreen = { child: "child", parent: "parent", teacher: "teacher", school_admin: "school", admin: "admin" }[_role];
   const [pkg, setPkg] = useStateTfr(null);
   const [status, setStatus] = useStateTfr("loading"); // loading | ready | error
   const [errMsg, setErrMsg] = useStateTfr("");
@@ -1081,6 +1083,14 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
             </button>
             <button className="btn btn-ghost" type="button" onClick={() => onNavigate("library")}>
               <span className="ico" aria-hidden="true">‹</span><span>Library</span>
+            </button>
+            {_dashScreen && (
+              <button className="btn btn-ghost" type="button" onClick={() => onNavigate(_dashScreen)}>
+                <span className="ico" aria-hidden="true">▦</span><span>Dashboard</span>
+              </button>
+            )}
+            <button className="btn btn-ghost" type="button" onClick={() => onNavigate("passport")}>
+              <span className="ico" aria-hidden="true">❖</span><span>Passport</span>
             </button>
           </div>
           <div className="running">

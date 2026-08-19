@@ -153,6 +153,8 @@ main:has(> .wrap > .dash.role-adult) {
 /* continue feature */
 .nd-continue { display:flex; gap:22px; align-items:center; background:var(--d-parch-hi); border:1px solid var(--d-line); border-radius:24px; padding:20px 22px; flex-wrap:wrap; }
 .nd-continue .cov { width:104px; height:138px; flex:none; border-radius:6px 11px 11px 6px; box-shadow:inset 6px 0 0 rgba(0,0,0,.14), 0 6px 16px rgba(78,103,51,.28); background:linear-gradient(160deg,#A9BE7E,var(--d-olive)); display:flex; align-items:center; justify-content:center; text-align:center; color:#fff; font-family:var(--nd-disp); font-weight:700; font-size:16px; line-height:1.15; padding:12px; }
+.nd-continue .cov.cov--img { padding:0; overflow:hidden; background:#fff; }
+.nd-continue .cov.cov--img img { width:100%; height:100%; object-fit:contain; display:block; }
 .nd-continue .body { flex:1; min-width:180px; }
 .nd-continue .tag { font-size:11px; font-weight:900; letter-spacing:.12em; text-transform:uppercase; color:var(--d-olive); }
 .nd-continue h3 { font-family:var(--nd-serif); font-weight:600; font-size:24px; margin:6px 0 4px; color:var(--d-ink); }

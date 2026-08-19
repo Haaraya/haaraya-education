@@ -565,7 +565,11 @@ function DashChildPreview({ onNavigate }) {
             </div>
             {keepFirst && (
               <div className="nd-continue">
-                <div className="cov">{keepFirst.title}</div>
+                <div className={"cov" + (keepFirst.thumb ? " cov--img" : "")}>
+                  {keepFirst.thumb && window.TafiyaData
+                    ? <img src={window.TafiyaData.assetUrl(keepFirst.thumb)} alt="" onError={(e) => { const p = e.currentTarget.closest(".cov"); if (p) { p.classList.remove("cov--img"); p.textContent = keepFirst.title; } }} />
+                    : keepFirst.title}
+                </div>
                 <div className="body">
                   <div className="tag">Continue reading</div>
                   <h3>{keepFirst.title}</h3>

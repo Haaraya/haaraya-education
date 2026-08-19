@@ -48,10 +48,19 @@ function StampBonus() {
 }
 
 function PassportScreen({ onNavigate, gotoLevel, highlightBookId }) {
-  const CHILD_ID = (window.HaarayaSession && HaarayaSession.childId()) || 1;
-  // The passport always belongs to the child being viewed, not the viewer
-  const ME = "Demo Child";
-  const { data: summary } = useApi(() => HaarayaApi.getChildSummary(CHILD_ID), [CHILD_ID]);
+  const real = !!(window.HaarayaSession && HaarayaSession.isReal() && window.HaarayaPlatformDB);
+  // Real families: the passport belongs to the parent's first child (children
+  // have no separate login). Demos: the single localStorage reader.
+  const { data: realKids } = useApi(() => real ? HaarayaPlatformDB.getChildrenForParent() : Promise.resolve(null), [real]);
+  const realChildId = real ? (realKids && realKids[0] && realKids[0].id) : null;
+  const CHILD_ID = real ? realChildId : ((window.HaarayaSession && HaarayaSession.childId()) || 1);
+  const ME = real ? ((realKids && realKids[0] && realKids[0].shortName) || "Reader") : "Demo Child";
+  const { data: summary } = useApi(
+    () => real
+      ? (realChildId ? HaarayaPlatformDB.getChildSummary(realChildId) : Promise.resolve(null))
+      : HaarayaApi.getChildSummary(CHILD_ID),
+    [real, realChildId, CHILD_ID]
+  );
   const { data: levelCounts } = useApi(() => TafiyaBooks.levelCounts(), []);
   const [readTick, setReadTick] = useStateScreens(0);
   useEffectScreens(() => {
@@ -59,6 +68,8 @@ function PassportScreen({ onNavigate, gotoLevel, highlightBookId }) {
     window.addEventListener("haaraya:reading", on);
     return () => window.removeEventListener("haaraya:reading", on);
   }, []);
+  // Real families: earned stamps come live from Supabase (demo stays local).
+  const { data: realStamps } = useApi(() => (real && realChildId) ? HaarayaPlatformDB.getPassportStamps(realChildId) : Promise.resolve(null), [real, realChildId, readTick]);
   // Open directly on a specific level's stamp page when arriving from a book completion.
   const levelToIdx = (lvl) => {
     const li = PASSPORT_LEVELS.findIndex(l => l.n === Number(lvl));
@@ -91,13 +102,18 @@ function PassportScreen({ onNavigate, gotoLevel, highlightBookId }) {
 
   if (!summary) return null;
   const child = summary.child;
-  // Current level is derived from real reading progress (highest level with a
-  // completed book), so it always matches the live Tafiya catalogue.
-  const cur = (() => {
-    const byLvl = window.TafiyaBooks ? TafiyaBooks.completedByLevel() : {};
-    const lvls = Object.keys(byLvl).map(Number);
-    return lvls.length ? Math.max(...lvls) : 1;
-  })();
+  // Completed-book codes: real → the child's Supabase stamps; demo → local reads.
+  const completedSet = real
+    ? new Set((realStamps || []).map(s => s.code).filter(Boolean))
+    : new Set(window.TafiyaData ? window.TafiyaData.completedCodes() : []);
+  // Current level: real → the child's DB level; demo → highest level with a completed book.
+  const cur = real
+    ? ((child && child.currentLevelId) || 1)
+    : (() => {
+        const byLvl = window.TafiyaBooks ? TafiyaBooks.completedByLevel() : {};
+        const lvls = Object.keys(byLvl).map(Number);
+        return lvls.length ? Math.max(...lvls) : 1;
+      })();
   const started = child.startedAt
     ? new Date(child.startedAt).toLocaleDateString("en-GB", { month: "short", day: "numeric", year: "numeric" })
     : "—";
@@ -112,8 +128,10 @@ function PassportScreen({ onNavigate, gotoLevel, highlightBookId }) {
 
   // Progress summary figures — derived from real Tafiya reads, not mock data.
   const _ignore = readTick; // re-render when a book is completed
-  const completedByLvl = (window.TafiyaBooks ? TafiyaBooks.completedByLevel() : {});
-  const stampsEarned = window.TafiyaData ? window.TafiyaData.completedCodes().length : 0;
+  const completedByLvl = real
+    ? (realStamps || []).reduce((m, s) => { if (s.levelId) m[s.levelId] = (m[s.levelId] || 0) + 1; return m; }, {})
+    : (window.TafiyaBooks ? TafiyaBooks.completedByLevel() : {});
+  const stampsEarned = real ? (summary.stampsEarned || (realStamps || []).length) : completedSet.size;
   const levelTotal   = (levelCounts && levelCounts[cur]) || 0;
   const levelDone    = completedByLvl[cur] || 0;
   const booksToNext  = Math.max(0, levelTotal - levelDone);
@@ -160,7 +178,7 @@ function PassportScreen({ onNavigate, gotoLevel, highlightBookId }) {
             aria-label="Next page"
           ></button>
           <div className={"pbook-spread dir-" + (dir > 0 ? "next" : "prev")} key={idx}>
-            <PassportSpread idx={idx} child={child} name={ME} summary={summary} cur={cur} levelCounts={levelCounts} started={started} onNavigate={onNavigate} childId={CHILD_ID} highlightBookId={highlightBookId} />
+            <PassportSpread idx={idx} child={child} name={ME} summary={summary} cur={cur} levelCounts={levelCounts} started={started} onNavigate={onNavigate} childId={CHILD_ID} highlightBookId={highlightBookId} real={real} completedSet={completedSet} />
           </div>
           {idx > 0 && <span className="pbook-curl curl-prev" aria-hidden="true"></span>}
           {idx > 0 && idx < TOTAL - 1 && <span className="pbook-curl curl-next" aria-hidden="true"></span>}
@@ -295,7 +313,7 @@ function JourneyPage({ cur, onNavigate }) {
   );
 }
 
-function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, onNavigate, childId, highlightBookId }) {
+function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, onNavigate, childId, highlightBookId, real, completedSet }) {
   const curName = (PASSPORT_LEVELS.find(l => l.n === cur) || {}).name || "";
 
   if (idx === 0) {
@@ -406,17 +424,20 @@ function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, 
   }
 
   const lv = PASSPORT_LEVELS[idx - 3];
-  return <LevelSpread level={lv} cur={cur} total={lv.total} completedThisLevel={summary.currentLevelCompleted} onNavigate={onNavigate} childId={childId} highlightBookId={highlightBookId} />;
+  return <LevelSpread level={lv} cur={cur} total={lv.total} completedThisLevel={summary.currentLevelCompleted} onNavigate={onNavigate} childId={childId} highlightBookId={highlightBookId} real={real} completedSet={completedSet} />;
 }
 
-function LevelSpread({ level, cur, completedThisLevel, onNavigate, childId, highlightBookId }) {
+function LevelSpread({ level, cur, completedThisLevel, onNavigate, childId, highlightBookId, real, completedSet }) {
   const n = level.n;
   const serial = "HL" + String(72467 + (childId || 1)).padStart(8, "0"); // passport serial, shown top-left
 
   // Real Tafiya books at this level + earned stamps from the reading-progress store.
   const TD = window.TafiyaData;
   const { data: levelBooksRaw } = useApi(() => TafiyaBooks.getBooks({ levelId: n }), [n]);
-  const statusOf = (b) => { const p = TD && TD.progressOf(b.code); return (p && p.completed) ? "complete" : (p && p.opened) ? "progress" : "notstarted"; };
+  const statusOf = (b) => {
+    if (real) return (completedSet && completedSet.has(b.code)) ? "complete" : "notstarted";
+    const p = TD && TD.progressOf(b.code); return (p && p.completed) ? "complete" : (p && p.opened) ? "progress" : "notstarted";
+  };
   const rank = { complete: 0, progress: 1, notstarted: 2 };
   const books = (levelBooksRaw || []).slice().sort((a, b) => rank[statusOf(a)] - rank[statusOf(b)]);
   const N = books.length; // real number of books in this level
@@ -663,7 +684,11 @@ function ChildDashScreen({ onNavigate }) {
 
             {feat && (
               <div className="nd-continue">
-                <div className="cov">{feat.title}</div>
+                <div className={"cov" + (feat.thumb ? " cov--img" : "")}>
+                  {feat.thumb && window.TafiyaData
+                    ? <img src={window.TafiyaData.assetUrl(feat.thumb)} alt="" onError={(e) => { const p = e.currentTarget.closest(".cov"); if (p) { p.classList.remove("cov--img"); p.textContent = feat.title; } }} />
+                    : feat.title}
+                </div>
                 <div className="body">
                   <div className="tag">Continue reading</div>
                   <h3>{feat.title}</h3>
