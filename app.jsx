@@ -104,6 +104,19 @@ const ROLE_HOME = {
 
 const ROLE_ORDER = ["visitor", "child", "parent", "teacher", "school_admin", "admin"];
 
+/* Demo accounts are REAL Supabase logins (seeded by
+   supabase/demo_accounts_seed.sql), so a demo shows exactly what the live
+   webapp shows. The child view has no account of its own — children read under
+   the parent session, so it signs in the demo parent and opens the child screen. */
+const DEMO_PASSWORD = "HaarayaDemo1!";
+const DEMO_LOGINS = {
+  child:        { email: "demo.parent@haaraya-demo.com",  dest: "child",   label: "Demo Reader",       sub: "Child view · reads under the family account" },
+  parent:       { email: "demo.parent@haaraya-demo.com",  dest: "parent",  label: "Demo Parent",       sub: "Family plan · 2 children" },
+  teacher:      { email: "demo.teacher@haaraya-demo.com", dest: "teacher", label: "Demo Teacher",      sub: "Primary 3 · 7 pupils" },
+  school_admin: { email: "demo.school@haaraya-demo.com",  dest: "school",  label: "Demo School Admin", sub: "Haaraya Demo Primary" },
+};
+const DEMO_COLOR = { child: "#E65100", parent: "#1565C0", teacher: "#8E24AA", school_admin: "#00838F" };
+
 function canAccess(role, screen) {
   return (ROLE_ACCESS[role] || ROLE_ACCESS.visitor).includes(screen);
 }
@@ -150,38 +163,51 @@ function SignInPanel({ open, currentRole, onChoose, onClose }) {
 
   if (!open) return null;
   const S = window.HaarayaSession;
-  const accounts = S ? S.accounts : {};
 
   const submit = async (e) => {
     e.preventDefault();
     if (busy) return;
     if (!/.+@.+\..+/.test(email.trim())) { setError("Please enter a valid email address."); return; }
     if (!password) { setError("Please enter your password."); return; }
+    await doSignIn(email.trim(), password);
+  };
+
+  // One shared sign-in path for typed credentials AND the demo buttons: both are
+  // real Supabase logins, so both land on live data.
+  const doSignIn = async (mail, pw, destOverride) => {
     setError(""); setBusy(true);
-    // Real Supabase auth: verify credentials, then route by the role stored on
-    // the user's public.users profile row. Falls back to the email heuristic if
-    // the auth stack isn't available (e.g. an offline/standalone copy).
     if (!window.HaarayaAuth) {
-      setTimeout(() => onChoose(inferRoleFromEmail(email)), 400);
+      setBusy(false);
+      setError("Sign-in needs a connection — the account service didn't load.");
       return;
     }
     try {
-      await window.HaarayaAuth.signIn({ email: email.trim(), password });
-      const accounts = (window.HaarayaSession && window.HaarayaSession.accounts) || {};
-      let roleKey = inferRoleFromEmail(email);
+      await window.HaarayaAuth.signIn({ email: mail, password: pw });
       let profileRow = null;
-      try {
-        const profile = await window.HaarayaAuth.getProfile();
-        if (profile && profile.role) {
-          profileRow = profile;
-          if (accounts[profile.role]) roleKey = profile.role;
-        }
-      } catch (e2) { /* keep the email-inferred fallback */ }
-      onChoose(roleKey, profileRow);
+      try { profileRow = await window.HaarayaAuth.getProfile(); } catch (e2) { profileRow = null; }
+      if (!profileRow) {
+        setBusy(false);
+        setError("Signed in, but your profile couldn't load. Please try again.");
+        return;
+      }
+      onChoose(profileRow.role, profileRow, destOverride);
     } catch (err) {
       setBusy(false);
-      setError((err && err.message) ? err.message : "Sign in failed. Check your email and password.");
+      const raw = (err && err.message) ? err.message : "";
+      const s = raw.toLowerCase();
+      setError(
+        s.indexOf("invalid login") !== -1 ? "That email or password doesn't match. Check both and try again."
+        : s.indexOf("rate limit") !== -1 ? "Too many attempts right now. Please wait a minute and try again."
+        : s.indexOf("not confirmed") !== -1 ? "Please confirm your email first — check your inbox."
+        : raw || "Sign in failed. Check your email and password."
+      );
     }
+  };
+
+  const demoSignIn = (role) => {
+    const d = DEMO_LOGINS[role];
+    if (!d || busy) return;
+    doSignIn(d.email, DEMO_PASSWORD, d.dest);
   };
 
   return (
@@ -238,24 +264,27 @@ function SignInPanel({ open, currentRole, onChoose, onClose }) {
 
         {showDemo && (
           <div className="signin-demo">
-            <p className="signin-demo-note">One-tap access for demos — no password needed.</p>
+            <p className="signin-demo-note">
+              Real accounts on live data — a demo shows exactly what the app shows.
+            </p>
             <div className="signin-list">
-              {ROLE_ORDER.filter(r => r !== "visitor" && r !== "admin").map(role => {
-                const a = accounts[role];
-                if (!a) return null;
+              {["child", "parent", "teacher", "school_admin"].map(role => {
+                const d = DEMO_LOGINS[role];
+                if (!d) return null;
                 const active = role === currentRole;
                 return (
                   <button
                     key={role}
                     className={`signin-account ${active ? "active" : ""}`}
-                    onClick={() => onChoose(role)}
+                    disabled={busy}
+                    onClick={() => demoSignIn(role)}
                   >
-                    <span className="signin-avatar" style={{ background: a.color }}>
-                      {role === "visitor" ? "?" : a.displayName.split(" ").map(w => w[0]).slice(0, 2).join("")}
+                    <span className="signin-avatar" style={{ background: DEMO_COLOR[role] }}>
+                      {d.label.split(" ").map(w => w[0]).slice(0, 2).join("")}
                     </span>
                     <span className="signin-meta">
-                      <span className="signin-name">{a.displayName}</span>
-                      <span className="signin-sub">{S.roleLabel(role)} · {a.sub}</span>
+                      <span className="signin-name">{d.label}</span>
+                      <span className="signin-sub">{S.roleLabel(role)} · {d.sub}</span>
                     </span>
                     {active && <span className="signin-current">Current</span>}
                   </button>
@@ -501,14 +530,17 @@ function App() {
     window.scrollTo({ top: 0, behavior: "instant" });
   };
 
-  const applyRole = (r, profileRow) => {
-    // profileRow present → real Supabase sign-in (live data). Otherwise a demo
-    // account switch. The two paths are deliberately separate.
+  const applyRole = (r, profileRow, destOverride) => {
+    // Every signed-in session is now a REAL Supabase session (profileRow). The
+    // demo accounts are real logins too — see DEMO_LOGINS. signInAs stays only
+    // for the visitor/sign-out case.
     const s = profileRow
       ? window.HaarayaSession.signInReal(profileRow)
       : window.HaarayaSession.signInAs(r);
     setSignInOpen(false);
-    const dest = ROLE_HOME[s.role] || "home";
+    const dest = (destOverride && canAccess(s.role, destOverride))
+      ? destOverride
+      : (ROLE_HOME[s.role] || "home");
     setParams({});
     setScreen(dest);
     window.location.hash = dest;
@@ -517,6 +549,19 @@ function App() {
   const signOut = () => {
     if (window.HaarayaAuth) { try { window.HaarayaAuth.signOut(); } catch (e) { /* ignore */ } }
     applyRole("visitor");
+  };
+
+  // Tweaks-panel account switcher: a real demo sign-in, same as the panel.
+  const demoRoleSignIn = async (r) => {
+    const d = DEMO_LOGINS[r];
+    if (!d || !window.HaarayaAuth) return;
+    try {
+      await window.HaarayaAuth.signIn({ email: d.email, password: DEMO_PASSWORD });
+      const profileRow = await window.HaarayaAuth.getProfile();
+      if (profileRow) applyRole(profileRow.role, profileRow, d.dest);
+    } catch (e) {
+      setToast("Couldn't sign in to that demo account.");
+    }
   };
 
   const screenLabel = ({
@@ -645,18 +690,19 @@ function App() {
           onChange={v => setTweak("quizLayout", v)}
         />
 
-        <TweakSection label="Prototype role" />
+        <TweakSection label="Switch account" />
         <div style={{ fontSize: 11, color: "rgba(255,255,255,.55)", lineHeight: 1.5, padding: "0 14px 8px" }}>
-          Switch the signed-in demo account. Nav + routes re-gate instantly.
+          Signs in a real demo account (live data). Nav + routes re-gate instantly.
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, padding: "0 14px 8px" }}>
-          {ROLE_ORDER.map(r => (
+          {["child", "parent", "teacher", "school_admin"].map(r => (
             <TweakButton
               key={r}
               label={window.HaarayaSession.roleLabel(r)}
-              onClick={() => applyRole(r)}
+              onClick={() => demoRoleSignIn(r)}
             />
           ))}
+          <TweakButton label="Sign out" onClick={signOut} />
         </div>
         <div style={{ padding: "0 14px 12px" }}>
           <TweakButton
@@ -668,7 +714,7 @@ function App() {
             }}
           />
           <div style={{ fontSize: 11, color: "rgba(255,255,255,.45)", lineHeight: 1.5, paddingTop: 6 }}>
-            Signs out and clears all demo progress (passport, readiness checks, calibration).
+            Signs out and clears local progress (readiness checks, calibration).
           </div>
         </div>
 

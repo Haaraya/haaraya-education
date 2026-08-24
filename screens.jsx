@@ -48,18 +48,14 @@ function StampBonus() {
 }
 
 function PassportScreen({ onNavigate, gotoLevel, highlightBookId }) {
-  const real = !!(window.HaarayaSession && HaarayaSession.isReal() && window.HaarayaPlatformDB);
-  // Real families: the passport belongs to the parent's first child (children
-  // have no separate login). Demos: the single localStorage reader.
-  const { data: realKids } = useApi(() => real ? HaarayaPlatformDB.getChildrenForParent() : Promise.resolve(null), [real]);
-  const realChildId = real ? (realKids && realKids[0] && realKids[0].id) : null;
-  const CHILD_ID = real ? realChildId : ((window.HaarayaSession && HaarayaSession.childId()) || 1);
-  const ME = real ? ((realKids && realKids[0] && realKids[0].shortName) || "Reader") : "Demo Child";
+  // Single live path: the passport belongs to the signed-in parent's first child
+  // (children have no separate login).
+  const { data: kids } = useApi(() => HaarayaPlatformDB.getChildrenForParent(), []);
+  const CHILD_ID = (kids && kids[0] && kids[0].id) || null;
+  const ME = (kids && kids[0] && kids[0].shortName) || "Reader";
   const { data: summary } = useApi(
-    () => real
-      ? (realChildId ? HaarayaPlatformDB.getChildSummary(realChildId) : Promise.resolve(null))
-      : HaarayaApi.getChildSummary(CHILD_ID),
-    [real, realChildId, CHILD_ID]
+    () => CHILD_ID ? HaarayaPlatformDB.getChildSummary(CHILD_ID) : Promise.resolve(null),
+    [CHILD_ID]
   );
   const { data: levelCounts } = useApi(() => TafiyaBooks.levelCounts(), []);
   const [readTick, setReadTick] = useStateScreens(0);
@@ -68,8 +64,8 @@ function PassportScreen({ onNavigate, gotoLevel, highlightBookId }) {
     window.addEventListener("haaraya:reading", on);
     return () => window.removeEventListener("haaraya:reading", on);
   }, []);
-  // Real families: earned stamps come live from Supabase (demo stays local).
-  const { data: realStamps } = useApi(() => (real && realChildId) ? HaarayaPlatformDB.getPassportStamps(realChildId) : Promise.resolve(null), [real, realChildId, readTick]);
+  // Earned stamps come live from Supabase.
+  const { data: realStamps } = useApi(() => CHILD_ID ? HaarayaPlatformDB.getPassportStamps(CHILD_ID) : Promise.resolve(null), [CHILD_ID, readTick]);
   // Open directly on a specific level's stamp page when arriving from a book completion.
   const levelToIdx = (lvl) => {
     const li = PASSPORT_LEVELS.findIndex(l => l.n === Number(lvl));
@@ -100,20 +96,25 @@ function PassportScreen({ onNavigate, gotoLevel, highlightBookId }) {
     go(dx < 0 ? idx + 1 : idx - 1);
   };
 
-  if (!summary) return null;
+  // Signed out (or no reader on the account yet) → invite instead of a blank page.
+  if (!summary) return (
+    <main className="nd-page" data-screen-label="Reading Passport">
+      <div className="nd" style={{ display: "grid", placeItems: "center", minHeight: "60vh", textAlign: "center" }}>
+        <div style={{ maxWidth: 460, display: "grid", gap: 14, justifyItems: "center" }}>
+          <img src="assets/odyssey-seal.png" alt="" style={{ width: 72, height: 72, opacity: 0.9 }} />
+          <h2 style={{ fontFamily: "var(--font-display)", margin: 0 }}>Your Reading Passport</h2>
+          <p style={{ margin: 0, color: "var(--ink-soft, #5c6157)", lineHeight: 1.6 }}>
+            Sign in to see your reader's stamps, levels and journey so far.
+          </p>
+          <button className="ppx-btn ppx-btn-solid" onClick={() => onNavigate("home")}>Back to home</button>
+        </div>
+      </div>
+    </main>
+  );
   const child = summary.child;
-  // Completed-book codes: real → the child's Supabase stamps; demo → local reads.
-  const completedSet = real
-    ? new Set((realStamps || []).map(s => s.code).filter(Boolean))
-    : new Set(window.TafiyaData ? window.TafiyaData.completedCodes() : []);
-  // Current level: real → the child's DB level; demo → highest level with a completed book.
-  const cur = real
-    ? ((child && child.currentLevelId) || 1)
-    : (() => {
-        const byLvl = window.TafiyaBooks ? TafiyaBooks.completedByLevel() : {};
-        const lvls = Object.keys(byLvl).map(Number);
-        return lvls.length ? Math.max(...lvls) : 1;
-      })();
+  // Completed-book codes + level from the child's live Supabase record.
+  const completedSet = new Map((realStamps || []).filter(s => s.code).map(s => [s.code, s.earnedAt || ""]));
+  const cur = (child && child.currentLevelId) || 1;
   const started = child.startedAt
     ? new Date(child.startedAt).toLocaleDateString("en-GB", { month: "short", day: "numeric", year: "numeric" })
     : "—";
@@ -128,10 +129,8 @@ function PassportScreen({ onNavigate, gotoLevel, highlightBookId }) {
 
   // Progress summary figures — derived from real Tafiya reads, not mock data.
   const _ignore = readTick; // re-render when a book is completed
-  const completedByLvl = real
-    ? (realStamps || []).reduce((m, s) => { if (s.levelId) m[s.levelId] = (m[s.levelId] || 0) + 1; return m; }, {})
-    : (window.TafiyaBooks ? TafiyaBooks.completedByLevel() : {});
-  const stampsEarned = real ? (summary.stampsEarned || (realStamps || []).length) : completedSet.size;
+  const completedByLvl = (realStamps || []).reduce((m, s) => { if (s.levelId) m[s.levelId] = (m[s.levelId] || 0) + 1; return m; }, {});
+  const stampsEarned = summary.stampsEarned || (realStamps || []).length;
   const levelTotal   = (levelCounts && levelCounts[cur]) || 0;
   const levelDone    = completedByLvl[cur] || 0;
   const booksToNext  = Math.max(0, levelTotal - levelDone);
@@ -178,7 +177,7 @@ function PassportScreen({ onNavigate, gotoLevel, highlightBookId }) {
             aria-label="Next page"
           ></button>
           <div className={"pbook-spread dir-" + (dir > 0 ? "next" : "prev")} key={idx}>
-            <PassportSpread idx={idx} child={child} name={ME} summary={summary} cur={cur} levelCounts={levelCounts} started={started} onNavigate={onNavigate} childId={CHILD_ID} highlightBookId={highlightBookId} real={real} completedSet={completedSet} />
+            <PassportSpread idx={idx} child={child} name={ME} summary={summary} cur={cur} levelCounts={levelCounts} started={started} onNavigate={onNavigate} childId={CHILD_ID} highlightBookId={highlightBookId} completedSet={completedSet} />
           </div>
           {idx > 0 && <span className="pbook-curl curl-prev" aria-hidden="true"></span>}
           {idx > 0 && idx < TOTAL - 1 && <span className="pbook-curl curl-next" aria-hidden="true"></span>}
@@ -313,7 +312,7 @@ function JourneyPage({ cur, onNavigate }) {
   );
 }
 
-function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, onNavigate, childId, highlightBookId, real, completedSet }) {
+function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, onNavigate, childId, highlightBookId, completedSet }) {
   const curName = (PASSPORT_LEVELS.find(l => l.n === cur) || {}).name || "";
 
   if (idx === 0) {
@@ -424,25 +423,22 @@ function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, 
   }
 
   const lv = PASSPORT_LEVELS[idx - 3];
-  return <LevelSpread level={lv} cur={cur} total={lv.total} completedThisLevel={summary.currentLevelCompleted} onNavigate={onNavigate} childId={childId} highlightBookId={highlightBookId} real={real} completedSet={completedSet} />;
+  return <LevelSpread level={lv} cur={cur} total={lv.total} completedThisLevel={summary.currentLevelCompleted} onNavigate={onNavigate} childId={childId} highlightBookId={highlightBookId} completedSet={completedSet} />;
 }
 
-function LevelSpread({ level, cur, completedThisLevel, onNavigate, childId, highlightBookId, real, completedSet }) {
+function LevelSpread({ level, cur, completedThisLevel, onNavigate, childId, highlightBookId, completedSet }) {
   const n = level.n;
   const serial = "HL" + String(72467 + (childId || 1)).padStart(8, "0"); // passport serial, shown top-left
 
   // Real Tafiya books at this level + earned stamps from the reading-progress store.
   const TD = window.TafiyaData;
   const { data: levelBooksRaw } = useApi(() => TafiyaBooks.getBooks({ levelId: n }), [n]);
-  const statusOf = (b) => {
-    if (real) return (completedSet && completedSet.has(b.code)) ? "complete" : "notstarted";
-    const p = TD && TD.progressOf(b.code); return (p && p.completed) ? "complete" : (p && p.opened) ? "progress" : "notstarted";
-  };
+  const statusOf = (b) => (completedSet && completedSet.has(b.code)) ? "complete" : "notstarted";
   const rank = { complete: 0, progress: 1, notstarted: 2 };
   const books = (levelBooksRaw || []).slice().sort((a, b) => rank[statusOf(a)] - rank[statusOf(b)]);
   const N = books.length; // real number of books in this level
   const earnedByBook = {};
-  books.forEach(b => { if (statusOf(b) === "complete") { const p = TD && TD.progressOf(b.code); earnedByBook[b.id] = (p && p.completedAt) ? new Date(p.completedAt).toISOString().slice(0, 10) : ""; } });
+  books.forEach(b => { if (statusOf(b) === "complete") { earnedByBook[b.id] = (completedSet && completedSet.get(b.code)) || ""; } });
 
   // Briefly highlight a stamp the child just earned (set on arrival from a book completion).
   const [highlight, setHighlight] = useStateScreens(highlightBookId || null);
@@ -589,18 +585,14 @@ function LevelSpread({ level, cur, completedThisLevel, onNavigate, childId, high
    ============================================================ */
 
 function ChildDashScreen({ onNavigate }) {
-  const real = !!(window.HaarayaSession && HaarayaSession.isReal() && window.HaarayaPlatformDB);
-  // Real families: the reader is the parent's first child (children have no
-  // separate login). Demos: the single localStorage reader.
-  const { data: realKids } = useApi(() => real ? HaarayaPlatformDB.getChildrenForParent() : Promise.resolve(null), [real]);
-  const realChildId = real ? (realKids && realKids[0] && realKids[0].id) : null;
-  const CHILD_ID = real ? realChildId : ((window.HaarayaSession && HaarayaSession.childId()) || 1);
-  const ME = real ? ((realKids && realKids[0] && realKids[0].shortName) || "Reader") : "Demo Child";
+  // Single live path: the reader is the signed-in parent's first child (children
+  // have no separate login).
+  const { data: kids } = useApi(() => HaarayaPlatformDB.getChildrenForParent(), []);
+  const CHILD_ID = (kids && kids[0] && kids[0].id) || null;
+  const ME = (kids && kids[0] && kids[0].shortName) || "Reader";
   const { data: summary }         = useApi(
-    () => real
-      ? (realChildId ? HaarayaPlatformDB.getChildSummary(realChildId) : Promise.resolve(null))
-      : HaarayaApi.getChildSummary(CHILD_ID),
-    [real, realChildId, CHILD_ID]
+    () => CHILD_ID ? HaarayaPlatformDB.getChildSummary(CHILD_ID) : Promise.resolve(null),
+    [CHILD_ID]
   );
   // Re-render whenever a book is read so passport figures stay in sync.
   const [readTick, setReadTick] = useStateScreens(0);
@@ -615,13 +607,10 @@ function ChildDashScreen({ onNavigate }) {
   const { data: storyPractice }   = useApi(() => CHILD_ID ? TafiyaBooks.getStoryPractice(CHILD_ID, 4)   : Promise.resolve([]), [CHILD_ID]);
   const { data: exploreBooks }    = useApi(() => CHILD_ID ? TafiyaBooks.getExploreLibrary(CHILD_ID, 4)  : Promise.resolve([]), [CHILD_ID, readTick]);
   const { data: pathProgress }    = useApi(
-    () => real
-      ? (realChildId ? HaarayaPlatformDB.getReadingPathProgress(realChildId) : Promise.resolve(null))
-      : HaarayaApi.getReadingPathProgress(CHILD_ID),
-    [real, realChildId, CHILD_ID]
+    () => CHILD_ID ? HaarayaPlatformDB.getReadingPathProgress(CHILD_ID) : Promise.resolve(null),
+    [CHILD_ID]
   );
-  const { data: realStampsList }  = useApi(() => (real && realChildId) ? HaarayaPlatformDB.getPassportStamps(realChildId) : Promise.resolve(null), [real, realChildId, readTick]);
-  const { data: stamps }          = useApi(() => real ? Promise.resolve([]) : TafiyaBooks.getPassportStamps(CHILD_ID), [real, CHILD_ID, readTick]);
+  const { data: stampsList }      = useApi(() => CHILD_ID ? HaarayaPlatformDB.getPassportStamps(CHILD_ID) : Promise.resolve(null), [CHILD_ID, readTick]);
 
   if (!summary) return null;
 
@@ -630,16 +619,14 @@ function ChildDashScreen({ onNavigate }) {
   const pathBooks       = (readingPath     || []).map(bookToCardProps);
   const practiceBooks   = (storyPractice   || []).map(bookToCardProps);
   const exploreList     = (exploreBooks    || []).map(bookToCardProps);
-  const recentStamps    = (real ? (realStampsList || []) : (stamps || [])).slice(-6).reverse();
+  const recentStamps    = (stampsList || []).slice(-6).reverse();
 
-  // Live passport figures. Real → from the Supabase child summary; demo → from
-  // the localStorage Tafiya reads (same source as the Reading Passport screen).
+  // Live passport figures, straight from the child's Supabase summary.
   const _ignoreTick     = readTick;
-  const completedByLvl  = (!real && window.TafiyaBooks) ? TafiyaBooks.completedByLevel() : {};
-  const stampsEarned    = real ? (summary.stampsEarned || 0) : (window.TafiyaData ? TafiyaData.completedCodes().length : 0);
-  const currentLevel    = real ? (child.currentLevelId || 1) : (() => { const ls = Object.keys(completedByLvl).map(Number); return ls.length ? Math.max(...ls) : 1; })();
-  const levelDone       = real ? (summary.currentLevelCompleted || 0) : (completedByLvl[currentLevel] || 0);
-  const levelTotal      = real ? (summary.currentLevelTotal || 0) : ((levelCounts && levelCounts[currentLevel]) || 0);
+  const stampsEarned    = summary.stampsEarned || 0;
+  const currentLevel    = child.currentLevelId || 1;
+  const levelDone       = summary.currentLevelCompleted || 0;
+  const levelTotal      = summary.currentLevelTotal || (levelCounts && levelCounts[currentLevel]) || 0;
   const levelPct        = levelTotal ? Math.round((levelDone / levelTotal) * 100) : 0;
   const levelName       = (HaarayaSeed.levels.find(l => l.number === currentLevel) || {}).name || "";
 
@@ -655,6 +642,7 @@ function ChildDashScreen({ onNavigate }) {
         <div className="nd-top">
           <div className="nd-word"><img src="assets/odyssey-seal.png" alt="Haaraya" /> Haaraya</div>
           <nav className="nd-nav">
+            <a onClick={() => onNavigate("home")}>Home</a>
             <a className="on">My Books</a>
             <a onClick={() => onNavigate("passport")}>Reading Passport</a>
             <a onClick={() => onNavigate("library")}>Library</a>
@@ -779,19 +767,15 @@ function ChildDashScreen({ onNavigate }) {
    ============================================================ */
 
 function ParentDashScreen({ onNavigate }) {
-  const real = !!(window.HaarayaSession && HaarayaSession.isReal() && window.HaarayaPlatformDB);
-  const Api = real ? HaarayaPlatformDB : HaarayaApi;
-  const PARENT_ID = (window.HaarayaSession && HaarayaSession.userId()) || 1;
-  const { data: parent }   = useApi(() => Api.getCurrentParent(), [PARENT_ID, real]);
-  const { data: children } = useApi(() => Api.getChildrenForParent(PARENT_ID), [PARENT_ID, real]);
-  const { data: sub }      = useApi(() => Api.getSubscriptionForParent(PARENT_ID), [PARENT_ID, real]);
+  const Api = HaarayaPlatformDB;
+  const { data: parent }   = useApi(() => Api.getCurrentParent(), []);
+  const { data: children } = useApi(() => Api.getChildrenForParent(), []);
+  const { data: sub }      = useApi(() => Api.getSubscriptionForParent(), []);
   const { data: summaries }= useApi(async () => {
-    const kids = await Api.getChildrenForParent(PARENT_ID);
+    const kids = await Api.getChildrenForParent();
     return Promise.all(kids.map(c => Api.getChildSummary(c.id)));
-  }, [PARENT_ID, real]);
+  }, []);
 
-  // The real (single-reader) Tafiya store belongs to the active demo reader.
-  const READER_ID = (window.HaarayaSession && HaarayaSession.childId()) || 1;
   const [readTick, setReadTick] = useStateScreens(0);
   useEffectScreens(() => {
     const on = () => setReadTick(t => t + 1);
@@ -799,50 +783,30 @@ function ParentDashScreen({ onNavigate }) {
     return () => window.removeEventListener("haaraya:reading", on);
   }, []);
   const { data: levelCounts }  = useApi(() => TafiyaBooks.levelCounts(), []);
-  // For real families the “active reader” is the first child; stamps come live
-  // from Supabase. For demos it stays the single localStorage reader.
-  const realReaderId = real ? (children && children[0] && children[0].id) : READER_ID;
+  // The “active reader” is the family's first child; stamps come live from Supabase.
+  const readerId = (children && children[0] && children[0].id) || null;
   const { data: readerStamps } = useApi(
-    () => real
-      ? (realReaderId ? Api.getPassportStamps(realReaderId) : Promise.resolve([]))
-      : TafiyaBooks.getPassportStamps(READER_ID),
-    [real, realReaderId, READER_ID, readTick]
+    () => readerId ? Api.getPassportStamps(readerId) : Promise.resolve([]),
+    [readerId, readTick]
   );
 
   if (!children || !summaries) return null;
 
-  // Live family figures. Real → from Supabase per-child summaries; demo → from
-  // the localStorage Tafiya reader store (unchanged).
+  // Live family figures, from the per-child Supabase summaries.
   const _ignoreTick    = readTick;
   const summaryById    = {};
   (summaries || []).forEach(s => { if (s && s.child) summaryById[s.child.id] = s; });
-  const completedByLvl = (!real && window.TafiyaBooks) ? TafiyaBooks.completedByLevel() : {};
-  const realStamps     = real
-    ? (summaries || []).reduce((a, s) => a + (s ? s.stampsEarned : 0), 0)
-    : (window.TafiyaData ? TafiyaData.completedCodes().length : 0);
-  const realLevel      = real
-    ? (children || []).reduce((m, c) => Math.max(m, c.currentLevelId || 1), 1)
-    : (() => { const ls = Object.keys(completedByLvl).map(Number); return ls.length ? Math.max(...ls) : 1; })();
+  const realStamps     = (summaries || []).reduce((a, s) => a + (s ? s.stampsEarned : 0), 0);
+  const realLevel      = (children || []).reduce((m, c) => Math.max(m, c.currentLevelId || 1), 1);
   const realLevelName  = (HaarayaSeed.levels.find(l => l.number === realLevel) || {}).name || "";
-  // Each child reflects real progress if they're the active reader, else a fresh start.
   const figuresFor = (id) => {
-    if (real) {
-      const s = summaryById[id];
-      if (!s) return { level: 1, done: 0, total: 0, pct: 0, books: 0 };
-      return { level: s.child.currentLevelId, done: s.currentLevelCompleted, total: s.currentLevelTotal, pct: s.currentLevelPct, books: s.booksCompleted };
-    }
-    if (id === READER_ID) {
-      const done = completedByLvl[realLevel] || 0;
-      const total = (levelCounts && levelCounts[realLevel]) || 0;
-      return { level: realLevel, done, total, pct: total ? Math.round(done / total * 100) : 0, books: realStamps };
-    }
-    return { level: 1, done: 0, total: (levelCounts && levelCounts[1]) || 0, pct: 0, books: 0 };
+    const s = summaryById[id];
+    if (!s) return { level: 1, done: 0, total: (levelCounts && levelCounts[1]) || 0, pct: 0, books: 0 };
+    return { level: s.child.currentLevelId, done: s.currentLevelCompleted, total: s.currentLevelTotal, pct: s.currentLevelPct, books: s.booksCompleted };
   };
   const recentStamps = (readerStamps || []).slice(-6).reverse();
-  const readerName   = (children.find(c => c.id === realReaderId) || children[0] || {}).shortName || "Your reader";
-  const totalBooks   = real
-    ? (summaries || []).reduce((a, s) => a + (s ? s.booksCompleted : 0), 0)
-    : children.reduce((a, c) => a + figuresFor(c.id).books, 0);
+  const readerName   = (children.find(c => c.id === readerId) || children[0] || {}).shortName || "Your reader";
+  const totalBooks   = (summaries || []).reduce((a, s) => a + (s ? s.booksCompleted : 0), 0);
   const totalStamps  = realStamps;
 
   return (
@@ -851,6 +815,7 @@ function ParentDashScreen({ onNavigate }) {
         <div className="nd-top">
           <div className="nd-word"><img src="assets/odyssey-seal.png" alt="Haaraya" /> Haaraya</div>
           <nav className="nd-nav">
+            <a onClick={() => onNavigate("home")}>Home</a>
             <a className="on">Children</a>
             <a>Reading plan</a>
             <a>Subscription</a>

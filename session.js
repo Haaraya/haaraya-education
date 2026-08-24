@@ -12,8 +12,14 @@
    ============================================================ */
 (function () {
   const KEY = "haaraya:session";
+  // Which child a REAL signed-in session is currently reading as. Demo
+  // accounts carry their childId on the account itself; real accounts pick one
+  // at runtime (a child reads under the parent session), stored here.
+  const CHILD_KEY = "haaraya:activeChild";
 
-  // Demo accounts, keyed by role. Ids reference data/seed.js.
+  // Demo/base personas, keyed by role. These are NO LONGER sign-in identities:
+  // every signed-in session is a real Supabase session (see signInReal). They
+  // survive only as the styling/label base for each role, plus the visitor state.
   const ACCOUNTS = {
     visitor: {
       role: "visitor",
@@ -72,14 +78,11 @@
     admin: "Haaraya admin",
   };
 
-  // Role is persisted in sessionStorage (session-only): it survives in-tab page
-  // navigation (e.g. the registration → home handoff) but resets when the tab/
-  // file is closed, so a freshly opened copy always starts as a public visitor.
+  // Sessions are restored from SUPABASE on boot (app.jsx reads the auth session
+  // and calls signInReal), so nothing is rehydrated from storage here: a stale
+  // role key would otherwise resurrect a fake identity with no data behind it.
+  // Every page load starts as a public visitor until Supabase says otherwise.
   function load() {
-    try {
-      const r = sessionStorage.getItem(KEY);
-      if (r && ACCOUNTS[r]) return ACCOUNTS[r];
-    } catch (e) { /* ignore */ }
     return ACCOUNTS.visitor;
   }
 
@@ -118,6 +121,22 @@
     userId() { return current.userId; },
     childId() { return current.childId; },
     schoolId() { return current.schoolId; },
+    // Active reading child: for real sessions the runtime-selected uuid (or
+    // null until one is chosen); for demo sessions the account's own childId.
+    activeChildId() {
+      if (current.real) {
+        try { return sessionStorage.getItem(CHILD_KEY) || null; } catch (e) { return null; }
+      }
+      return current.childId;
+    },
+    setActiveChild(id) {
+      try {
+        if (id == null) sessionStorage.removeItem(CHILD_KEY);
+        else sessionStorage.setItem(CHILD_KEY, String(id));
+      } catch (e) { /* ignore */ }
+      try { window.dispatchEvent(new CustomEvent("haaraya:activechild", { detail: id })); } catch (e) { /* ignore */ }
+      return id;
+    },
     isSignedIn() { return current.role !== "visitor"; },
     signInAs(role) {
       current = ACCOUNTS[role] || ACCOUNTS.visitor;

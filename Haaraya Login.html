@@ -176,7 +176,7 @@
         }
       }catch(err){
         busy("su_btn", false);
-        msg(err.message || String(err), "err");
+        msg(friendlyAuthError(err), "err");
       }
       return false;
     }
@@ -191,9 +191,23 @@
         await render();
       }catch(err){
         busy("li_btn", false);
-        msg(err.message || String(err), "err");
+        msg(friendlyAuthError(err), "err");
       }
       return false;
+    }
+
+    function friendlyAuthError(err){
+      var raw = (err && (err.message || err.error_description)) ? (err.message || err.error_description) : String(err || "");
+      var s = raw.toLowerCase();
+      if (s.indexOf("invalid login") !== -1 || s.indexOf("invalid credentials") !== -1)
+        return "That email or password doesn't match. Check both and try again.";
+      if (s.indexOf("rate limit") !== -1 || (err && err.status === 429))
+        return "Too many attempts right now. Please wait a minute and try again.";
+      if (s.indexOf("email not confirmed") !== -1 || s.indexOf("not confirmed") !== -1)
+        return "Please confirm your email first — check your inbox for the confirmation link.";
+      if (s.indexOf("failed to fetch") !== -1 || s.indexOf("network") !== -1)
+        return "Couldn't reach the server. Check your connection and try again.";
+      return raw || "Sign-in failed. Please try again.";
     }
 
     async function doLogout(){
