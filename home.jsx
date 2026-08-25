@@ -802,7 +802,7 @@ function Pricing() {
 
 /* ------------ Footer ------------ */
 
-function Footer() {
+function Footer({ onNavigate }) {
   return (
     <footer className="footer">
       <div className="wrap footer-inner">
@@ -841,6 +841,7 @@ function Footer() {
           <div>
             <h5>Company</h5>
             <div className="links">
+              <a href="#faq" onClick={(e) => { if (onNavigate) { e.preventDefault(); onNavigate("faq"); } }}>Frequently asked questions</a>
               <a href="#">About Haaraya</a>
               <a href="#">Press</a>
               <a href="#">Contact</a>
@@ -874,7 +875,7 @@ function HomePage({ onNavigate }) {
       <DashboardsPreview onNavigate={onNavigate} />
       <OdysseySection onNavigate={onNavigate} />
       <Pricing />
-      <Footer />
+      <Footer onNavigate={onNavigate} />
     </>
   );
 }

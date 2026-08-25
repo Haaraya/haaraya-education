@@ -1,69 +1,80 @@
 /* ============================================================
-   Haaraya — Dashboard theme
-   Warm, friendly palette for the dashboards, drawn from the
-   Odyssey seal (sage greens, warm parchment, gold).
-   Loaded AFTER styles.css; scoped to .dash so the rest of the
-   marketing site is untouched.
+   Haaraya — Dashboard theme (TAFIYA palette)
+   Every colour below resolves to a brand token in styles.css
+   :root — forest greens, cream/sand neutrals, --yellow accent.
+   Derived stops use color-mix() rather than invented hex values.
 
-   .dash            → Child dashboard (friendly, warm)
-   .dash.role-adult → Parent / Teacher / School / Admin (calmer, deeper)
+   The previous parchment-and-gold version (drawn from the Odyssey
+   seal) is kept as "dashboard-theme (odyssey palette).css".
+
+   Loaded AFTER styles.css; scoped to .dash / .nd-page so the rest
+   of the marketing site is untouched.
+
+   .dash            → Child dashboard (bright, green)
+   .dash.role-adult → Parent / Teacher / School / Admin (calmer)
    ============================================================ */
 
 .dash {
-  --d-parch:        #F5ECD0;   /* main panel */
-  --d-parch-hi:     #FBF4DE;   /* cards */
-  --d-line:         #E4D7B4;   /* borders */
-  --d-side:         #3B4A2B;   /* sidebar */
-  --d-accent:       var(--yellow-dk);   /* gold */
-  --d-accent-bright:#E6C860;
-  --d-accent-deep:  #9A7A18;
-  --d-olive:        #6E8B48;
-  --d-olive-deep:   #4E6733;
-  --d-ink:          #3E3A26;
-  --d-ink-soft:     #8B8060;
-  --d-track:        #DEE6C8;   /* progress track */
+  --d-parch:        var(--green-light);   /* main panel */
+  --d-parch-hi:     var(--cream);         /* cards */
+  --d-line:         var(--green-mid);     /* borders */
+  --d-side:         var(--deep-forest);   /* sidebar */
+  --d-accent:       var(--yellow-dk);     /* gold accent */
+  --d-accent-bright:var(--yellow);
+  --d-accent-deep:  var(--yellow-dk);
+  --d-olive:        var(--forest);
+  --d-olive-deep:   var(--forest-dark);
+  --d-ink:          var(--ink);
+  --d-ink-soft:     var(--ink-soft);
+  --d-track:        var(--green-mid);     /* progress track */
 }
 
 .dash.role-adult {
-  --d-parch:        #EEEAE0;
-  --d-parch-hi:     #FAF8F2;
-  --d-line:         #DBD5C8;
-  --d-side:         #2C332B;
-  --d-accent:       #A98B3E;
-  --d-accent-bright:#C4A65A;
-  --d-accent-deep:  #836A28;
-  --d-olive:        #516155;
-  --d-olive-deep:   #374A3E;
-  --d-ink:          #2C302C;
-  --d-ink-soft:     #7B7D75;
-  --d-track:        #D7DBCE;
+  --d-parch:        var(--sand);
+  --d-parch-hi:     var(--cream);
+  --d-line:         var(--sand-dk);
+  --d-side:         var(--deep-forest);
+  --d-accent:       var(--yellow-dk);
+  --d-accent-bright:var(--yellow);
+  --d-accent-deep:  var(--yellow-dk);
+  --d-olive:        var(--forest-dark);
+  --d-olive-deep:   var(--deep-forest);
+  --d-ink:          var(--ink);
+  --d-ink-soft:     var(--ink-soft);
+  --d-track:        var(--green-mid);
 }
 
-/* ---- Page backdrop behind the dashboard card (replaces flat cream) ---- */
+/* ---- Page backdrop behind the dashboard card ---- */
 main:has(> .wrap > .dash) {
-  background: radial-gradient(140% 120% at 50% -10%, #C7D3A0 0%, #B4C489 46%, #A2B577 100%) !important;
+  background: radial-gradient(140% 120% at 50% -10%,
+    var(--green-light) 0%,
+    var(--green-mid) 46%,
+    color-mix(in oklab, var(--green-mid) 74%, var(--forest)) 100%) !important;
 }
 main:has(> .wrap > .dash.role-adult) {
-  background: radial-gradient(140% 120% at 50% -10%, #C4CBB6 0%, #ADB49E 50%, #98A186 100%) !important;
+  background: radial-gradient(140% 120% at 50% -10%,
+    var(--sand) 0%,
+    color-mix(in oklab, var(--sand) 68%, var(--green-mid)) 50%,
+    color-mix(in oklab, var(--green-mid) 82%, var(--forest-dark)) 100%) !important;
 }
 
 /* ---- Card shell + sidebar ---- */
 .dash { background: var(--d-parch); border-color: var(--d-line); }
 .dash-sidebar { background: var(--d-side); }
-.dash-nav a.active { background: var(--d-accent); color: #3A2D06; }
-.dash-nav a:hover:not(.active) { background: rgba(255,255,255,.08); color: #fff; }
+.dash-nav a.active { background: var(--d-accent); color: var(--ink); }
+.dash-nav a:hover:not(.active) { background: rgba(255,255,255,.10); color: #fff; }
 
-/* ---- Child greeting hero: heavy green → soft parchment + gold ---- */
+/* ---- Child greeting hero ---- */
 .dash .dash-child-hero {
-  background: linear-gradient(135deg, #F8F1DA 0%, #EFE1BE 100%);
+  background: linear-gradient(135deg, var(--cream) 0%, var(--green-light) 100%);
   color: var(--d-ink);
 }
 .dash .dash-child-hero::after {
-  background-image: radial-gradient(circle at 1px 1px, rgba(160,124,24,.10) 1px, transparent 0);
+  background-image: radial-gradient(circle at 1px 1px, rgba(20,82,20,.10) 1px, transparent 0);
 }
 .dash .dash-child-hero .greet h4 { color: var(--d-olive-deep); }
 .dash .dash-child-hero .greet .level { color: var(--d-ink-soft); opacity: 1; }
-.dash .dash-child-hero .stat .num { color: var(--d-accent-deep); }
+.dash .dash-child-hero .stat .num { color: var(--d-olive-deep); }
 .dash .dash-child-hero .stat .lbl { color: var(--d-ink-soft); opacity: 1; }
 
 /* ---- Cards ---- */
@@ -89,37 +100,43 @@ main:has(> .wrap > .dash.role-adult) {
 .dash .roster-row .lvl { background: var(--d-olive-deep); }
 .dash .roster-row .prog .bar { background: var(--d-track); }
 .dash .roster-row .prog .bar > span { background: linear-gradient(90deg, var(--d-olive), var(--d-accent)); }
-.dash .adash-pill.ok { background: #E7EED6; color: var(--d-olive-deep); }
+.dash .adash-pill.ok { background: var(--green-light); color: var(--d-olive-deep); }
 .dash .adash-table { background: var(--d-parch-hi); }
 .dash .adash-table thead th { background: var(--d-parch); color: var(--d-ink-soft); border-bottom-color: var(--d-line); }
 .dash .adash-table tbody td { border-bottom-color: var(--d-line); }
 .dash .adash-table tbody tr:hover td { background: var(--d-parch); }
 
 /* ============================================================
-   NEW dashboard LAYOUT (structural redesign)
+   Dashboard LAYOUT
    Top bar + welcome hero + feature card + gold medallion.
-   .nd-page = child (warm) · .nd-page.role-adult = calmer adult
+   .nd-page = child (bright) · .nd-page.role-adult = calmer adult
    ============================================================ */
 .nd-page {
-  --d-parch:#F5ECD0; --d-parch-hi:#FBF4DE; --d-line:#E4D7B4;
-  --d-accent:var(--yellow-dk); --d-accent-bright:#E6C860; --d-accent-deep:#9A7A18;
-  --d-olive:#6E8B48; --d-olive-deep:#4E6733; --d-olive-ink:#3B4E27;
-  --d-ink:#3E3A26; --d-ink-mid:#6A6449; --d-ink-soft:#8B8060;
-  --d-sage-soft:#D9E2BF; --d-track:#DEE6C8;
+  --d-parch:var(--green-light); --d-parch-hi:var(--cream); --d-line:var(--green-mid);
+  --d-accent:var(--yellow-dk); --d-accent-bright:var(--yellow); --d-accent-deep:var(--yellow-dk);
+  --d-olive:var(--forest); --d-olive-deep:var(--forest-dark); --d-olive-ink:var(--deep-forest);
+  --d-ink:var(--ink); --d-ink-mid:var(--ink-mid); --d-ink-soft:var(--ink-soft);
+  --d-sage-soft:var(--green-mid); --d-track:var(--green-mid);
   --nd-serif:"Lora", Georgia, serif;
   --nd-disp:"Andika", system-ui, sans-serif;
   min-height:100vh;
-  background: radial-gradient(140% 120% at 50% -10%, #C7D3A0 0%, #B4C489 46%, #A2B577 100%);
+  background: radial-gradient(140% 120% at 50% -10%,
+    var(--green-light) 0%,
+    var(--green-mid) 46%,
+    color-mix(in oklab, var(--green-mid) 74%, var(--forest)) 100%);
   color: var(--d-ink);
   font-family: var(--font-body);
 }
 .nd-page.role-adult {
-  --d-parch:#EEEAE0; --d-parch-hi:#FAF8F2; --d-line:#DBD5C8;
-  --d-accent:#A98B3E; --d-accent-bright:#C4A65A; --d-accent-deep:#836A28;
-  --d-olive:#516155; --d-olive-deep:#374A3E; --d-olive-ink:#2E3D33;
-  --d-ink:#2C302C; --d-ink-mid:#565A54; --d-ink-soft:#7B7D75;
-  --d-sage-soft:#D2D8C8; --d-track:#D7DBCE;
-  background: radial-gradient(140% 120% at 50% -10%, #C4CBB6 0%, #ADB49E 50%, #98A186 100%);
+  --d-parch:var(--sand); --d-parch-hi:var(--cream); --d-line:var(--sand-dk);
+  --d-accent:var(--yellow-dk); --d-accent-bright:var(--yellow); --d-accent-deep:var(--yellow-dk);
+  --d-olive:var(--forest-dark); --d-olive-deep:var(--deep-forest); --d-olive-ink:var(--deep-forest);
+  --d-ink:var(--ink); --d-ink-mid:var(--ink-mid); --d-ink-soft:var(--ink-soft);
+  --d-sage-soft:var(--green-mid); --d-track:var(--green-mid);
+  background: radial-gradient(140% 120% at 50% -10%,
+    var(--sand) 0%,
+    color-mix(in oklab, var(--sand) 68%, var(--green-mid)) 50%,
+    color-mix(in oklab, var(--green-mid) 82%, var(--forest-dark)) 100%);
 }
 .nd { max-width:1220px; margin:0 auto; padding:34px 32px 80px; }
 
@@ -129,7 +146,7 @@ main:has(> .wrap > .dash.role-adult) {
 .nd-word img { width:42px; height:42px; border-radius:50%; display:block; }
 .nd-nav { display:flex; gap:6px; margin-left:6px; flex-wrap:wrap; }
 .nd-nav a { padding:10px 18px; border-radius:999px; font-weight:800; font-size:14.5px; color:var(--d-ink-mid); cursor:pointer; white-space:nowrap; }
-.nd-nav a:hover { background:rgba(78,103,51,.12); color:var(--d-olive-deep); }
+.nd-nav a:hover { background:rgba(20,82,20,.12); color:var(--d-olive-deep); }
 .nd-nav a.on { background:var(--d-olive-deep); color:#fff; }
 .nd-chip { margin-left:auto; display:flex; align-items:center; gap:12px; background:var(--d-parch-hi); border:1px solid var(--d-line); padding:7px 16px 7px 8px; border-radius:999px; }
 .nd-chip .who .n { font-family:var(--nd-disp); font-weight:700; font-size:15px; line-height:1; }
@@ -141,18 +158,18 @@ main:has(> .wrap > .dash.role-adult) {
 @media (max-width:900px) { .nd-grid { grid-template-columns:1fr; } }
 
 /* welcome */
-.nd-welcome { position:relative; overflow:hidden; background:linear-gradient(135deg,#F8F2DD 0%, var(--d-parch) 60%, #EFE6C8 100%); border:1px solid var(--d-line); border-radius:30px; padding:32px 34px; }
-.nd-page.role-adult .nd-welcome { background:linear-gradient(135deg,#F6F4EE,#EAE6DC); }
+.nd-welcome { position:relative; overflow:hidden; background:linear-gradient(135deg,var(--cream) 0%, var(--green-light) 60%, color-mix(in oklab, var(--green-light) 72%, var(--green-mid)) 100%); border:1px solid var(--d-line); border-radius:30px; padding:32px 34px; }
+.nd-page.role-adult .nd-welcome { background:linear-gradient(135deg,var(--cream),var(--sand)); }
 .nd-welcome .eye { font-weight:900; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--d-olive); margin-bottom:10px; }
 .nd-welcome h1 { font-family:var(--nd-disp); font-weight:700; font-size:36px; line-height:1.05; color:var(--d-olive-ink); max-width:20ch; }
 .nd-welcome p { font-size:16px; color:var(--d-ink-mid); font-weight:600; margin-top:12px; max-width:52ch; line-height:1.5; }
 .nd-welcome .trail { position:absolute; right:-30px; top:-20px; width:280px; height:280px; opacity:.5; pointer-events:none; }
-.nd-welcome .trail path { fill:none; stroke:var(--d-accent); stroke-width:5; stroke-linecap:round; stroke-dasharray:3 16; opacity:.6; }
+.nd-welcome .trail path { fill:none; stroke:var(--d-accent); stroke-width:5; stroke-linecap:round; stroke-dasharray:3 16; opacity:.7; }
 .nd-welcome .trail circle { fill:var(--d-olive); opacity:.35; }
 
 /* continue feature */
 .nd-continue { display:flex; gap:22px; align-items:center; background:var(--d-parch-hi); border:1px solid var(--d-line); border-radius:24px; padding:20px 22px; flex-wrap:wrap; }
-.nd-continue .cov { width:104px; height:138px; flex:none; border-radius:6px 11px 11px 6px; box-shadow:inset 6px 0 0 rgba(0,0,0,.14), 0 6px 16px rgba(78,103,51,.28); background:linear-gradient(160deg,#A9BE7E,var(--d-olive)); display:flex; align-items:center; justify-content:center; text-align:center; color:#fff; font-family:var(--nd-disp); font-weight:700; font-size:16px; line-height:1.15; padding:12px; }
+.nd-continue .cov { width:104px; height:138px; flex:none; border-radius:6px 11px 11px 6px; box-shadow:inset 6px 0 0 rgba(0,0,0,.14), 0 6px 16px rgba(20,82,20,.28); background:linear-gradient(160deg,color-mix(in oklab, var(--forest) 55%, var(--green-mid)),var(--forest-dark)); display:flex; align-items:center; justify-content:center; text-align:center; color:#fff; font-family:var(--nd-disp); font-weight:700; font-size:16px; line-height:1.15; padding:12px; }
 .nd-continue .cov.cov--img { padding:0; overflow:hidden; background:#fff; }
 .nd-continue .cov.cov--img img { width:100%; height:100%; object-fit:contain; display:block; }
 .nd-continue .body { flex:1; min-width:180px; }
@@ -162,8 +179,9 @@ main:has(> .wrap > .dash.role-adult) {
 .nd-continue .pbar { height:9px; background:var(--d-sage-soft); border-radius:999px; overflow:hidden; margin-top:14px; max-width:320px; }
 .nd-continue .pbar span { display:block; height:100%; background:linear-gradient(90deg,var(--d-olive),var(--d-accent)); border-radius:999px; }
 .nd-continue .pct { font-size:12px; font-weight:800; color:var(--d-ink-mid); margin-top:6px; }
-.nd-btn { flex:none; border:none; border-radius:14px; padding:14px 26px; font-weight:900; font-size:15px; font-family:var(--font-body); cursor:pointer; background:linear-gradient(180deg,var(--d-accent-bright),var(--d-accent)); color:#4a3a08; box-shadow:0 4px 0 var(--d-accent-deep); }
-.nd-btn:hover { filter:brightness(1.04); }
+.nd-btn { flex:none; border:none; border-radius:14px; padding:14px 26px; font-weight:900; font-size:15px; font-family:var(--font-body); cursor:pointer; background:var(--yellow); color:var(--ink); box-shadow:0 4px 0 var(--yellow-dk); }
+.nd-btn:hover { box-shadow:0 6px 0 var(--yellow-dk); }
+.nd-btn:active { box-shadow:0 3px 0 var(--yellow-dk); }
 
 /* panels */
 .nd-panel { background:var(--d-parch-hi); border:1px solid var(--d-line); border-radius:24px; padding:22px 24px; }
@@ -174,12 +192,12 @@ main:has(> .wrap > .dash.role-adult) {
 @media (max-width:620px) { .nd-rail { grid-template-columns:repeat(2,1fr); } }
 
 /* right column */
-.nd-medal { background:linear-gradient(160deg,#F8F2DD,var(--d-parch)); border:1px solid var(--d-line); border-radius:24px; padding:28px 24px 26px; text-align:center; }
-.nd-page.role-adult .nd-medal { background:linear-gradient(160deg,#F6F4EE,#EAE6DC); }
-.nd-disc { width:168px; height:168px; margin:4px auto 18px; border-radius:50%; position:relative; background:radial-gradient(circle at 36% 30%, var(--d-accent-bright), var(--d-accent) 52%, var(--d-accent-deep) 100%); box-shadow:inset 0 3px 6px rgba(255,255,255,.55), inset 0 -8px 14px rgba(110,80,8,.45), 0 8px 20px rgba(150,115,20,.35); display:grid; place-items:center; }
+.nd-medal { background:linear-gradient(160deg,var(--cream),var(--green-light)); border:1px solid var(--d-line); border-radius:24px; padding:28px 24px 26px; text-align:center; }
+.nd-page.role-adult .nd-medal { background:linear-gradient(160deg,var(--cream),var(--sand)); }
+.nd-disc { width:168px; height:168px; margin:4px auto 18px; border-radius:50%; position:relative; background:radial-gradient(circle at 36% 30%, var(--d-accent-bright), var(--d-accent) 52%, color-mix(in oklab, var(--yellow-dk) 78%, var(--deep-forest)) 100%); box-shadow:inset 0 3px 6px rgba(255,255,255,.55), inset 0 -8px 14px rgba(110,80,8,.45), 0 8px 20px rgba(150,115,20,.35); display:grid; place-items:center; }
 .nd-disc::before { content:""; position:absolute; inset:11px; border-radius:50%; border:2px solid rgba(255,255,255,.35); }
-.nd-disc::after { content:""; position:absolute; inset:17px; border-radius:50%; border:1.5px dashed rgba(90,65,5,.30); }
-.nd-disc .in { position:relative; z-index:2; color:#5a4408; }
+.nd-disc::after { content:""; position:absolute; inset:17px; border-radius:50%; border:1.5px dashed rgba(20,82,20,.30); }
+.nd-disc .in { position:relative; z-index:2; color:var(--ink); }
 .nd-disc .in .n { font-family:var(--nd-disp); font-weight:700; font-size:54px; line-height:1; }
 .nd-disc .in .u { font-size:11px; font-weight:900; letter-spacing:.14em; text-transform:uppercase; margin-top:2px; }
 .nd-medal .cap { font-family:var(--nd-serif); font-weight:600; font-size:20px; color:var(--d-ink); }
@@ -191,7 +209,7 @@ main:has(> .wrap > .dash.role-adult) {
 .nd-mile .row { display:flex; justify-content:space-between; font-size:12.5px; font-weight:800; color:var(--d-ink-mid); margin-top:8px; }
 .nd-stamps { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
 
-/* adult content blocks reused inside the new layout */
+/* adult content blocks reused inside the layout */
 .nd-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
 @media (max-width:760px){ .nd-kpis { grid-template-columns:repeat(2,1fr); } }
 .nd-kpi { background:var(--d-parch-hi); border:1px solid var(--d-line); border-radius:18px; padding:18px 20px; }
@@ -200,7 +218,7 @@ main:has(> .wrap > .dash.role-adult) {
 .nd-kpi .delta { font-size:12px; font-weight:600; color:var(--d-ink-mid); margin-top:6px; }
 
 /* embedded preview frame (marketing home page) */
-.nd-frame { border-radius:30px; border:1px solid var(--d-line); overflow:hidden; box-shadow:var(--shadow-md, 0 18px 50px rgba(40,30,15,.12)); min-height:0; }
+.nd-frame { border-radius:30px; border:1px solid var(--d-line); overflow:hidden; box-shadow:var(--shadow-md, 0 18px 50px rgba(20,42,20,.12)); min-height:0; }
 .nd-frame .nd { padding:26px 26px 28px; max-width:none; }
 .nd-frame .nd-welcome { padding:26px 28px; border-radius:24px; }
 .nd-frame .nd-welcome h1 { font-size:28px; }
@@ -214,8 +232,8 @@ main:has(> .wrap > .dash.role-adult) {
 .nd-prevtable td { padding:12px; border-bottom:1px solid var(--d-line); font-weight:600; color:var(--d-ink); }
 .nd-prevtable tbody tr:last-child td { border-bottom:none; }
 .nd-status { font-size:12px; font-weight:800; padding:4px 12px; border-radius:999px; display:inline-block; }
-.nd-status.done { background:#E7EED6; color:var(--d-olive-deep); }
-.nd-status.progress { background:#FBEFCF; color:var(--d-accent-deep); }
+.nd-status.done { background:var(--green-light); color:var(--d-olive-deep); }
+.nd-status.progress { background:color-mix(in oklab, var(--yellow) 26%, var(--cream)); color:color-mix(in oklab, var(--yellow-dk) 70%, var(--ink)); }
 .nd-status.notstarted { background:var(--d-parch); color:var(--d-ink-soft); }
 .nd-childrow { display:grid; grid-template-columns:auto 1fr 200px auto; gap:16px; align-items:center; background:var(--d-parch-hi); border:1px solid var(--d-line); border-radius:16px; padding:14px 18px; }
 .nd-childrow .name { font-family:var(--nd-disp); font-weight:700; font-size:16px; color:var(--d-ink); }

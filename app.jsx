@@ -78,12 +78,12 @@ function PublisherMark() {
 
 // Which screens each role may navigate to.
 const ROLE_ACCESS = {
-  visitor:      ["home", "library", "passport", "reader", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals", "odyssey-log"],
-  child:        ["home", "child", "passport", "library", "reader", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals", "odyssey-log"],
-  parent:       ["home", "parent", "child", "passport", "library", "reader", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals", "odyssey-log"],
-  teacher:      ["home", "teacher", "library", "reader", "passport", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals", "odyssey-log"],
-  school_admin: ["home", "school", "library", "reader", "passport", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals", "odyssey-log"],
-  admin:        ["home", "library", "passport", "child", "reader", "parent", "teacher", "school", "admin", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals", "odyssey-log"],
+  visitor:      ["home", "faq", "library", "passport", "reader", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals", "odyssey-log"],
+  child:        ["home", "faq", "child", "passport", "library", "reader", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals", "odyssey-log"],
+  parent:       ["home", "faq", "parent", "child", "passport", "library", "reader", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals", "odyssey-log"],
+  teacher:      ["home", "faq", "teacher", "library", "reader", "passport", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals", "odyssey-log"],
+  school_admin: ["home", "faq", "school", "library", "reader", "passport", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals", "odyssey-log"],
+  admin:        ["home", "faq", "library", "passport", "child", "reader", "parent", "teacher", "school", "admin", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals", "odyssey-log"],
 };
 
 // Which links appear in the nav for each role (a subset of access, in order).
@@ -383,7 +383,7 @@ function App() {
   }, []);
 
   // Hash-based router (access-gated)
-  const validScreens = ["home","passport","child","parent","library","reader","teacher","school","admin","odyssey","odyssey-library","odyssey-reader","odyssey-medals","odyssey-log"];
+  const validScreens = ["home","faq","passport","child","parent","library","reader","teacher","school","admin","odyssey","odyssey-library","odyssey-reader","odyssey-medals","odyssey-log"];
   const [screen, setScreen] = useStateApp(() => {
     // Default: always open on Home (accessible to every role) so a downloaded /
     // shared copy lands predictably regardless of the last session role.
@@ -598,6 +598,7 @@ function App() {
 
       {!booted && <BootSplash />}
       {booted && screen === "home"     && <HomePage onNavigate={navigate} />}
+      {booted && screen === "faq"      && <FaqScreen onNavigate={navigate} />}
       {booted && screen === "passport" && <PassportScreen onNavigate={navigate} gotoLevel={params.levelId} highlightBookId={params.highlightBookId} />}
       {booted && screen === "child"    && <ChildDashScreen onNavigate={navigate} />}
       {booted && screen === "library"  && <LibraryScreen onNavigate={navigate} initialLevel={params.levelId} />}
@@ -613,6 +614,10 @@ function App() {
       {booted && screen === "odyssey-log"     && <OdysseyCaptainsLog onNavigate={navigate} initialBook={params.bookCode ? { book_code: params.bookCode, book_title: params.bookTitle, book_number: params.bookNumber, level: params.level } : null} />}
 
       <PublisherMark />
+
+      {booted && typeof FirstRunGuide !== "undefined" && (
+        <FirstRunGuide role={role} screen={screen} session={session} onNavigate={navigate} />
+      )}
 
       <SignInPanel
         open={signInOpen}

@@ -101,7 +101,7 @@ function PassportScreen({ onNavigate, gotoLevel, highlightBookId }) {
     <main className="nd-page" data-screen-label="Reading Passport">
       <div className="nd" style={{ display: "grid", placeItems: "center", minHeight: "60vh", textAlign: "center" }}>
         <div style={{ maxWidth: 460, display: "grid", gap: 14, justifyItems: "center" }}>
-          <img src="assets/odyssey-seal.png" alt="" style={{ width: 72, height: 72, opacity: 0.9 }} />
+          <img src="assets/green-passport.png" alt="" style={{ width: 116, height: "auto", opacity: 0.95 }} />
           <h2 style={{ fontFamily: "var(--font-display)", margin: 0 }}>Your Reading Passport</h2>
           <p style={{ margin: 0, color: "var(--ink-soft, #5c6157)", lineHeight: 1.6 }}>
             Sign in to see your reader's stamps, levels and journey so far.

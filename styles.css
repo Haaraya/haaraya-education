@@ -788,6 +788,9 @@ html[data-direction="classic"] .hero-passport-img { transform: rotate(0); }
    ============================================================ */
 
 .publisher-mark {
+  /* Decorative: never intercept clicks. The seal + caption re-enable
+     pointer events on themselves so the hover reveal still works. */
+  pointer-events: none;
   position: fixed;
   bottom: 24px;
   right: 24px;
@@ -799,6 +802,7 @@ html[data-direction="classic"] .hero-passport-img { transform: rotate(0); }
 }
 
 .publisher-mark-seal {
+  pointer-events: auto;
   flex-shrink: 0;
   width: 130px; height: auto;
   display: block;
@@ -875,6 +879,13 @@ html[data-direction="classic"] .hero-passport-img { transform: rotate(0); }
   top: 50%;
   bottom: auto;
   transform: translateY(-50%);
+}
+
+/* Hide on the FAQ — the seal prints over the question list's right column.
+   FaqScreen toggles .faq-screen-open on <body>; the :has() rule is a fallback. */
+body.faq-screen-open .publisher-mark,
+body:has([data-screen-label="FAQ"]) .publisher-mark {
+  display: none;
 }
 
 @media (max-width: 640px) {
