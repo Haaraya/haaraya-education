@@ -82,7 +82,7 @@ function buildReadingRecord(method, chosenLevel) {
 /* ============================================================
    PARENT / FAMILY
    ============================================================ */
-function ParentFlow({ onBack, onComplete }) {
+function ParentFlow({ onBack, onComplete, submitting, submitError }) {
   const STEPS = [
     { key: "account", title: "Parent account", sub: "Who's setting up" },
     { key: "child", title: "Child profile", sub: "Your young reader" },
@@ -328,7 +328,8 @@ function ParentFlow({ onBack, onComplete }) {
                   </ul>
                 </button>
               </div>
-              <Actions onBack={back} onNext={next} nextLabel="Create passport &amp; reserve place" gold nextDisabled={!plan} />
+              <RegError message={submitError} />
+              <Actions onBack={back} onNext={next} nextLabel="Create passport &amp; start reading" gold nextDisabled={!plan} busy={submitting} />
             </React.Fragment>
           )}
         </div>
@@ -340,7 +341,7 @@ function ParentFlow({ onBack, onComplete }) {
 /* ============================================================
    SCHOOL / TEACHER
    ============================================================ */
-function SchoolFlow({ onBack, onComplete }) {
+function SchoolFlow({ onBack, onComplete, submitting, submitError }) {
   const STEPS = [
     { key: "account", title: "School account", sub: "School & lead" },
     { key: "setup", title: "School setup", sub: "Pupils & groups" },
@@ -450,7 +451,8 @@ function SchoolFlow({ onBack, onComplete }) {
                 <Choice selected={action === "join_pilot"} onClick={() => setAction("join_pilot")}
                   lead={<Ic d={ICONS.pilot} size={20} sw={2} />} title="Join the pilot waitlist" desc="Be first in line as new pilots open." />
               </div>
-              <Actions onBack={back} onNext={next} nextLabel="Start school account" gold nextDisabled={!action} />
+              <RegError message={submitError} />
+              <Actions onBack={back} onNext={next} nextLabel="Start school account" gold nextDisabled={!action} busy={submitting} />
             </React.Fragment>
           )}
         </div>
@@ -462,7 +464,7 @@ function SchoolFlow({ onBack, onComplete }) {
 /* ============================================================
    SPONSORED / ACCESS CODE
    ============================================================ */
-function SponsoredFlow({ onBack, onComplete }) {
+function SponsoredFlow({ onBack, onComplete, submitting, submitError }) {
   const STEPS = [
     { key: "code", title: "Access code", sub: "Your invitation" },
     { key: "child", title: "Child profile", sub: "Create the reader" },
@@ -471,20 +473,40 @@ function SponsoredFlow({ onBack, onComplete }) {
   const [step, setStep] = useStateF(0);
   const [code, setCode] = useStateF("");
   const [verified, setVerified] = useStateF(false);
+  const [checking, setChecking] = useStateF(false);
+  const [codeError, setCodeError] = useStateF("");
+  const [programme, setProgramme] = useStateF("");
   const [email, setEmail] = useStateF("");
+  const [password, setPassword] = useStateF("");
   const [kid, setKid] = useStateF({ passportName: "", firstName: "", confidence: "", passportColor: "green", avatar: randomAvatar() });
 
-  // Demo: any 6+ char code "resolves" to a programme.
-  const programme = "Lagos State Reads · Sunshine Academy";
-  const verify = () => { if (code.trim().length >= 4) setVerified(true); };
+  // Real check against public.access_codes (never consumes the code here).
+  const CODE_MSG = {
+    not_found: "We do not recognise that code. Check it with whoever gave it to you.",
+    already_used: "That code has already been used for another reader.",
+    expired: "That code has expired. Ask your programme for a new one.",
+  };
+  // Server-side failures must not be blamed on the family's code.
+  const CODE_UNAVAILABLE = "We cannot check codes right now. Please try again shortly.";
+  const verify = async () => {
+    setCodeError(""); setChecking(true);
+    const E = window.HaarayaEnrol;
+    if (!E) { setChecking(false); setCodeError(CODE_UNAVAILABLE); return; }
+    const res = await E.checkAccessCode(code);
+    setChecking(false);
+    if (res.ok && res.valid) { setProgramme(res.programmeName || "Your programme"); setVerified(true); return; }
+    setVerified(false);
+    // res.ok false = we could not ask. res.ok true + !valid = a real verdict.
+    setCodeError(res.ok ? (CODE_MSG[res.reason] || "That code is not valid.") : CODE_UNAVAILABLE);
+  };
 
   const child0 = { firstName: kid.firstName, passportName: kid.passportName, lastName: "", passportColor: kid.passportColor, avatar: kid.avatar };
-  const codeValid = verified;
+  const codeValid = verified && email.trim() && password.length >= 8;
   const kidValid = kid.passportName.trim() && kid.firstName.trim();
 
   const next = () => {
     if (step < STEPS.length - 1) { setStep(step + 1); window.scrollTo({ top: 0, behavior: "smooth" }); }
-    else onComplete({ role: "sponsored", accessCode: code, guardianEmail: email, programme, child: { ...kid, readingStartMethod: "assigned_path" } });
+    else onComplete({ role: "sponsored", accessCode: code, guardianEmail: email, password, programme, child: { ...kid, readingStartMethod: "assigned_path" } });
   };
   const back = () => step === 0 ? onBack() : (setStep(step - 1), window.scrollTo({ top: 0, behavior: "smooth" }));
 
@@ -503,14 +525,15 @@ function SponsoredFlow({ onBack, onComplete }) {
               <StepHead n={1} total={2} tag="Access code" title="Enter your invitation code"
                 sub="This came from a school, sponsor, community programme or invitation. It links the child to the right reading path — no payment needed." />
               <div className="reg-fields">
-                <Field label="Access or invitation code" hint={verified ? "" : "Try any code to continue in this demo."}>
+                <Field label="Access or invitation code" hint={verified ? "" : "The code from your school, sponsor or programme."}>
                   <div style={{ display: "flex", gap: 10 }}>
-                    <Input value={code} onChange={e => { setCode(e.target.value.toUpperCase()); setVerified(false); }}
+                    <Input value={code} onChange={e => { setCode(e.target.value.toUpperCase()); setVerified(false); setCodeError(""); }}
                       placeholder="e.g. HAARAYA-2026" style={{ letterSpacing: "0.08em", fontWeight: 800 }} />
                     <button className="reg-btn-next" style={{ padding: "13px 22px", boxShadow: "0 4px 0 var(--deep-forest)" }}
-                      onClick={verify} disabled={code.trim().length < 4}>Verify</button>
+                      onClick={verify} disabled={code.trim().length < 4 || checking}>{checking ? "Checking\u2026" : "Verify"}</button>
                   </div>
                 </Field>
+                <RegError message={codeError} />
                 {verified && (
                   <div className="reg-callout reg-fade" style={{ borderColor: "rgba(34,139,34,.4)", background: "var(--green-light)" }}>
                     <span className="seal" style={{ borderColor: "rgba(34,139,34,.5)" }}><Ic d={ICONS.check} size={18} sw={3} /></span>
@@ -520,8 +543,11 @@ function SponsoredFlow({ onBack, onComplete }) {
                     </span>
                   </div>
                 )}
-                <Field label="Parent / guardian email" optional hint="So we can send progress and recovery — only if your programme asks for it.">
+                <Field label="Parent / guardian email" hint="This is the login for the account, and where progress and recovery go.">
                   <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="guardian@email.com" />
+                </Field>
+                <Field label="Create a password" hint="At least 8 characters.">
+                  <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
                 </Field>
               </div>
               <Actions onBack={back} backLabel="All account types" onNext={next} nextDisabled={!codeValid} />
@@ -572,7 +598,8 @@ function SponsoredFlow({ onBack, onComplete }) {
                 <span className="seal"><Ic d={ICONS.shield} size={13} sw={2.4} /></span>
                 <span>No photos, ever. Your reader gets a friendly illustrated passport picture you can edit any time from their profile.</span>
               </div>
-              <Actions onBack={back} onNext={next} nextLabel="Save Avatar &amp; begin" gold nextDisabled={!kidValid} />
+              <RegError message={submitError} />
+              <Actions onBack={back} onNext={next} nextLabel="Save Avatar &amp; begin" gold nextDisabled={!kidValid} busy={submitting} />
             </React.Fragment>
           )}
         </div>
@@ -584,9 +611,10 @@ function SponsoredFlow({ onBack, onComplete }) {
 /* ============================================================
    SUCCESS
    ============================================================ */
-function SuccessScreen({ payload, onDashboard, onRestart }) {
+function SuccessScreen({ payload, result, onDashboard, onRestart }) {
   const isSchool = payload.role === "school";
   const isSponsored = payload.role === "sponsored";
+  const needsConfirm = !!(result && result.needsConfirmation);
 
   let title, sub, btn, stamp, eyebrow, meta;
   if (isSchool) {
@@ -607,10 +635,10 @@ function SuccessScreen({ payload, onDashboard, onRestart }) {
     const kidNames = payload.children.map(k => k.passportName || k.firstName).filter(Boolean);
     eyebrow = "Passport ready";
     title = kidNames.length > 1 ? "Your children's Haaraya passports are ready." : (kidNames[0] || "Your child") + "'s Haaraya passport is ready.";
-    sub = "We've reserved your place. Your dashboard is set up — explore the library and we'll let you know the moment plans open.";
+    sub = "We've reserved your place. Your dashboard is set up — explore the library and your 14-day trial starts today.";
     btn = "Enter Dashboard";
     stamp = "assets/stamp-l1.png";
-    meta = [kidNames.join(", "), payload.subscription.plan === "family" ? "Family plan" : "Individual", "Place reserved"];
+    meta = [kidNames.join(", "), payload.subscription.plan === "family" ? "Family plan" : "Individual", "14-day trial"];
   }
 
   const previewChild = isSchool ? null
@@ -626,6 +654,16 @@ function SuccessScreen({ payload, onDashboard, onRestart }) {
       <h1>{title}</h1>
       <p className="sub">{sub}</p>
 
+      {needsConfirm && (
+        <div className="reg-callout" style={{ maxWidth: 560, margin: "0 auto 8px", textAlign: "left" }}>
+          <span className="seal"><Ic d={ICONS.check} size={18} sw={3} /></span>
+          <span className="body">
+            <span className="t">Check your email to finish</span>
+            <span className="d">We have sent a confirmation link. Click it once and you can sign in — everything you set up is saved and waiting.</span>
+          </span>
+        </div>
+      )}
+
       <div className="reg-success-passport">
         {isSchool
           ? <SchoolAccountPreview school={payload.school} stampsFilled={2} />
@@ -633,8 +671,9 @@ function SuccessScreen({ payload, onDashboard, onRestart }) {
       </div>
 
       <div className="reg-success-actions">
-        <button className="reg-btn-next reg-btn-gold" onClick={onDashboard} style={{ fontSize: 17, padding: "16px 30px" }}>
-          {btn} <Ic d={ICONS.arrowR} size={18} sw={2.4} />
+        <button className="reg-btn-next reg-btn-gold" onClick={onDashboard} disabled={needsConfirm} style={{ fontSize: 17, padding: "16px 30px" }}>
+          {needsConfirm ? "Confirm your email first" : btn}
+          {!needsConfirm && <Ic d={ICONS.arrowR} size={18} sw={2.4} />}
         </button>
       </div>
 

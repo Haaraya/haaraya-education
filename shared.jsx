@@ -387,7 +387,13 @@ function Nav({ current, onNavigate, session, navKeys, homeScreen, onSignIn, onSi
 
   const handleSignIn = (e) => { e.preventDefault(); setMenuOpen(false); onSignIn && onSignIn(); };
   const handleSignOut = (e) => { e.preventDefault(); setMenuOpen(false); onSignOut && onSignOut(); };
-  const handleWaitlist = () => { setMenuOpen(false); onWaitlist ? onWaitlist() : go(homeScreen || "home"); };
+  // Sign up goes to the registration page. onWaitlist stays supported for
+  // callers that want their own handler.
+  const handleWaitlist = () => {
+    setMenuOpen(false);
+    if (onWaitlist) return onWaitlist();
+    window.location.href = "Haaraya Registration.html";
+  };
 
   return (
     <nav className={`nav ${menuOpen ? "menu-open" : ""}`}>
@@ -479,7 +485,7 @@ function Nav({ current, onNavigate, session, navKeys, homeScreen, onSignIn, onSi
             <React.Fragment>
               <a className="signin" href="#" onClick={handleSignIn}>Sign in</a>
               <button className="btn btn-primary btn-sm" onClick={handleWaitlist}>
-                Get started
+                Sign up
               </button>
             </React.Fragment>
           )}
@@ -552,7 +558,7 @@ function Nav({ current, onNavigate, session, navKeys, homeScreen, onSignIn, onSi
             <React.Fragment>
               <a className="signin" href="#" onClick={handleSignIn}>Sign in</a>
               <button className="btn btn-primary" onClick={handleWaitlist}>
-                Get started
+                Sign up
               </button>
             </React.Fragment>
           )}

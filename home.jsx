@@ -789,7 +789,8 @@ function Pricing() {
               {p.note && <div className="price-note">{p.note}</div>}
               <p className="blurb">{t.blurb}</p>
               <ul>{t.features.map(f => <li key={f}>{f}</li>)}</ul>
-              <button className={`btn ${t.featured ? "btn-primary" : "btn-ghost-dark"}`}>
+              <button className={`btn ${t.featured ? "btn-primary" : "btn-ghost-dark"}`}
+                onClick={() => { window.location.href = "Haaraya Registration.html"; }}>
                 {t.cta}
               </button>
             </div>

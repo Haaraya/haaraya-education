@@ -226,19 +226,31 @@ function StepHead({ n, total, tag, title, sub }) {
 }
 
 /* ---------- Footer actions ---------- */
-function Actions({ onBack, backLabel = "Back", onNext, nextLabel = "Continue", nextDisabled, gold }) {
+function Actions({ onBack, backLabel = "Back", onNext, nextLabel = "Continue", nextDisabled, gold, busy, busyLabel = "Creating your account\u2026" }) {
   return (
     <div className="reg-actions">
       {onBack && (
-        <button type="button" className="reg-back" onClick={onBack}>
+        <button type="button" className="reg-back" onClick={onBack} disabled={busy}>
           <Ic d={ICONS.arrowL} size={17} sw={2.4} /> {backLabel}
         </button>
       )}
       <div className="spacer" />
       <button type="button" className={"reg-btn-next" + (gold ? " reg-btn-gold" : "")}
-        onClick={onNext} disabled={nextDisabled}>
-        {nextLabel} <Ic d={ICONS.arrowR} size={18} sw={2.4} />
+        onClick={onNext} disabled={nextDisabled || busy}>
+        {busy ? busyLabel : nextLabel}
+        {!busy && <Ic d={ICONS.arrowR} size={18} sw={2.4} />}
       </button>
+    </div>
+  );
+}
+
+/* Shown above the final action when a registration write fails. */
+function RegError({ message }) {
+  if (!message) return null;
+  return (
+    <div className="reg-error" role="alert">
+      <span className="reg-error-mark" aria-hidden="true">!</span>
+      <span>{message}</span>
     </div>
   );
 }
@@ -322,7 +334,7 @@ function PassportColorPicker({ value, onChange, name }) {
 
 Object.assign(window, {
   Ic, ICONS, Field, Input, Select, Choice, Trail,
-  ChildPassportPreview, SchoolAccountPreview, FlowRail, StepHead, Actions,
+  ChildPassportPreview, SchoolAccountPreview, FlowRail, StepHead, Actions, RegError,
   READING_START_LABEL, CONFIDENCE_LABEL, COUNTRIES, YEARS,
   PASSPORT_COVERS, PASSPORT_COVER_ORDER, PassportCover, PassportColorPicker,
 });

@@ -662,7 +662,19 @@ body[data-reg-preview="false"] .reg-rail .reg-passport-card { display: none; }
 .reg-nextsteps { display: grid; gap: 12px; }
 
 /* ---- Footer actions ---- */
-.reg-actions {
+.reg-error {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: #FDECEC; border: 1px solid #F0B4B4; border-radius: 14px;
+  padding: 13px 16px; margin: 4px 0 18px;
+  font-size: 14.5px; font-weight: 700; line-height: 1.45; color: #8C2020;
+  text-wrap: pretty;
+}
+.reg-error-mark {
+  flex: none; width: 20px; height: 20px; border-radius: 50%;
+  background: #C62828; color: #fff;
+  display: grid; place-items: center;
+  font-size: 13px; font-weight: 900; margin-top: 1px;
+}
   display: flex; align-items: center; gap: 14px;
   margin-top: 30px; padding-top: 24px;
   border-top: 1px dashed var(--sand-dk);

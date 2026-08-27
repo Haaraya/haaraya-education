@@ -133,14 +133,15 @@ function writeLastNav(screen, params) {
 
 /* ------------ Sign-in panel (prototype role chooser) ------------ */
 
-// Infer which dashboard an email belongs to. Lets the "real" sign-in form route
-// to the right role (teacher@…, school@…, admin@…, child@…) and default to parent.
+// Infer which dashboard an email belongs to, used only as a FALLBACK when the
+// profile row carries no role. Never returns "child": children have no logins
+// (public.users.role is parent | teacher | school_admin | haaraya_admin), so a
+// child-sounding email is a guardian who reads under a parent account.
 function inferRoleFromEmail(em) {
   const e = (em || "").trim().toLowerCase();
   if (/(^|[._-])teacher|^mr|^mrs|^ms\b/.test(e)) return "teacher";
   if (/(^|[._-])(school|principal|head|coordinator)/.test(e)) return "school_admin";
-  if (/(^|[._-])(admin|haaraya|staff)/.test(e)) return "admin";
-  if (/(^|[._-])(child|kid|reader|pupil)/.test(e)) return "child";
+  if (/(^|[._-])(admin|staff)/.test(e)) return "admin";
   return "parent";
 }
 
@@ -183,6 +184,12 @@ function SignInPanel({ open, currentRole, onChoose, onClose }) {
     }
     try {
       await window.HaarayaAuth.signIn({ email: mail, password: pw });
+      // First sign-in after registering: the profile, children and plan are
+      // created here, from the payload stashed in auth metadata at signup.
+      // (No session exists at signup time, so nothing could be written then.)
+      if (window.HaarayaEnrol && window.HaarayaEnrol.ensureProfile) {
+        try { await window.HaarayaEnrol.ensureProfile(); } catch (e3) { /* fall through */ }
+      }
       let profileRow = null;
       try { profileRow = await window.HaarayaAuth.getProfile(); } catch (e2) { profileRow = null; }
       if (!profileRow) {
@@ -592,7 +599,7 @@ function App() {
           homeScreen={ROLE_HOME[role] || "home"}
           onSignIn={() => setSignInOpen(true)}
           onSignOut={signOut}
-          onWaitlist={() => navigate(ROLE_HOME[role] || "home")}
+          onWaitlist={() => { window.location.href = "Haaraya Registration.html"; }}
         />
       )}
 

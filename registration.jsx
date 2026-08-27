@@ -3,6 +3,21 @@
    ============================================================ */
 const { useState: useStateApp, useEffect: useEffectApp } = React;
 
+/* Plain-language messages for the write failures enrolment.js can return. */
+const REG_ERRORS = {
+  "email-taken": "That email already has a Haaraya account. Try signing in instead.",
+  "missing-credentials": "Please enter an email address and a password.",
+  "signup-failed": "We could not create your account. Please check the email and password and try again.",
+  "signup-threw": "We could not reach Haaraya just now. Please check your connection and try again.",
+  "profile-failed": "Your login was created but your profile could not be saved. Please try again.",
+  "school-failed": "Your account was created but the school record could not be saved. Please try again.",
+  "child-failed": "We could not save your reader's profile. Please try again.",
+  "bad-code": "That access code is not valid, or it has already been used.",
+  "code-check-unavailable": "We could not check your access code just now. Please try again shortly.",
+  "weak-password": "Please choose a password of at least 8 characters.",
+  "no-client": "Sign-up is unavailable right now. Please try again shortly.",
+};
+
 const REG_TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "direction": "Storybook",
   "displayFont": "DM Serif Display",
@@ -100,6 +115,9 @@ function RegApp() {
   const [tweaks, setTweak] = useTweaks(REG_TWEAK_DEFAULTS);
   const [view, setView] = useStateApp("landing");   // landing | parent | school | sponsored | success
   const [payload, setPayload] = useStateApp(null);
+  const [submitting, setSubmitting] = useStateApp(false);
+  const [submitError, setSubmitError] = useStateApp("");
+  const [result, setResult] = useStateApp(null);     // what the DB actually created
 
   useEffectApp(() => {
     document.documentElement.dataset.direction = tweaks.direction.toLowerCase();
@@ -114,16 +132,46 @@ function RegApp() {
     document.body.dataset.regPreview = String(tweaks.showPassport);
   }, [tweaks.showPassport]);
 
-  const goHome = () => { setView("landing"); setPayload(null); window.scrollTo({ top: 0, behavior: "smooth" }); };
-  const complete = (p) => { setPayload(p); setView("success"); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const goHome = () => { setView("landing"); setPayload(null); setResult(null); setSubmitError(""); window.scrollTo({ top: 0, behavior: "smooth" }); };
+
+  // Registration now WRITES: create the auth user, profile, children and
+  // subscription before showing the success screen. If the write fails the
+  // user stays on the flow with a message rather than seeing a false success.
+  const complete = async (p) => {
+    setSubmitError("");
+    const E = window.HaarayaEnrol;
+    if (!E) { setSubmitError("Sign-up is unavailable right now. Please try again shortly."); return; }
+
+    setSubmitting(true);
+    let res;
+    try {
+      if (p.role === "school") res = await E.registerSchool(p);
+      else if (p.role === "sponsored") res = await E.registerSponsored(p);
+      else res = await E.registerParent(p);
+    } catch (err) {
+      res = { ok: false, reason: "threw", detail: String(err) };
+    }
+    setSubmitting(false);
+
+    if (!res || !res.ok) {
+      setSubmitError(REG_ERRORS[res && res.reason] || "We could not create your account. Please try again.");
+      return;
+    }
+    setPayload(p);
+    setResult(res);
+    setView("success");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const enterDashboard = () => {
     if (!payload) return goHome();
-    let role = "parent", screen = "parent";
-    if (payload.role === "school") {
-      role = payload.school.role === "teacher" ? "teacher" : payload.school.role === "coordinator" ? "teacher" : "school_admin";
-      screen = role === "teacher" ? "teacher" : "school";
-    } else if (payload.role === "sponsored") { role = "child"; screen = "child"; }
+    // The real profile role decides the dashboard, not the flow's guess.
+    const dbRole = (result && result.profile && result.profile.role) || "parent";
+    let role = dbRole === "school_admin" ? "school_admin" : dbRole === "teacher" ? "teacher" : "parent";
+    let screen = role === "school_admin" ? "school" : role === "teacher" ? "teacher" : "parent";
+    // A sponsored guardian has one child and no plan to manage: the child view
+    // is the useful first screen.
+    if (payload.role === "sponsored") screen = "child";
     try {
       sessionStorage.setItem("haaraya:session", role);
       sessionStorage.setItem("haaraya:landing", screen);
@@ -136,10 +184,10 @@ function RegApp() {
       <RegTop onHome={goHome} />
 
       {view === "landing" && <Landing onChoose={setView} />}
-      {view === "parent" && <ParentFlow onBack={goHome} onComplete={complete} />}
-      {view === "school" && <SchoolFlow onBack={goHome} onComplete={complete} />}
-      {view === "sponsored" && <SponsoredFlow onBack={goHome} onComplete={complete} />}
-      {view === "success" && payload && <SuccessScreen payload={payload} onDashboard={enterDashboard} onRestart={goHome} />}
+      {view === "parent" && <ParentFlow onBack={goHome} onComplete={complete} submitting={submitting} submitError={submitError} />}
+      {view === "school" && <SchoolFlow onBack={goHome} onComplete={complete} submitting={submitting} submitError={submitError} />}
+      {view === "sponsored" && <SponsoredFlow onBack={goHome} onComplete={complete} submitting={submitting} submitError={submitError} />}
+      {view === "success" && payload && <SuccessScreen payload={payload} result={result} onDashboard={enterDashboard} onRestart={goHome} />}
 
       <TweaksPanel title="Tweaks">
         <TweakSection label="Design direction" />
