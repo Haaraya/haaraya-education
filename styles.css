@@ -3094,8 +3094,7 @@ body[data-hero-variant="journey"] .hero-subject .passport-card { display: none; 
    glyph's stroke sits outside the heading box and gets shaved by any
    clipping ancestor. Nudge heading and subtitle together by the overhang
    so they stay aligned and nothing is cut. */
-.dash-header h3, .dash-header .sub { padding-left: 3px; }
-.dash-header > div:first-child { margin-left: -3px; }
+.dash-header h3, .dash-header .sub { padding-left: 4px; }
 
 /* 2. Collapsible two-column dashboard content grids.
    Mobile-first single column; expands on wider screens. Replaces the

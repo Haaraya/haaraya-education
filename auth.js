@@ -21,7 +21,10 @@
     return;
   }
 
-  var profileCache = null;
+  // Cache the profile AGAINST the auth user it belongs to. An unkeyed cache
+  // could hand back the previous account's row after a switch, which then got
+  // written into children.parent_user_id and refused by RLS.
+  var profileCache = null, profileCacheUid = null;
 
   async function signUp(opts) {
     var email = opts.email, password = opts.password;
@@ -34,7 +37,7 @@
       options: { data: { full_name: fullName, first_name: firstName, last_name: lastName, role: role } },
     });
     if (res.error) throw res.error;
-    profileCache = null;
+    clearProfile();
     return res.data;
   }
 
@@ -44,14 +47,16 @@
       password: opts.password,
     });
     if (res.error) throw res.error;
-    profileCache = null;
+    clearProfile();
     return res.data;
   }
 
   async function signOut() {
     await sb.auth.signOut();
-    profileCache = null;
+    clearProfile();
   }
+
+  function clearProfile() { profileCache = null; profileCacheUid = null; }
 
   async function getSession() {
     var res = await sb.auth.getSession();
@@ -64,23 +69,30 @@
   }
 
   // The public.users profile row for the signed-in user (via RLS).
-  async function getProfile() {
-    if (profileCache) return profileCache;
+  //  `force` skips the cache — use it before a write that depends on the id.
+  async function getProfile(force) {
     var user = await getUser();
-    if (!user) return null;
+    if (!user) { clearProfile(); return null; }
+    // Serve the cache only when it belongs to THIS auth user.
+    if (!force && profileCache && profileCacheUid === user.id) return profileCache;
+
     var res = await sb
       .from("users")
       .select("*")
       .eq("auth_uid", user.id)
       .maybeSingle();
     if (res.error) throw res.error;
-    profileCache = res.data;
+
+    // Never cache a miss: a null here is usually a profile that has not been
+    // written yet (deferred email confirmation), and the caller may create it.
+    if (res.data) { profileCache = res.data; profileCacheUid = user.id; }
+    else clearProfile();
     return res.data;
   }
 
   function onChange(cb) {
     return sb.auth.onAuthStateChange(function (event, session) {
-      profileCache = null;
+      clearProfile();
       cb(event, session);
     });
   }
@@ -92,6 +104,8 @@
     getSession: getSession,
     getUser: getUser,
     getProfile: getProfile,
+    refreshProfile: function () { return getProfile(true); },
+    clearProfileCache: clearProfile,
     onChange: onChange,
   };
 })();

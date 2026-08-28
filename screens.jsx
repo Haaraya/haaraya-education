@@ -794,6 +794,23 @@ function ChildDashScreen({ onNavigate }) {
    plan's child allowance), then calls onDone() to refetch the dashboard.
    Any DB error is shown verbatim — a silent failure here is how the signup
    children went missing in the first place. */
+/* Turn a DB/enrolment failure into something a parent can act on. The raw
+   detail is kept on the end for us, but never leads. */
+function friendlyChildError(res) {
+  const reason = (res && res.reason) || "";
+  const detail = (res && res.detail) || "";
+  if (/row-level security/i.test(detail)) {
+    return "We could not save this child to your account. Please sign out, sign back in, and try again — if it keeps happening, contact support.";
+  }
+  if (reason === "not-signed-in") return "Your session has expired. Please sign in again.";
+  if (reason === "wrong-role") return "This account is not a parent account, so it cannot add children.";
+  if (reason === "no-profile" || /profile/.test(reason)) {
+    return "We could not load your account details. Please refresh the page and try again.";
+  }
+  if (/duplicate|already exists/i.test(detail)) return "A child with these details is already on your account.";
+  return detail || "Could not add this child. Please try again.";
+}
+
 function AddChildModal({ onClose, onDone }) {
   const [first, setFirst]     = useStateScreens("");
   const [last, setLast]       = useStateScreens("");
@@ -823,7 +840,7 @@ function AddChildModal({ onClose, onDone }) {
       onClose && onClose();
       return;
     }
-    setMsg((res && (res.detail || res.reason)) || "Could not add this child.");
+    setMsg(friendlyChildError(res));
   };
 
   return (

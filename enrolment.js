@@ -280,6 +280,55 @@
     return out;
   }
 
+  /* ---------- who is signed in, authoritatively ----------
+     Every owner-scoped write needs public.users.id, NOT auth.users.id, and the
+     two are different uuids. Reading a cached profile was how a stale or
+     missing row reached children.parent_user_id and tripped RLS. This always
+     re-reads by auth_uid, and writes the profile if signup never got to it
+     (the deferred email-confirmation path), so the caller always has a real id.
+  */
+  async function resolveProfile() {
+    var client = sb();
+    if (!client) return fail("no-client");
+
+    var user = null;
+    try {
+      var ures = await client.auth.getUser();
+      user = ures && ures.data ? ures.data.user : null;
+    } catch (e) { return fail("not-signed-in", String(e)); }
+    if (!user || !user.id) return fail("not-signed-in");
+
+    var prof = null;
+    try {
+      var res = await client.from("users").select("id, role, full_name, email, auth_uid")
+        .eq("auth_uid", user.id).maybeSingle();
+      if (res.error) return fail("profile-read-failed", res.error.message);
+      prof = res.data;
+    } catch (e) { return fail("profile-read-threw", String(e)); }
+
+    // No profile row yet — create it from the auth metadata rather than failing.
+    if (!prof) {
+      var meta = user.user_metadata || {};
+      var made = await insertProfile(
+        user.id, user.email,
+        meta.full_name || (user.email || "").split("@")[0],
+        meta.role || "parent", meta.phone
+      );
+      if (!made.ok) return made;
+      prof = made.profile;
+    }
+    if (!prof || !prof.id) return fail("no-profile");
+
+    // Keep the app-wide cache honest now that we know the truth.
+    try {
+      if (window.HaarayaAuth && window.HaarayaAuth.clearProfileCache) {
+        window.HaarayaAuth.clearProfileCache();
+      }
+    } catch (e) { /* non-fatal */ }
+
+    return { ok: true, profile: prof, authUser: user };
+  }
+
   /* ---------- children ---------- */
   //  Insert one child row. `owner` is either { parentUserId } or { schoolId }.
   async function insertChild(kid, owner) {
@@ -528,8 +577,9 @@
     var client = sb();
     if (!client) return fail("no-client");
 
-    var prof = window.HaarayaAuth ? await window.HaarayaAuth.getProfile() : null;
-    if (!prof || !prof.id) return fail("not-signed-in");
+    var who = await resolveProfile();
+    if (!who.ok) return who;
+    var prof = who.profile;
     if (prof.role !== "parent") return fail("wrong-role");
 
     var allowance = 1, used = 0;
@@ -581,8 +631,9 @@
     if (!client) return fail("no-client");
     if (!opts.schoolId) return fail("no-school");
 
-    var prof = window.HaarayaAuth ? await window.HaarayaAuth.getProfile() : null;
-    if (!prof || !prof.id) return fail("not-signed-in");
+    var who = await resolveProfile();
+    if (!who.ok) return who;
+    var prof = who.profile;
 
     var res = await insertChild(opts.child || opts, {
       schoolId: opts.schoolId, enrolledBy: prof.id,
@@ -624,6 +675,7 @@
     registerSponsored: registerSponsored,
     ensureProfile: ensureProfile,
     addChild: addChild,
+    resolveProfile: resolveProfile,
     createClassroom: createClassroom,
     enrolPupil: enrolPupil,
     linkTeacher: linkTeacher,
