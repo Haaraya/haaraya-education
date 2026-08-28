@@ -160,6 +160,10 @@ p.lede { font-size: 18px; line-height: 1.55; color: var(--ink-mid); max-width: 6
 
 .btn-sm { padding: 10px 18px; font-size: 14px; }
 
+/* Disabled state for the global .btn family, matching .sc-btn-primary:disabled. */
+.btn:disabled, .btn[disabled] { background: var(--sand-dk); color: var(--ink-mute); border-color: var(--sand-dk); box-shadow: none; transform: none; cursor: default; }
+.btn:disabled:hover, .btn[disabled]:hover { background: var(--sand-dk); color: var(--ink-mute); border-color: var(--sand-dk); box-shadow: none; transform: none; }
+
 /* ============================================================
    Nav
    ============================================================ */
@@ -3086,6 +3090,12 @@ body[data-hero-variant="journey"] .hero-subject .passport-card { display: none; 
 .dash-header { flex-wrap: wrap; }
 .dash-header > div:first-child { flex: 1 1 auto; min-width: 0; }
 .dash-header h3 { text-wrap: pretty; }
+/* Andika bold sets P/W/A with a negative left side bearing, so the first
+   glyph's stroke sits outside the heading box and gets shaved by any
+   clipping ancestor. Nudge heading and subtitle together by the overhang
+   so they stay aligned and nothing is cut. */
+.dash-header h3, .dash-header .sub { padding-left: 3px; }
+.dash-header > div:first-child { margin-left: -3px; }
 
 /* 2. Collapsible two-column dashboard content grids.
    Mobile-first single column; expands on wider screens. Replaces the
@@ -3164,5 +3174,11 @@ body[data-hero-variant="journey"] .hero-subject .passport-card { display: none; 
 .assign-picked { flex: 1; min-width: 160px; font-size: 13px; color: var(--ink-soft); }
 .assign-picked strong { color: var(--ink); }
 .assign-msg { font-size: 13px; font-weight: 700; color: #B23B3B; width: 100%; }
+.addkid-modal { width: min(600px, 100%); }
+.addkid-body { display: flex; flex-direction: column; gap: 18px; }
+.addkid-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+@media (max-width: 560px) { .addkid-row { grid-template-columns: 1fr; } }
+.addkid-body select.assign-search { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ink-soft) 50%), linear-gradient(135deg, var(--ink-soft) 50%, transparent 50%); background-position: calc(100% - 18px) 51%, calc(100% - 13px) 51%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 38px; cursor: pointer; }
+.mint-out { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 14px; letter-spacing: .06em; line-height: 1.7; resize: vertical; }
 .assign-actions { display: flex; gap: 10px; }
 @media (max-width: 640px) { .assign-body { grid-template-columns: 1fr; } }

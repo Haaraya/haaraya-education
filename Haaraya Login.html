@@ -65,7 +65,7 @@
         <h1>Haaraya Auth Test</h1>
       </div>
     </div>
-    <p class="sub">Proving real signup → login → profile → row-level security against live Supabase. This page is a diagnostic, not the final UI.</p>
+    <p class="sub">Diagnostic page for the auth layer — signup, login, profile row and RLS against live Supabase. Signing in here hands you off to the app. The real sign-in lives on the <a href="Haaraya Home.html">Haaraya home page</a>.</p>
 
     <!-- Logged-out view -->
     <div class="card" id="authCard">
@@ -114,10 +114,11 @@
 
     <!-- Logged-in view -->
     <div class="card profile" id="profileCard" style="display:none">
-      <div class="msg ok show" style="margin-bottom:18px">✓ Signed in. Persistent session is active — refresh this page and you'll stay logged in.</div>
+      <div class="msg ok show" style="margin-bottom:18px">&#10003; Signed in. Taking you to your dashboard&hellip;</div>
       <h2>Your profile row <span style="font-weight:500;color:var(--muted)">(public.users)</span></h2>
       <div id="profileBody"></div>
       <div style="height:16px"></div>
+      <a class="btn" href="Haaraya Home.html" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px">Enter Haaraya &rarr;</a>
       <button class="btn ghost" onclick="doLogout()">Log out</button>
     </div>
 
@@ -189,11 +190,23 @@
           password: document.getElementById("li_pass").value,
         });
         await render();
+        // This page is a diagnostic, not a destination: a successful login
+        // belongs in the app, on the dashboard for that role.
+        enterApp();
       }catch(err){
         busy("li_btn", false);
         msg(friendlyAuthError(err), "err");
       }
       return false;
+    }
+
+    // Hand off to the app. The app's own boot resolves the session and routes
+    // to the right dashboard, so there is nothing to pass along.
+    var handedOff = false;
+    function enterApp(){
+      if (handedOff) return;
+      handedOff = true;
+      setTimeout(function(){ window.location.href = "Haaraya Home.html"; }, 900);
     }
 
     function friendlyAuthError(err){

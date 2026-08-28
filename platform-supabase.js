@@ -299,6 +299,7 @@
         status: clean(s.status),
         maxChildren: num(s.max_children),
         renewsOn: s.expires_at || null,
+        trialEndsAt: s.trial_ends_at || null,
         billingCycle: clean(s.billing_cycle),
       };
     } catch (e) { return null; }

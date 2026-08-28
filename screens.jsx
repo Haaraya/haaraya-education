@@ -59,6 +59,30 @@ function PassportScreen({ onNavigate, gotoLevel, highlightBookId }) {
   );
   const { data: levelCounts } = useApi(() => TafiyaBooks.levelCounts(), []);
   const [readTick, setReadTick] = useStateScreens(0);
+  const [shareMsg, setShareMsg] = useStateScreens("");
+  // Share the passport: the native share sheet where there is one (phones),
+  // otherwise copy the link. There is no public passport URL yet, so this
+  // shares the passport screen itself — a parent opening it signs in first.
+  const sharePassport = async () => {
+    const url = window.location.href.split("#")[0] + "#passport";
+    const title = ME === "Reader" ? "Haaraya Reading Passport" : `${ME}'s Haaraya Reading Passport`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: title, text: title, url: url });
+        return;
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(url);
+        setShareMsg("Link copied");
+        setTimeout(() => setShareMsg(""), 1800);
+        return;
+      }
+      setShareMsg("Copy from the address bar");
+      setTimeout(() => setShareMsg(""), 2400);
+    } catch (e) {
+      // A dismissed share sheet lands here too — say nothing.
+    }
+  };
   useEffectScreens(() => {
     const on = () => setReadTick(t => t + 1);
     window.addEventListener("haaraya:reading", on);
@@ -147,7 +171,7 @@ function PassportScreen({ onNavigate, gotoLevel, highlightBookId }) {
           <div className="ppx-header-right">
             <div className="ppx-actions">
               <button className="ppx-btn ppx-btn-ghost" onClick={() => onNavigate("child")}>&larr; Dashboard</button>
-              <button className="ppx-btn ppx-btn-solid">Share passport</button>
+              <button className="ppx-btn ppx-btn-solid" onClick={sharePassport}>{shareMsg || "Share passport"}</button>
             </div>
             <div className="ppx-progress-summary">
               <span className="ppx-prog-chip">Level {cur}</span>
@@ -766,15 +790,113 @@ function ChildDashScreen({ onNavigate }) {
    PARENT DASHBOARD (full screen)
    ============================================================ */
 
+/* Add-a-child form. Writes through HaarayaEnrol.addChild (which checks the
+   plan's child allowance), then calls onDone() to refetch the dashboard.
+   Any DB error is shown verbatim — a silent failure here is how the signup
+   children went missing in the first place. */
+function AddChildModal({ onClose, onDone }) {
+  const [first, setFirst]     = useStateScreens("");
+  const [last, setLast]       = useStateScreens("");
+  const [passport, setPass]   = useStateScreens("");
+  const [year, setYear]       = useStateScreens("");
+  const [level, setLevel]     = useStateScreens(1);
+  const [mode, setMode]       = useStateScreens("automatic");
+  const [busy, setBusy]       = useStateScreens(false);
+  const [msg, setMsg]         = useStateScreens("");
+
+  const levels = (window.HaarayaSeed && HaarayaSeed.levels) || [];
+  const thisYear = new Date().getFullYear();
+
+  const submit = async () => {
+    if (!first.trim()) { setMsg("A first name is needed."); return; }
+    if (!window.HaarayaEnrol || !window.HaarayaEnrol.addChild) {
+      setMsg("Enrolment layer not loaded — check enrolment.js is on the page."); return;
+    }
+    setBusy(true); setMsg("");
+    const res = await window.HaarayaEnrol.addChild({
+      firstName: first, lastName: last, passportName: passport,
+      year: year, currentLevelId: Number(level) || 1, readingMode: mode,
+    });
+    setBusy(false);
+    if (res && res.ok) {
+      onDone && onDone();
+      onClose && onClose();
+      return;
+    }
+    setMsg((res && (res.detail || res.reason)) || "Could not add this child.");
+  };
+
+  return (
+    <div className="assign-ov" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose && onClose(); }}>
+      <div className="assign-modal addkid-modal" role="dialog" aria-modal="true" aria-label="Add a child">
+        <div className="assign-head">
+          <div>
+            <h4>Add a child</h4>
+            <div className="sub">They'll get their own passport and reading level.</div>
+          </div>
+          <button className="assign-x" onClick={onClose} aria-label="Close">&times;</button>
+        </div>
+        <div className="assign-body addkid-body">
+          <div className="addkid-row">
+            <div className="assign-col">
+              <div className="assign-lbl">First name</div>
+              <input className="assign-search" value={first} onChange={(e) => setFirst(e.target.value)} placeholder="Amara" autoFocus />
+            </div>
+            <div className="assign-col">
+              <div className="assign-lbl">Last name <span className="opt">optional</span></div>
+              <input className="assign-search" value={last} onChange={(e) => setLast(e.target.value)} placeholder="Alerege" />
+            </div>
+          </div>
+          <div className="addkid-row">
+            <div className="assign-col">
+              <div className="assign-lbl">Passport name <span className="opt">optional</span></div>
+              <input className="assign-search" value={passport} onChange={(e) => setPass(e.target.value)} placeholder="What the passport should say" />
+            </div>
+            <div className="assign-col">
+              <div className="assign-lbl">Year of birth <span className="opt">optional</span></div>
+              <input className="assign-search" value={year} onChange={(e) => setYear(e.target.value)} placeholder={String(thisYear - 8)} inputMode="numeric" />
+            </div>
+          </div>
+          <div className="addkid-row">
+            <div className="assign-col">
+              <div className="assign-lbl">Starting level</div>
+              <select className="assign-search" value={level} onChange={(e) => setLevel(e.target.value)}>
+                {(levels.length ? levels : [{ number: 1, name: "Level 1" }]).map(l => (
+                  <option key={l.number} value={l.number}>L{l.number} &middot; {l.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="assign-col">
+              <div className="assign-lbl">Book choice</div>
+              <div className="assign-seg">
+                <button className={mode === "automatic" ? "on" : ""} onClick={() => setMode("automatic")}>We choose</button>
+                <button className={mode === "choose" ? "on" : ""} onClick={() => setMode("choose")}>They choose</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="assign-foot">
+          <div className="assign-picked">{first.trim() ? <span>Adding <strong>{passport.trim() || first.trim()}</strong></span> : "Fill in a first name to continue."}</div>
+          <button className="btn btn-ghost-dark btn-sm" onClick={onClose} disabled={busy}>Cancel</button>
+          <button className="btn btn-forest btn-sm" onClick={submit} disabled={busy || !first.trim()}>{busy ? "Adding…" : "Add child"}</button>
+          {msg && <div className="assign-msg">{msg}</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ParentDashScreen({ onNavigate }) {
   const Api = HaarayaPlatformDB;
+  const [kidTick, setKidTick] = useStateScreens(0);
+  const [addOpen, setAddOpen] = useStateScreens(false);
   const { data: parent }   = useApi(() => Api.getCurrentParent(), []);
-  const { data: children } = useApi(() => Api.getChildrenForParent(), []);
-  const { data: sub }      = useApi(() => Api.getSubscriptionForParent(), []);
+  const { data: children } = useApi(() => Api.getChildrenForParent(), [kidTick]);
+  const { data: sub }      = useApi(() => Api.getSubscriptionForParent(), [kidTick]);
   const { data: summaries }= useApi(async () => {
     const kids = await Api.getChildrenForParent();
     return Promise.all(kids.map(c => Api.getChildSummary(c.id)));
-  }, []);
+  }, [kidTick]);
 
   const [readTick, setReadTick] = useStateScreens(0);
   useEffectScreens(() => {
@@ -805,6 +927,24 @@ function ParentDashScreen({ onNavigate }) {
     return { level: s.child.currentLevelId, done: s.currentLevelCompleted, total: s.currentLevelTotal, pct: s.currentLevelPct, books: s.booksCompleted };
   };
   const recentStamps = (readerStamps || []).slice(-6).reverse();
+
+  // Plan / trial wording. Every field can legitimately be missing (a trial has
+  // no renewal date), so each label degrades on its own rather than printing
+  // "Invalid Date".
+  const fmtDay = (v) => {
+    if (!v) return "";
+    const d = new Date(v);
+    return isNaN(d) ? "" : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  };
+  const planRaw = (sub && sub.plan) || "family";
+  const planLabel = planRaw.charAt(0).toUpperCase() + planRaw.slice(1) + " plan";
+  const renewsDay = fmtDay(sub && sub.renewsOn);
+  const renewsLabel = renewsDay ? " \u00b7 Renews " + renewsDay : "";
+  const trialEndLabel = fmtDay(sub && sub.trialEndsAt);
+  const trialLeft = (sub && sub.status === "trial" && sub.trialEndsAt)
+    ? Math.max(0, Math.ceil((new Date(sub.trialEndsAt).getTime() - Date.now()) / 86400000))
+    : null;
+  const allowance = (sub && sub.maxChildren) || 0;
   const readerName   = (children.find(c => c.id === readerId) || children[0] || {}).shortName || "Your reader";
   const totalBooks   = (summaries || []).reduce((a, s) => a + (s ? s.booksCompleted : 0), 0);
   const totalStamps  = realStamps;
@@ -817,9 +957,9 @@ function ParentDashScreen({ onNavigate }) {
           <nav className="nd-nav">
             <a onClick={() => onNavigate("home")}>Home</a>
             <a className="on">Children</a>
-            <a>Reading plan</a>
-            <a>Subscription</a>
-            <a>Reports</a>
+            <a className="nd-soon" title="Not built yet">Reading plan</a>
+            <a className="nd-soon" title="Not built yet">Subscription</a>
+            <a className="nd-soon" title="Not built yet">Reports</a>
             <a onClick={() => onNavigate("library")}>Library</a>
           </nav>
           <div className="nd-chip">
@@ -835,10 +975,30 @@ function ParentDashScreen({ onNavigate }) {
             <div className="dash-header">
               <div>
                 <h3>Welcome back, <span style={{ fontFamily: '"Andika", system-ui, sans-serif' }}>{(window.HaarayaSession && HaarayaSession.get().displayName) || "Demo Parent"}</span>.</h3>
-                <div className="sub">{children.length} children · {sub ? sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1) : "Family"} plan · Renews {sub ? new Date(sub.renewsOn).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"}</div>
+                <div className="sub">{children.length} {children.length === 1 ? "child" : "children"} &middot; {planLabel}{renewsLabel}</div>
               </div>
-              <button className="btn btn-ghost-dark btn-sm">+ Add child</button>
+              <button className="btn btn-ghost-dark btn-sm" onClick={() => setAddOpen(true)}>+ Add child</button>
             </div>
+
+            {sub && sub.status === "trial" && (
+              <div className={"plan-strip" + (trialLeft !== null && trialLeft <= 3 ? " urgent" : "")}>
+                <div className="plan-strip-main">
+                  <div className="plan-strip-t">
+                    {trialLeft === null ? "You're on a free trial."
+                      : trialLeft > 1 ? `${trialLeft} days left in your free trial.`
+                      : trialLeft === 1 ? "Last day of your free trial."
+                      : "Your free trial has ended."}
+                  </div>
+                  <div className="plan-strip-s">
+                    {allowance
+                      ? `${planLabel} · up to ${allowance} ${allowance === 1 ? "reader" : "readers"} · ${children.length} added`
+                      : planLabel}
+                    {trialEndLabel ? ` · ends ${trialEndLabel}` : ""}
+                  </div>
+                </div>
+                <a className="btn btn-forest btn-sm" href="Haaraya Home.html#home" onClick={(e) => { e.preventDefault(); onNavigate("pricing"); }}>See plans</a>
+              </div>
+            )}
 
             <div className="kpis">
               <div className="kpi"><div className="lbl">Books read</div><div className="num">{totalBooks}</div><div className="delta">All-time across {children.length} {children.length === 1 ? "child" : "children"}</div></div>
@@ -913,10 +1073,16 @@ function ParentDashScreen({ onNavigate }) {
           </div>
         </div>
       </div>
+      {addOpen && (
+        <AddChildModal
+          onClose={() => setAddOpen(false)}
+          onDone={() => setKidTick(t => t + 1)}
+        />
+      )}
     </main>
   );
 }
 
 Object.assign(window, {
-  PassportScreen, ChildDashScreen, ParentDashScreen,
+  PassportScreen, ChildDashScreen, ParentDashScreen, AddChildModal,
 });

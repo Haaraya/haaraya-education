@@ -367,6 +367,7 @@ function App() {
   // ---- Real Supabase session restore ----
   // On load, if the browser already holds a valid Supabase session, adopt the
   // role from that user's public.users profile so a refresh keeps them signed in.
+  const bootDestRef = useRefApp(false);
   useEffectApp(() => {
     if (!window.HaarayaAuth || !window.HaarayaSession) return;
     let cancelled = false;
@@ -384,6 +385,20 @@ function App() {
         // A real Supabase user → live, DB-backed session (separate from demos).
         if (!cancelled && profileRow) window.HaarayaSession.signInReal(profileRow);
         else if (!cancelled && roleKey) window.HaarayaSession.signInAs(roleKey);
+        // A restored session belongs on its dashboard, not the marketing home.
+        // This covers the email-confirmation landing and any plain refresh.
+        // Only when we're sitting on Home with no explicit screen in the URL,
+        // and only once at boot, so it never fights a deliberate Home click.
+        if (!cancelled && !bootDestRef.current) {
+          bootDestRef.current = true;
+          const hash = (window.location.hash || "").replace("#", "");
+          const landed = window.HaarayaSession.role();
+          const dest = ROLE_HOME[landed] || "home";
+          if (dest !== "home" && (!hash || hash === "home")) {
+            setScreen(dest);
+            window.location.hash = dest;
+          }
+        }
       } catch (e) { /* ignore */ }
     })();
     return () => { cancelled = true; };

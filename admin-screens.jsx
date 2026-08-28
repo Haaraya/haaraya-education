@@ -339,12 +339,15 @@ function TeacherDashScreen({ onNavigate }) {
 function SchoolAdminDashScreen({ onNavigate }) {
   const Api = HaarayaPlatformDB;
   const ME = (window.HaarayaSession && HaarayaSession.get().displayName) || "School Admin";
-  const { data }      = useApi(() => Api.getSchoolDashboard(), []);
-  const { data: kpi } = useApi(() => Api.getSchoolUsageOverview(), []);
+  const [schoolTick, setSchoolTick] = useStateAdult(0);
+  const [modal, setModal] = useStateAdult(null); // classroom | pupil | teacher | codes
+  const { data }      = useApi(() => Api.getSchoolDashboard(), [schoolTick]);
+  const { data: kpi } = useApi(() => Api.getSchoolUsageOverview(), [schoolTick]);
 
   if (!data || !kpi) return null;
 
   const { school, teachers, classrooms, pupils, subscription, sponsored } = data;
+  const refresh = () => setSchoolTick(t => t + 1);
 
   return (
     <main className="nd-page role-adult" data-screen-label="School Admin Dashboard">
@@ -354,10 +357,8 @@ function SchoolAdminDashScreen({ onNavigate }) {
           <nav className="nd-nav">
             <a onClick={() => onNavigate("home")}>Home</a>
             <a className="on">Overview</a>
-            <a>Teachers</a>
-            <a>Classrooms</a>
-            <a>Subscription</a>
-            <a>Reports</a>
+            <a className="nd-soon" title="Not built yet">Subscription</a>
+            <a className="nd-soon" title="Not built yet">Reports</a>
             <a onClick={() => onNavigate("library")}>Library</a>
           </nav>
           <div className="nd-chip">
@@ -375,9 +376,11 @@ function SchoolAdminDashScreen({ onNavigate }) {
                 <h3>{school.name}</h3>
                 <div className="sub">{school.type} · {school.city}, {school.country} · {subscription ? `${subscription.plan} plan` : "No subscription"}</div>
               </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button className="btn btn-ghost-dark btn-sm">+ Invite teacher</button>
-                <button className="btn btn-primary btn-sm">+ Add pupil</button>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button className="btn btn-ghost-dark btn-sm" onClick={() => setModal("codes")}>Access codes</button>
+                <button className="btn btn-ghost-dark btn-sm" onClick={() => setModal("classroom")}>+ New class</button>
+                <button className="btn btn-ghost-dark btn-sm" onClick={() => setModal("teacher")}>+ Add teacher</button>
+                <button className="btn btn-primary btn-sm" onClick={() => setModal("pupil")}>+ Add pupil</button>
               </div>
             </div>
 
@@ -449,6 +452,18 @@ function SchoolAdminDashScreen({ onNavigate }) {
           </div>
         </div>
       </div>
+      {modal === "classroom" && (
+        <CreateClassroomModal schoolId={school.id} teachers={teachers} onClose={() => setModal(null)} onDone={refresh} />
+      )}
+      {modal === "pupil" && (
+        <AddPupilModal schoolId={school.id} classrooms={classrooms} onClose={() => setModal(null)} onDone={refresh} />
+      )}
+      {modal === "teacher" && (
+        <LinkTeacherModal schoolId={school.id} onClose={() => setModal(null)} onDone={refresh} />
+      )}
+      {modal === "codes" && (
+        <MintCodesModal schoolId={school.id} onClose={() => setModal(null)} />
+      )}
     </main>
   );
 }

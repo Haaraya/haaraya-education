@@ -37,6 +37,17 @@
   function clean(v) { return v == null ? "" : String(v).trim(); }
   function fail(reason, detail) { return { ok: false, reason: reason, detail: detail || null }; }
 
+  // Where the confirmation link should land. Same directory as whatever page
+  // the user registered from, so this works on GitHub Pages (served from a
+  // subpath) and on a local file/dev server alike. The app's boot then routes
+  // the restored session to the right dashboard.
+  function confirmRedirect() {
+    try {
+      var dir = window.location.pathname.replace(/[^/]*$/, "");
+      return window.location.origin + dir + "Haaraya%20Home.html";
+    } catch (e) { return undefined; }
+  }
+
   function trialEnd() {
     var d = new Date();
     d.setDate(d.getDate() + TRIAL_DAYS);
@@ -89,7 +100,8 @@
     var signUp;
     try {
       signUp = await client.auth.signUp({
-        email: email, password: password, options: { data: meta },
+        email: email, password: password,
+        options: { data: meta, emailRedirectTo: confirmRedirect() },
       });
     } catch (e) { return fail("signup-threw", String(e)); }
 
@@ -155,7 +167,13 @@
     try {
       var have = await client.from("users").select("id, role, full_name, email")
         .eq("auth_uid", user.id).maybeSingle();
-      if (have.data) return { ok: true, profile: have.data, created: false };
+      if (have.data) {
+        // The profile exists, but an earlier run may have failed partway and
+        // left children unwritten. Finish those before returning.
+        var stillPending = (user.user_metadata || {}).haaraya_pending;
+        if (!stillPending) return { ok: true, profile: have.data, created: false };
+        return await finishPending(client, have.data, stillPending, false);
+      }
     } catch (e) { /* fall through and try to create */ }
 
     var meta = user.user_metadata || {};
@@ -165,11 +183,21 @@
     var prof = await insertProfile(user.id, user.email, fullName, role, meta.phone);
     if (!prof.ok) return prof;
 
-    var out = { ok: true, profile: prof.profile, created: true, children: [], warnings: [] };
-    var pending = meta.haaraya_pending;
-    if (!pending) return out;
+    if (!meta.haaraya_pending) {
+      return { ok: true, profile: prof.profile, created: true, children: [], warnings: [] };
+    }
+    return await finishPending(client, prof.profile, meta.haaraya_pending, true);
+  }
 
-    // ---- finish what registration started ----
+  /* ---------- finish what registration started -------------------------------
+     Writes the school / children / subscription a signup promised, then clears
+     the stashed payload ONLY if it all landed. Runs whether the profile was
+     just created or already existed, so a part-finished signup self-repairs on
+     the next sign-in.
+  */
+  async function finishPending(client, profile, pending, created) {
+    var out = { ok: true, profile: profile, created: !!created, children: [], warnings: [] };
+
     try {
       if (pending.kind === "school" && pending.school) {
         var sres = await client.from("schools").insert({
@@ -177,13 +205,13 @@
           type: pending.school.type || "school",
           country: clean(pending.school.country) || null,
           city: clean(pending.school.city) || null,
-          admin_user_id: prof.profile.id,
+          admin_user_id: profile.id,
         }).select("id, name").maybeSingle();
         if (sres.data) {
           out.school = sres.data;
           try {
             await client.from("teacher_school_links").insert({
-              teacher_user_id: prof.profile.id, school_id: sres.data.id, status: "active",
+              teacher_user_id: profile.id, school_id: sres.data.id, status: "active",
             });
           } catch (e) { /* non-fatal */ }
           var ssub = await insertSubscription({ schoolId: sres.data.id, plan: "school", cycle: "annual" });
@@ -194,15 +222,26 @@
       } else {
         var kids = Array.isArray(pending.children) ? pending.children : [];
         for (var i = 0; i < kids.length; i++) {
-          var r = await insertChild(kids[i], { parentUserId: prof.profile.id });
+          var r = await insertChild(kids[i], { parentUserId: profile.id });
           if (r.ok) out.children.push(r.child); else out.warnings.push(r);
         }
-        var plan = pending.plan || "individual";
-        var sub = await insertSubscription({
-          ownerUserId: prof.profile.id, plan: plan, cycle: pending.cycle,
-          maxChildren: plan === "family" ? 4 : 1,
-        });
-        if (sub.ok) out.subscription = sub.subscription;
+        // Only create a subscription if this user hasn't got one already (this
+        // may be a repair run over a signup that got partway through).
+        var existingSub = null;
+        try {
+          var q = await client.from("subscriptions").select("id")
+            .eq("owner_user_id", profile.id).maybeSingle();
+          existingSub = q.data || null;
+        } catch (e) { /* treat as none */ }
+        if (!existingSub) {
+          var plan = pending.plan || "individual";
+          var sub = await insertSubscription({
+            ownerUserId: profile.id, plan: plan, cycle: pending.cycle,
+            maxChildren: plan === "family" ? 4 : 1,
+          });
+          if (sub.ok) out.subscription = sub.subscription;
+          else out.warnings.push(sub);
+        }
 
         // A sponsored signup consumes its code now that the child exists.
         if (pending.accessCode && out.children.length) {
@@ -217,9 +256,26 @@
       out.warnings.push(fail("pending-threw", String(e)));
     }
 
-    // Clear the payload so a later sign-in cannot duplicate the children.
-    try { await client.auth.updateUser({ data: { haaraya_pending: null } }); }
-    catch (e) { /* non-fatal */ }
+    // Clear the payload ONLY when everything it promised actually landed.
+    // Clearing regardless is how a refused child insert became permanent:
+    // the warning was discarded and the payload was gone on the next sign-in.
+    var kidsWanted = (pending.kind === "school") ? 0
+      : (Array.isArray(pending.children) ? pending.children.length : 0);
+    var settled = out.warnings.length === 0 && out.children.length >= kidsWanted;
+    if (settled) {
+      try { await client.auth.updateUser({ data: { haaraya_pending: null } }); }
+      catch (e) { /* non-fatal */ }
+    } else {
+      // Keep the payload for a retry, but never let it duplicate what DID land.
+      try {
+        var left = (Array.isArray(pending.children) ? pending.children : []).slice(out.children.length);
+        var keep = Object.assign({}, pending, { children: left });
+        await client.auth.updateUser({ data: { haaraya_pending: keep } });
+      } catch (e) { /* non-fatal */ }
+      try {
+        console.warn("[Haaraya] signup did not fully complete:", out.warnings);
+      } catch (e) { /* ignore */ }
+    }
 
     return out;
   }
