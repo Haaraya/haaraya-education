@@ -464,10 +464,9 @@ function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, 
                 : <span className="ppid2-photo-initial">{(child.shortName || "?").slice(0, 1).toUpperCase()}</span>}
             </div>
             <div className="ppid2-info">
-              <div className="ppid2-row3 ppid2-typerow">
+              <div className="ppid2-row2 ppid2-typerow">
                 <Field label="Passport Type" value="Reading Passport" />
                 <Field label="Code" value="HLP" />
-                <Field label="Country" value="Haaraya" />
               </div>
               <Field label="Surname" value={surname || "\u2014"} />
               <Field label="Given Name" value={given || "\u2014"} />

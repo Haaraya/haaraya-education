@@ -763,7 +763,9 @@
 .ppage-cover .pcover-img { height: 100%; width: 100%; object-fit: contain; }
 .pcover-name {
   position: absolute; left: 7%; right: 7%; bottom: 6%;
-  text-align: center; line-height: 1;
+  /* line-height 1 plus the overflow:hidden needed for the ellipsis shaved the
+     descenders off names like "Nanya Alerege". */
+  text-align: center; line-height: 1.4; padding-bottom: .12em;
   font-family: var(--font-serif); font-weight: 600;
   font-size: 7cqw; letter-spacing: .01em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
