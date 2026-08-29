@@ -50,10 +50,13 @@ function StampBonus() {
 function PassportScreen({ onNavigate, gotoLevel, highlightBookId }) {
   // The passport belongs to one of the signed-in parent's children. With more
   // than one, a switcher picks whose passport is open (children have no login).
-  const { data: kids } = useApi(() => HaarayaPlatformDB.getChildrenForParent(), []);
   const [whoIdx, setWhoIdx] = useStateScreens(0);
   const [editOpen, setEditOpen] = useStateScreens(false);
   const [childTick, setChildTick] = useStateScreens(0);
+  // Refetched on childTick: the passport renders straight off this row, so an
+  // edit that only refreshed the summary left name, birth year, home base and
+  // cover showing pre-edit values until a full page reload.
+  const { data: kids } = useApi(() => HaarayaPlatformDB.getChildrenForParent(), [childTick]);
   const roster = kids || [];
   const active = roster[Math.min(whoIdx, Math.max(0, roster.length - 1))] || null;
   const CHILD_ID = (active && active.id) || null;
@@ -370,9 +373,12 @@ function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, 
   const curName = (PASSPORT_LEVELS.find(l => l.n === cur) || {}).name || "";
 
   if (idx === 0) {
+    // The cover is foil-stamped with the reader's FULL name; display_name is the
+    // shorter passport name used elsewhere.
+    const coverName = [child.firstName, child.lastName].filter(Boolean).join(" ") || child.displayName;
     return (
       <div className="ppage ppage-cover">
-        <PassportCover color={child.passportColor} name={child.displayName} />
+        <PassportCover color={child.passportColor} name={coverName} />
       </div>
     );
   }
@@ -383,7 +389,7 @@ function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, 
     const surname   = (child.lastName || (nameParts.length > 1 ? nameParts[nameParts.length - 1] : "") || "").toUpperCase();
     const given     = (child.firstName || (nameParts.length > 1 ? nameParts.slice(0, -1).join(" ") : nameParts[0]) || "").toUpperCase();
     const readerNm  = (child.shortName || given.split(" ")[0] || "").toUpperCase();
-    const homeBase  = child.city ? (child.city + ", Haaraya").toUpperCase() : "\u2014";
+    const homeBase  = [child.city, child.country].filter(Boolean).join(", ").toUpperCase() || "\u2014";
     const lvlName   = curName.toUpperCase();
     // Sequential serial owned by the database. Older rows without one show a
     // dash rather than the NaN the previous arithmetic produced on a uuid.
@@ -722,7 +728,7 @@ function ChildDashScreen({ onNavigate }) {
       <div className="nd">
 
         <div className="nd-top">
-          <div className="nd-word"><img src="assets/odyssey-seal.png" alt="Haaraya" /> Haaraya</div>
+          <div className="nd-word"><img className="nd-seal" src="assets/odyssey-seal.png" alt="" /><img className="nd-logo" src="assets/logo-haaraya-literacy.png" alt="Haaraya Literacy" /></div>
           <nav className="nd-nav">
             <a onClick={() => onNavigate("home")}>Home</a>
             <a className="on">My Books</a>
@@ -1012,7 +1018,7 @@ function EditChildModal({ child, onClose, onDone }) {
                 })}
               </div>
               {window.PassportCover && (
-                <PassportCover className="pcolor-preview" color={color} name={passport || first} />
+                <PassportCover className="pcolor-preview" color={color} name={[first, last].filter(Boolean).join(" ") || passport} />
               )}
             </div>
           )}
@@ -1198,7 +1204,7 @@ function ParentDashScreen({ onNavigate }) {
     <main className="nd-page role-adult" data-screen-label="Parent Dashboard">
       <div className="nd">
         <div className="nd-top">
-          <div className="nd-word"><img src="assets/odyssey-seal.png" alt="Haaraya" /> Haaraya</div>
+          <div className="nd-word"><img className="nd-seal" src="assets/odyssey-seal.png" alt="" /><img className="nd-logo" src="assets/logo-haaraya-literacy.png" alt="Haaraya Literacy" /></div>
           <nav className="nd-nav">
             <a onClick={() => onNavigate("home")}>Home</a>
             <a className="on">Children</a>

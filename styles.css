@@ -3098,7 +3098,11 @@ body[data-hero-variant="journey"] .hero-subject .passport-card { display: none; 
    glyph's stroke sits outside the heading box and gets shaved by any
    clipping ancestor. Nudge heading and subtitle together by the overhang
    so they stay aligned and nothing is cut. */
-.dash-header h3, .dash-header .sub { padding-left: 4px; }
+.dash-header h3, .dash-header .sub { padding-left: 6px; }
+/* Andika bold ascenders also sit above the h3 box; without an explicit
+   line-height the tops of W/l/b get shaved. */
+.dash-header h3 { line-height: 1.3; padding-top: 2px; }
+.dash, .dash-main, .nd { overflow: visible; }
 
 /* 2. Collapsible two-column dashboard content grids.
    Mobile-first single column; expands on wider screens. Replaces the

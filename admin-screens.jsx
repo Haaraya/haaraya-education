@@ -179,7 +179,7 @@ function TeacherDashScreen({ onNavigate }) {
     <main className="nd-page role-adult" data-screen-label="Teacher Dashboard">
       <div className="nd">
         <div className="nd-top">
-          <div className="nd-word"><img src="assets/odyssey-seal.png" alt="Haaraya" /> Haaraya</div>
+          <div className="nd-word"><img className="nd-seal" src="assets/odyssey-seal.png" alt="" /><img className="nd-logo" src="assets/logo-haaraya-literacy.png" alt="Haaraya Literacy" /></div>
           <nav className="nd-nav">
             <a onClick={() => onNavigate("home")}>Home</a>
             <a className="on">Classrooms</a>
@@ -353,7 +353,7 @@ function SchoolAdminDashScreen({ onNavigate }) {
     <main className="nd-page role-adult" data-screen-label="School Admin Dashboard">
       <div className="nd">
         <div className="nd-top">
-          <div className="nd-word"><img src="assets/odyssey-seal.png" alt="Haaraya" /> Haaraya</div>
+          <div className="nd-word"><img className="nd-seal" src="assets/odyssey-seal.png" alt="" /><img className="nd-logo" src="assets/logo-haaraya-literacy.png" alt="Haaraya Literacy" /></div>
           <nav className="nd-nav">
             <a onClick={() => onNavigate("home")}>Home</a>
             <a className="on">Overview</a>
@@ -853,7 +853,7 @@ function HaarayaAdminDashScreen({ onNavigate }) {
     <main className="nd-page role-adult" data-screen-label="Haaraya Admin Dashboard">
       <div className="nd">
         <div className="nd-top">
-          <div className="nd-word"><img src="assets/odyssey-seal.png" alt="Haaraya" /> Haaraya</div>
+          <div className="nd-word"><img className="nd-seal" src="assets/odyssey-seal.png" alt="" /><img className="nd-logo" src="assets/logo-haaraya-literacy.png" alt="Haaraya Literacy" /></div>
           <nav className="nd-nav">
             <a onClick={() => onNavigate("home")}>Home</a>
             <a className={tab === "ops" ? "on" : ""} onClick={() => setTab("ops")}>Operations</a>

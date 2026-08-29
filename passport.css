@@ -1425,7 +1425,10 @@ button.pplv-levelstamp.is-link:hover { transform: translateY(-2px) scale(1.03); 
 .ppid2-photo-initial{font-family:var(--font-serif,Georgia,serif);font-size:44px;font-weight:600;color:#8b7f70;line-height:1}
 
 /* Pencil affordance on the ID page, mirroring the serial badge. */
-.ppid2-edit{position:absolute;top:16px;right:22px;z-index:5;display:flex;align-items:center;gap:6px;font-family:var(--font-body);font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--gold-dk,#8a6a1f);background:rgba(255,255,255,.82);border:1px solid rgba(138,106,31,.34);border-radius:999px;padding:6px 12px 6px 10px;cursor:pointer;transition:background .15s,border-color .15s}
+/* .pbook-spread is pointer-events:none so blank paper passes clicks to the
+   page-flip zones; anything interactive on a page must opt back in or the click
+   turns the page instead. */
+.ppid2-edit{pointer-events:auto;position:absolute;top:16px;right:22px;z-index:12;display:flex;align-items:center;gap:6px;font-family:var(--font-body);font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--gold-dk,#8a6a1f);background:rgba(255,255,255,.82);border:1px solid rgba(138,106,31,.34);border-radius:999px;padding:6px 12px 6px 10px;cursor:pointer;transition:background .15s,border-color .15s}
 .ppid2-edit:hover{background:#fff;border-color:rgba(138,106,31,.6)}
 .ppid2-edit:focus-visible{outline:2px solid var(--gold-dk,#8a6a1f);outline-offset:2px}
 

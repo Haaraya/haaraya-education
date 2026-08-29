@@ -144,6 +144,7 @@ main:has(> .wrap > .dash.role-adult) {
 .nd-top { display:flex; align-items:center; gap:18px; margin-bottom:26px; flex-wrap:wrap; }
 .nd-word { font-family:var(--nd-serif); font-weight:600; font-size:24px; color:var(--d-olive-ink); display:flex; align-items:center; gap:12px; white-space:nowrap; }
 .nd-word img { width:42px; height:42px; border-radius:50%; display:block; }
+.nd-word .nd-logo { width:auto; height:26px; border-radius:0; }
 .nd-nav { display:flex; gap:6px; margin-left:6px; flex-wrap:wrap; }
 .nd-nav a { padding:10px 18px; border-radius:999px; font-weight:800; font-size:14.5px; color:var(--d-ink-mid); cursor:pointer; white-space:nowrap; }
 .nd-nav a:hover { background:rgba(20,82,20,.12); color:var(--d-olive-deep); }
