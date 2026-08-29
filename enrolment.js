@@ -435,6 +435,7 @@
       if (y > 1900 && y < 2100) row.date_of_birth = y + "-01-01";
     }
     if (patch.city != null) row.city = clean(patch.city) || null;
+    if (patch.country != null) row.country = clean(patch.country) || null;
     if (patch.passportColor != null) row.passport_color = clean(patch.passportColor) || "green";
     if (patch.avatar !== undefined) row.avatar = patch.avatar || null;
 

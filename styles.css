@@ -3207,7 +3207,16 @@ body[data-hero-variant="journey"] .hero-subject .passport-card { display: none; 
 
 /* Avatar builder inside the edit modal: the signup page gives it a full column,
    a modal cannot — tighten the preview and drop its sticky offset. */
-.editkid-modal .av-builder{grid-template-columns:180px 1fr;gap:18px}
+.editkid-modal .av-builder{grid-template-columns:210px 1fr;gap:18px}
 .editkid-modal .av-stage{position:static;padding:14px 12px 12px}
-.editkid-modal .av-stage-frame{width:132px}
+/* PassportAvatar sets width/height as SVG ATTRIBUTES (208px), so narrowing the
+   wrapper alone let the drawing spill over the controls column. Make the svg
+   itself fluid and the attribute stops governing layout. */
+.editkid-modal .av-stage-frame{width:100%;max-width:176px}
+.editkid-modal .av-stage-frame svg{width:100%;height:auto;display:block}
 @media (max-width:680px){.editkid-modal .av-builder{grid-template-columns:1fr}}
+
+/* Picture tab: the builder keeps the single-column control stack it was
+   authored for — narrowing that column forces every swatch/chip row to wrap and
+   makes the panel TALLER, not shorter. Height comes from the modal instead. */
+.editkid-modal{max-height:92vh}

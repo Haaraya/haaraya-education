@@ -1436,3 +1436,8 @@ button.pplv-levelstamp.is-link:hover { transform: translateY(-2px) scale(1.03); 
 .ppx-who-btn:focus-visible{outline:2px solid var(--forest,#20402a);outline-offset:2px}
 
 @media (max-width:760px){.ppid2-edit{top:12px;right:14px;padding:5px 10px}.ppx-who{justify-content:flex-start}}
+
+/* Top row of the ID page: "Reading Passport" was wrapping onto two lines and
+   pushing the fields below out of alignment. Give it the width it needs. */
+.ppid2-row3.ppid2-typerow{grid-template-columns:1.75fr .55fr .9fr}
+.ppid2-typerow .ppid2-field dd{white-space:nowrap}

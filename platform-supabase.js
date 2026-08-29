@@ -172,6 +172,7 @@
       dateOfBirth: r.date_of_birth || null,
       birthYear: r.date_of_birth ? Number(String(r.date_of_birth).slice(0, 4)) : null,
       city: clean(r.city) || "",
+      country: clean(r.country) || "",
       startedAt: r.created_at || null,
       currentLevelId: (lm && lm.levelById[r.current_level_id]) || 1,
       readingMode: clean(r.reading_mode) || "automatic",
@@ -266,6 +267,9 @@
           bookId: r.book ? clean(r.book.book_code) : null,
           title: title,
           levelId: lvl,
+          // "book" stamps are one-per-title; anything else is a bonus reward.
+          type: clean(r.stamp_type) || "book",
+          isBook: (clean(r.stamp_type) || "book") === "book",
           strandUi: strandUiFromSlug(slug),
           earnedAt: r.earned_at ? String(r.earned_at).slice(0, 10) : null,
         };

@@ -63,6 +63,7 @@ function PassportScreen({ onNavigate, gotoLevel, highlightBookId }) {
     [CHILD_ID, childTick]
   );
   const { data: levelCounts } = useApi(() => TafiyaBooks.levelCounts(), []);
+  const { data: subscription } = useApi(() => HaarayaPlatformDB.getSubscriptionForParent(), []);
   const [readTick, setReadTick] = useStateScreens(0);
   const [shareMsg, setShareMsg] = useStateScreens("");
   // Share the passport: the native share sheet where there is one (phones),
@@ -142,7 +143,9 @@ function PassportScreen({ onNavigate, gotoLevel, highlightBookId }) {
   );
   const child = summary.child;
   // Completed-book codes + level from the child's live Supabase record.
-  const completedSet = new Map((realStamps || []).filter(s => s.code).map(s => [s.code, s.earnedAt || ""]));
+  const completedSet = new Map((realStamps || []).filter(s => s.isBook && s.code).map(s => [s.code, s.earnedAt || ""]));
+  // Non-book stamps are the bonus rewards shown on each level spread.
+  const bonusStamps = (realStamps || []).filter(s => s && s.isBook === false);
   const cur = (child && child.currentLevelId) || 1;
   const started = child.startedAt
     ? new Date(child.startedAt).toLocaleDateString("en-GB", { month: "short", day: "numeric", year: "numeric" })
@@ -220,7 +223,7 @@ function PassportScreen({ onNavigate, gotoLevel, highlightBookId }) {
             aria-label="Next page"
           ></button>
           <div className={"pbook-spread dir-" + (dir > 0 ? "next" : "prev")} key={idx}>
-            <PassportSpread idx={idx} child={child} name={ME} summary={summary} cur={cur} levelCounts={levelCounts} started={started} onNavigate={onNavigate} childId={CHILD_ID} highlightBookId={highlightBookId} completedSet={completedSet} onEdit={() => setEditOpen(true)} />
+            <PassportSpread idx={idx} child={child} name={ME} summary={summary} cur={cur} levelCounts={levelCounts} started={started} onNavigate={onNavigate} childId={CHILD_ID} highlightBookId={highlightBookId} completedSet={completedSet} onEdit={() => setEditOpen(true)} subscription={subscription} bonusStamps={bonusStamps} />
           </div>
           {idx > 0 && <span className="pbook-curl curl-prev" aria-hidden="true"></span>}
           {idx > 0 && idx < TOTAL - 1 && <span className="pbook-curl curl-next" aria-hidden="true"></span>}
@@ -363,7 +366,7 @@ function JourneyPage({ cur, onNavigate }) {
   );
 }
 
-function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, onNavigate, childId, highlightBookId, completedSet, onEdit }) {
+function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, onNavigate, childId, highlightBookId, completedSet, onEdit, subscription, bonusStamps }) {
   const curName = (PASSPORT_LEVELS.find(l => l.n === cur) || {}).name || "";
 
   if (idx === 0) {
@@ -380,7 +383,7 @@ function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, 
     const surname   = (child.lastName || (nameParts.length > 1 ? nameParts[nameParts.length - 1] : "") || "").toUpperCase();
     const given     = (child.firstName || (nameParts.length > 1 ? nameParts.slice(0, -1).join(" ") : nameParts[0]) || "").toUpperCase();
     const readerNm  = (child.shortName || given.split(" ")[0] || "").toUpperCase();
-    const homeBase  = (child.city ? child.city + ", Haaraya" : "Haaraya").toUpperCase();
+    const homeBase  = child.city ? (child.city + ", Haaraya").toUpperCase() : "\u2014";
     const lvlName   = curName.toUpperCase();
     // Sequential serial owned by the database. Older rows without one show a
     // dash rather than the NaN the previous arithmetic produced on a uuid.
@@ -388,8 +391,10 @@ function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, 
       ? String(child.passportSerial).padStart(8, "0") : null;
     const issuedDate = child.startedAt ? new Date(child.startedAt) : null;
     const fmtDate = (d) => d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase();
-    const validDate = issuedDate ? new Date(issuedDate) : null;
-    if (validDate) validDate.setFullYear(validDate.getFullYear() + 3);
+    // Validity follows the subscription, not an arbitrary three years: whichever
+    // of the renewal or trial end date the account actually has.
+    const subEnd = subscription && (subscription.renewsOn || subscription.trialEndsAt);
+    const validDate = subEnd ? new Date(subEnd) : null;
     const issuedYr  = issuedDate ? issuedDate.getFullYear() : new Date().getFullYear();
     const readerId  = serial ? "HLR-" + issuedYr + "-" + serial : "—";
     const dob       = child.birthYear ? String(child.birthYear) : "—";
@@ -453,21 +458,20 @@ function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, 
                 : <span className="ppid2-photo-initial">{(child.shortName || "?").slice(0, 1).toUpperCase()}</span>}
             </div>
             <div className="ppid2-info">
-              <div className="ppid2-row3">
+              <div className="ppid2-row3 ppid2-typerow">
                 <Field label="Passport Type" value="Reading Passport" />
                 <Field label="Code" value="HLP" />
                 <Field label="Country" value="Haaraya" />
               </div>
-              <Field label="Surname" value={surname} />
-              <Field label="Given Name" value={given} />
-              <Field label="Reader Name" value={readerNm} />
-              <Field label="Nationality" value="Haaraya Reader" />
+              <Field label="Surname" value={surname || "\u2014"} />
+              <Field label="Given Name" value={given || "\u2014"} />
+              <Field label="Reader Name" value={readerNm || "\u2014"} />
+              <Field label="Nationality" value={(child.country || "\u2014").toUpperCase()} />
             </div>
           </div>
 
-          <div className="ppid2-row3 ppid2-undercard">
+          <div className="ppid2-row2 ppid2-undercard">
             <Field label="Year of Birth" value={dob} />
-            <Field label="Sex" value="—" />
             <Field label="Home Base" value={homeBase} />
           </div>
           <div className="ppid2-row2">
@@ -492,10 +496,10 @@ function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, 
   }
 
   const lv = PASSPORT_LEVELS[idx - 3];
-  return <LevelSpread level={lv} cur={cur} total={lv.total} completedThisLevel={summary.currentLevelCompleted} onNavigate={onNavigate} childId={childId} serial={child.passportSerial} highlightBookId={highlightBookId} completedSet={completedSet} />;
+  return <LevelSpread level={lv} cur={cur} total={lv.total} completedThisLevel={summary.currentLevelCompleted} onNavigate={onNavigate} childId={childId} serial={child.passportSerial} highlightBookId={highlightBookId} completedSet={completedSet} bonusStamps={bonusStamps} />;
 }
 
-function LevelSpread({ level, cur, completedThisLevel, onNavigate, childId, serial: passportSerial, highlightBookId, completedSet }) {
+function LevelSpread({ level, cur, completedThisLevel, onNavigate, childId, serial: passportSerial, highlightBookId, completedSet, bonusStamps }) {
   const n = level.n;
   // Passport serial, shown top-left. Owned by the DB; blank rather than wrong.
   const serial = passportSerial != null ? "HL" + String(passportSerial).padStart(8, "0") : "HL\u2014";
@@ -542,7 +546,11 @@ function LevelSpread({ level, cur, completedThisLevel, onNavigate, childId, seri
   const leftCount = Math.min(N, 24);                // LEFT page = a full 4×6 = 24 stamp slots
   const rightCount = Math.min(N - 24, 24);          // RIGHT page = the next 4×6 = up to 24 (48 books fills both pages)
   // NOTE: only real books are rendered — no empty/placeholder circles for books that don't exist.
-  const earnedBonus = state === "complete" ? 4 : state === "current" ? 2 : 0;
+  // Bonus rewards are REAL non-book stamps earned at this level. This used to be
+  // fabricated (4 for a finished level, 2 for the current one) regardless of
+  // what the child had actually done.
+  const bonusEarned = (bonusStamps || []).filter(s => s.levelId === n);
+  const BONUS_SLOTS = 4;
   const statusLabel = state === "complete" ? "Complete" : state === "current" ? "In progress" : "Locked";
   const earned = state === "complete";
 
@@ -619,10 +627,14 @@ function LevelSpread({ level, cur, completedThisLevel, onNavigate, childId, seri
           <div className="pplv-bonus-wrap">
             <div className="pplv-bonus-label">Bonus Rewards</div>
             <div className="pplv-bonus-row">
-              {[1, 2, 3, 4].map((b) => {
-                const got = b <= earnedBonus;
+              {Array.from({ length: Math.max(BONUS_SLOTS, bonusEarned.length) }, (_, i) => {
+                const st = bonusEarned[i] || null;
+                const got = !!st;
+                const label = got
+                  ? st.title + (st.earnedAt ? "  ·  " + fmtDate(st.earnedAt) : "")
+                  : "Bonus reward  ·  not yet earned";
                 return (
-                  <span key={b} className={"ppspot bonus " + (got ? "earned" : "locked")} tabIndex={0} data-tip={"Bonus " + b + "  ·  " + (got ? "Earned" : "Not yet earned")}>
+                  <span key={st ? st.code || i : "slot" + i} className={"ppspot bonus " + (got ? "earned" : "locked")} tabIndex={0} data-tip={label}>
                     <StampBonus />
                   </span>
                 );
@@ -868,6 +880,7 @@ function EditChildModal({ child, onClose, onDone }) {
   const [passport, setPass] = useStateScreens(child.displayName || "");
   const [year, setYear]     = useStateScreens(child.birthYear ? String(child.birthYear) : "");
   const [city, setCity]     = useStateScreens(child.city || "");
+  const [country, setCountry] = useStateScreens(child.country || "");
   const [color, setColor]   = useStateScreens(child.passportColor || "green");
   const [avatar, setAvatar] = useStateScreens(child.avatar || null);
   const [level, setLevel]   = useStateScreens(child.currentLevelId || 1);
@@ -879,6 +892,7 @@ function EditChildModal({ child, onClose, onDone }) {
   const thisYear = new Date().getFullYear();
   const covers = window.PASSPORT_COVER_ORDER || ["green", "blue", "red", "beige"];
   const coverMap = window.PASSPORT_COVERS || {};
+  const countries = window.HAARAYA_COUNTRIES || [];
 
   const save = async () => {
     if (!first.trim()) { setMsg("A first name is needed."); return; }
@@ -889,7 +903,7 @@ function EditChildModal({ child, onClose, onDone }) {
     setBusy(true); setMsg("");
     const res = await window.HaarayaEnrol.updateChild(child.id, {
       firstName: first, lastName: last, passportName: passport,
-      year: year, city: city, passportColor: color, avatar: avatar,
+      year: year, city: city, country: country, passportColor: color, avatar: avatar,
       currentLevelId: Number(level) || 1,
     });
     setBusy(false);
@@ -949,6 +963,19 @@ function EditChildModal({ child, onClose, onDone }) {
                   <input className="assign-search" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Lagos" />
                 </div>
                 <div className="assign-col">
+                  <div className="assign-lbl">Nationality <span className="opt">optional</span></div>
+                  <select className="assign-search" value={country} onChange={(e) => setCountry(e.target.value)}>
+                    <option value="">Not set</option>
+                    {countries.map((c, i) => (
+                      c.charAt(0) === "\u2500"
+                        ? <option key={"sep" + i} disabled>{c}</option>
+                        : <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="addkid-row">
+                <div className="assign-col">
                   <div className="assign-lbl">Reading level</div>
                   <select className="assign-search" value={level} onChange={(e) => setLevel(e.target.value)}>
                     {(levels.length ? levels : [{ number: 1, name: "Level 1" }]).map(l => (
@@ -956,6 +983,7 @@ function EditChildModal({ child, onClose, onDone }) {
                     ))}
                   </select>
                 </div>
+                <div className="assign-col" />
               </div>
             </React.Fragment>
           )}
