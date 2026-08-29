@@ -44,6 +44,24 @@ function AvChipRow({ options, value, onChange }) {
   );
 }
 
+/* visual choices — children see the change before selecting it */
+function AvPictureRow({ options, value, onChange, config, field }) {
+  return (
+    <div className="av-picture-grid">
+      {options.map((o) => (
+        <button key={o.id} type="button"
+          className={"av-picture-choice" + (value === o.id ? " on" : "")}
+          onClick={() => onChange(o.id)} aria-pressed={value === o.id}>
+          <span className="av-choice-portrait">
+            <PassportAvatar config={{...config, [field]: o.id}} size={58} shape="circle" />
+          </span>
+          <span>{o.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function AvGroup({ label, children }) {
   return (
     <div className="av-group">
@@ -74,10 +92,10 @@ function AvatarBuilder({ value, onChange, name }) {
       {/* live preview */}
       <div className="av-stage">
         <div className="av-stage-frame">
-          <PassportAvatar config={cfg} size={208} />
+          <PassportAvatar config={cfg} size={224} />
         </div>
         <div className="av-stage-cap">
-          <div className="lbl">Passport picture</div>
+          <div className="lbl">My reader avatar</div>
           <div className="nm">{display || "Your reader"}</div>
         </div>
         <button type="button" className="av-surprise" onClick={() => onChange({ ...randomAvatar() })}>
@@ -91,8 +109,12 @@ function AvatarBuilder({ value, onChange, name }) {
           <AvSwatchRow options={AV_SKIN} value={cfg.skinTone} onChange={set("skinTone")} colorKey="base" />
         </AvGroup>
 
+        <AvGroup label="Face shape">
+          <AvPictureRow options={AV_FACE} value={cfg.faceShape} onChange={set("faceShape")} config={cfg} field="faceShape" />
+        </AvGroup>
+
         <AvGroup label="Hairstyle">
-          <AvChipRow options={AV_HAIR_STYLE} value={cfg.hairStyle} onChange={set("hairStyle")} />
+          <AvPictureRow options={AV_HAIR_STYLE} value={cfg.hairStyle} onChange={set("hairStyle")} config={cfg} field="hairStyle" />
         </AvGroup>
 
         {cfg.hairStyle !== "headwrap" && (
@@ -102,14 +124,7 @@ function AvatarBuilder({ value, onChange, name }) {
         )}
 
         <AvGroup label="Eyes">
-          <AvChipRow options={AV_EYES} value={cfg.eyeStyle} onChange={set("eyeStyle")} />
-        </AvGroup>
-
-        <AvGroup label="Glasses">
-          <div className="av-seg">
-            <button type="button" className={!cfg.glasses ? "on" : ""} onClick={() => set("glasses")(false)}>No</button>
-            <button type="button" className={cfg.glasses ? "on" : ""} onClick={() => set("glasses")(true)}>Yes</button>
-          </div>
+          <AvPictureRow options={AV_EYES} value={cfg.eyeStyle} onChange={set("eyeStyle")} config={cfg} field="eyeStyle" />
         </AvGroup>
 
         <AvGroup label="Expression">
@@ -117,7 +132,7 @@ function AvatarBuilder({ value, onChange, name }) {
         </AvGroup>
 
         <AvGroup label="Outfit">
-          <AvChipRow options={AV_OUTFIT_STYLE} value={cfg.outfitStyle} onChange={set("outfitStyle")} />
+          <AvPictureRow options={AV_OUTFIT_STYLE} value={cfg.outfitStyle} onChange={set("outfitStyle")} config={cfg} field="outfitStyle" />
         </AvGroup>
 
         <AvGroup label="Outfit colour">
@@ -125,7 +140,7 @@ function AvatarBuilder({ value, onChange, name }) {
         </AvGroup>
 
         <AvGroup label="Accessory">
-          <AvChipRow options={AV_ACCESSORY} value={cfg.accessory} onChange={set("accessory")} />
+          <AvPictureRow options={AV_ACCESSORY} value={cfg.accessory} onChange={set("accessory")} config={cfg} field="accessory" />
         </AvGroup>
 
         <AvGroup label="Passport frame">

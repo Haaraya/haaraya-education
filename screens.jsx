@@ -677,12 +677,13 @@ function ChildDashScreen({ onNavigate }) {
   const { data: kids } = useApi(() => HaarayaPlatformDB.getChildrenForParent(), []);
   const CHILD_ID = (kids && kids[0] && kids[0].id) || null;
   const ME = (kids && kids[0] && kids[0].shortName) || "Reader";
+  // Re-render whenever a book is read, or the avatar is rebuilt, so the
+  // dashboard figures and portrait stay in sync.
+  const [readTick, setReadTick] = useStateScreens(0);
   const { data: summary }         = useApi(
     () => CHILD_ID ? HaarayaPlatformDB.getChildSummary(CHILD_ID) : Promise.resolve(null),
-    [CHILD_ID]
+    [CHILD_ID, readTick]
   );
-  // Re-render whenever a book is read so passport figures stay in sync.
-  const [readTick, setReadTick] = useStateScreens(0);
   useEffectScreens(() => {
     const on = () => setReadTick(t => t + 1);
     window.addEventListener("haaraya:reading", on);
@@ -698,6 +699,7 @@ function ChildDashScreen({ onNavigate }) {
     [CHILD_ID]
   );
   const { data: stampsList }      = useApi(() => CHILD_ID ? HaarayaPlatformDB.getPassportStamps(CHILD_ID) : Promise.resolve(null), [CHILD_ID, readTick]);
+  const [avOpen, setAvOpen] = useStateScreens(false);
 
   if (!summary) return null;
 
@@ -735,7 +737,14 @@ function ChildDashScreen({ onNavigate }) {
             <a onClick={() => onNavigate("library")}>Library</a>
           </nav>
           <div className="nd-chip">
-            <Avatar name={ME} color={child.avatarColor} size={40} />
+            <button type="button" className="nd-chip-av" onClick={() => setAvOpen(true)} title="Change my avatar" aria-label="Change my avatar">
+              {child.avatar && window.PassportAvatar
+                ? <PassportAvatar config={child.avatar} size={40} shape="circle" />
+                : <Avatar name={ME} color={child.avatarColor} size={40} />}
+              <span className="nd-chip-av-pen" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+              </span>
+            </button>
             <div className="who">
               <div className="n">{firstName}</div>
               <div className="l">{"Level " + currentLevel + " \u00b7 " + levelName}</div>
@@ -808,6 +817,19 @@ function ChildDashScreen({ onNavigate }) {
           </div>
 
           <div className="nd-col">
+            <div className="nd-panel nd-avpanel">
+              <div className="nd-avpanel-portrait">
+                {child.avatar && window.PassportAvatar
+                  ? <PassportAvatar config={child.avatar} size={132} />
+                  : <div className="nd-avpanel-empty" aria-hidden="true">?</div>}
+              </div>
+              <div className="nd-avpanel-body">
+                <div className="lbl">My reader avatar</div>
+                <h4>{child.avatar ? "This is the face on your passport." : "Make the face for your passport."}</h4>
+                <button type="button" className="nd-btn nd-btn-sm" onClick={() => setAvOpen(true)}>{child.avatar ? "Change my avatar" : "Build my avatar"}</button>
+              </div>
+            </div>
+
             <div className="nd-medal" onClick={() => onNavigate("passport")} style={{ cursor: "pointer" }}>
               <div className="nd-disc"><div className="in"><div className="n">{stampsEarned}</div><div className="u">Stamps</div></div></div>
               <div className="cap">{firstName + "'s collection"}</div>
@@ -835,13 +857,62 @@ function ChildDashScreen({ onNavigate }) {
 
         </div>
       </div>
+      {avOpen && (
+        <ChildAvatarModal
+          child={child}
+          childId={CHILD_ID}
+          onClose={() => setAvOpen(false)}
+          onDone={() => setReadTick(t => t + 1)}
+        />
+      )}
     </main>
   );
 }
 
-/* ============================================================
-   LIBRARY
-   ============================================================ */
+/* ---- The child's own avatar builder -------------------------------------
+   Same builder the signup flow uses, opened from the child dashboard so a
+   reader can redo their own portrait. Writes only children.avatar. */
+function ChildAvatarModal({ child, childId, onClose, onDone }) {
+  const [cfg, setCfg] = useStateScreens(child.avatar || window.DEFAULT_AVATAR || {});
+  const [busy, setBusy] = useStateScreens(false);
+  const [msg, setMsg] = useStateScreens("");
+
+  const save = async () => {
+    if (!window.HaarayaEnrol || !window.HaarayaEnrol.updateChild) {
+      setMsg("Enrolment layer not loaded — check enrolment.js is on the page."); return;
+    }
+    setBusy(true); setMsg("");
+    const res = await window.HaarayaEnrol.updateChild(childId, { avatar: cfg });
+    setBusy(false);
+    if (!res || !res.ok) { setMsg((res && res.message) || "That did not save. Please try again."); return; }
+    onDone && onDone();
+    onClose && onClose();
+  };
+
+  return (
+    <div className="assign-ov" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose && onClose(); }}>
+      <div className="assign-modal addkid-modal editkid-modal avatar-modal" role="dialog" aria-modal="true" aria-label="Build my avatar">
+        <div className="assign-head">
+          <div>
+            <h4>My reader avatar</h4>
+            <div className="sub">Pick anything you like — it goes straight onto your passport.</div>
+          </div>
+          <button className="assign-x" onClick={onClose} aria-label="Close">&times;</button>
+        </div>
+        <div className="assign-body addkid-body">
+          {window.AvatarBuilder
+            ? <AvatarBuilder value={cfg} onChange={setCfg} name={child.shortName || child.firstName || ""} />
+            : <p>The avatar builder did not load.</p>}
+        </div>
+        {msg && <span className="addkid-err">{msg}</span>}
+        <div className="assign-foot">
+          <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+          <button className="btn btn-gold" onClick={save} disabled={busy}>{busy ? "Saving…" : "Save my avatar"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ------------------------------------------------------------------
    The Library and Reader screens now live in tafiya-reader.jsx, which

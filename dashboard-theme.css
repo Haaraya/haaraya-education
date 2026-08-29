@@ -145,6 +145,19 @@ main:has(> .wrap > .dash.role-adult) {
 .nd-word { font-family:var(--nd-serif); font-weight:600; font-size:24px; color:var(--d-olive-ink); display:flex; align-items:center; gap:12px; white-space:nowrap; }
 .nd-word img { width:42px; height:42px; border-radius:50%; display:block; }
 .nd-word .nd-logo { width:auto; height:26px; border-radius:0; }
+/* Avatar button in the top chip + the child's own avatar panel */
+.nd-chip-av { position:relative; border:0; padding:0; background:none; cursor:pointer; line-height:0; border-radius:50%; flex:none; }
+.nd-chip-av:hover { box-shadow:0 0 0 3px rgba(34,139,34,.22); }
+.nd-chip-av .pp-avatar { display:block; border-radius:50%; }
+.nd-chip-av-pen { position:absolute; right:-2px; bottom:-2px; width:16px; height:16px; border-radius:50%; background:var(--d-olive-deep,#1d5a2c); color:#fff; display:grid; place-items:center; }
+.nd-avpanel { display:flex; align-items:center; gap:16px; }
+.nd-avpanel-portrait { flex:none; line-height:0; filter:drop-shadow(0 8px 16px rgba(20,42,20,.18)); }
+.nd-avpanel-portrait .pp-avatar { display:block; }
+.nd-avpanel-empty { width:110px; height:132px; border-radius:14px; display:grid; place-items:center; font-size:34px; font-weight:900; color:var(--d-ink-soft); background:var(--d-sage-soft); }
+.nd-avpanel-body { min-width:0; }
+.nd-avpanel-body .lbl { font-size:11px; font-weight:900; letter-spacing:.12em; text-transform:uppercase; color:var(--d-olive); }
+.nd-avpanel-body h4 { font-family:var(--nd-serif); font-weight:600; font-size:17px; margin:6px 0 12px; color:var(--d-ink); line-height:1.25; }
+.nd-btn-sm { padding:9px 16px; font-size:13.5px; }
 .nd-nav { display:flex; gap:6px; margin-left:6px; flex-wrap:wrap; }
 .nd-nav a { padding:10px 18px; border-radius:999px; font-weight:800; font-size:14.5px; color:var(--d-ink-mid); cursor:pointer; white-space:nowrap; }
 .nd-nav a:hover { background:rgba(20,82,20,.12); color:var(--d-olive-deep); }

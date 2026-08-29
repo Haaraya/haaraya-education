@@ -3224,3 +3224,9 @@ body[data-hero-variant="journey"] .hero-subject .passport-card { display: none; 
    authored for — narrowing that column forces every swatch/chip row to wrap and
    makes the panel TALLER, not shorter. Height comes from the modal instead. */
 .editkid-modal{max-height:92vh}
+/* Child's own avatar builder: gets more room than the parent's edit modal. */
+.avatar-modal{max-width:920px;display:flex;flex-direction:column}
+.avatar-modal .assign-body{overflow:auto}
+.avatar-modal .av-builder{grid-template-columns:250px 1fr;gap:22px}
+.avatar-modal .av-stage-frame{max-width:220px}
+@media (max-width:680px){.avatar-modal .av-builder{grid-template-columns:1fr}}
