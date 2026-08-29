@@ -1412,3 +1412,27 @@ button.pplv-levelstamp.is-link:hover { transform: translateY(-2px) scale(1.03); 
   .pcover-img { height: auto; max-height: 68vh; }
   .ppbonus-row { grid-template-columns: repeat(4, 1fr); }
 }
+
+/* ============================================================
+   Passport editing — added with parent-editable passport details
+   ============================================================ */
+
+/* Real content in the photo frame replaces the drawn silhouette. */
+.ppid2-photo.has-avatar::before,.ppid2-photo.has-avatar::after,.ppid2-photo.has-initial::before,.ppid2-photo.has-initial::after{display:none}
+.ppid2-photo.has-avatar{display:grid;place-items:center;background:#efe9df}
+.ppid2-photo.has-avatar svg{width:100%;height:100%}
+.ppid2-photo.has-initial{display:grid;place-items:center;background:linear-gradient(180deg,#e2dbd0,#d3cabd)}
+.ppid2-photo-initial{font-family:var(--font-serif,Georgia,serif);font-size:44px;font-weight:600;color:#8b7f70;line-height:1}
+
+/* Pencil affordance on the ID page, mirroring the serial badge. */
+.ppid2-edit{position:absolute;top:16px;right:22px;z-index:5;display:flex;align-items:center;gap:6px;font-family:var(--font-body);font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--gold-dk,#8a6a1f);background:rgba(255,255,255,.82);border:1px solid rgba(138,106,31,.34);border-radius:999px;padding:6px 12px 6px 10px;cursor:pointer;transition:background .15s,border-color .15s}
+.ppid2-edit:hover{background:#fff;border-color:rgba(138,106,31,.6)}
+.ppid2-edit:focus-visible{outline:2px solid var(--gold-dk,#8a6a1f);outline-offset:2px}
+
+/* Whose-passport switcher (only rendered with 2+ children). */
+.ppx-who{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;margin-bottom:10px}
+.ppx-who-btn{font-family:var(--font-body);font-size:13px;font-weight:800;padding:6px 14px;border-radius:999px;border:1px solid var(--sand-dk,#d8cfbe);background:transparent;color:var(--ink-soft,#5c6157);cursor:pointer}
+.ppx-who-btn.on{background:var(--forest,#20402a);border-color:var(--forest,#20402a);color:#fff}
+.ppx-who-btn:focus-visible{outline:2px solid var(--forest,#20402a);outline-offset:2px}
+
+@media (max-width:760px){.ppid2-edit{top:12px;right:14px;padding:5px 10px}.ppx-who{justify-content:flex-start}}

@@ -48,14 +48,19 @@ function StampBonus() {
 }
 
 function PassportScreen({ onNavigate, gotoLevel, highlightBookId }) {
-  // Single live path: the passport belongs to the signed-in parent's first child
-  // (children have no separate login).
+  // The passport belongs to one of the signed-in parent's children. With more
+  // than one, a switcher picks whose passport is open (children have no login).
   const { data: kids } = useApi(() => HaarayaPlatformDB.getChildrenForParent(), []);
-  const CHILD_ID = (kids && kids[0] && kids[0].id) || null;
-  const ME = (kids && kids[0] && kids[0].shortName) || "Reader";
+  const [whoIdx, setWhoIdx] = useStateScreens(0);
+  const [editOpen, setEditOpen] = useStateScreens(false);
+  const [childTick, setChildTick] = useStateScreens(0);
+  const roster = kids || [];
+  const active = roster[Math.min(whoIdx, Math.max(0, roster.length - 1))] || null;
+  const CHILD_ID = (active && active.id) || null;
+  const ME = (active && active.shortName) || "Reader";
   const { data: summary } = useApi(
     () => CHILD_ID ? HaarayaPlatformDB.getChildSummary(CHILD_ID) : Promise.resolve(null),
-    [CHILD_ID]
+    [CHILD_ID, childTick]
   );
   const { data: levelCounts } = useApi(() => TafiyaBooks.levelCounts(), []);
   const [readTick, setReadTick] = useStateScreens(0);
@@ -169,8 +174,22 @@ function PassportScreen({ onNavigate, gotoLevel, highlightBookId }) {
             <p className="ppx-tagline">Every book earns a stamp. Every stamp marks the journey.</p>
           </div>
           <div className="ppx-header-right">
+            {roster.length > 1 && (
+              <div className="ppx-who" role="tablist" aria-label="Whose passport">
+                {roster.map((k, i) => (
+                  <button
+                    key={k.id}
+                    role="tab"
+                    aria-selected={i === whoIdx}
+                    className={"ppx-who-btn" + (i === whoIdx ? " on" : "")}
+                    onClick={() => { setWhoIdx(i); setIdx(0); }}
+                  >{k.shortName}</button>
+                ))}
+              </div>
+            )}
             <div className="ppx-actions">
               <button className="ppx-btn ppx-btn-ghost" onClick={() => onNavigate("child")}>&larr; Dashboard</button>
+              <button className="ppx-btn ppx-btn-ghost" onClick={() => setEditOpen(true)}>Edit details</button>
               <button className="ppx-btn ppx-btn-solid" onClick={sharePassport}>{shareMsg || "Share passport"}</button>
             </div>
             <div className="ppx-progress-summary">
@@ -201,7 +220,7 @@ function PassportScreen({ onNavigate, gotoLevel, highlightBookId }) {
             aria-label="Next page"
           ></button>
           <div className={"pbook-spread dir-" + (dir > 0 ? "next" : "prev")} key={idx}>
-            <PassportSpread idx={idx} child={child} name={ME} summary={summary} cur={cur} levelCounts={levelCounts} started={started} onNavigate={onNavigate} childId={CHILD_ID} highlightBookId={highlightBookId} completedSet={completedSet} />
+            <PassportSpread idx={idx} child={child} name={ME} summary={summary} cur={cur} levelCounts={levelCounts} started={started} onNavigate={onNavigate} childId={CHILD_ID} highlightBookId={highlightBookId} completedSet={completedSet} onEdit={() => setEditOpen(true)} />
           </div>
           {idx > 0 && <span className="pbook-curl curl-prev" aria-hidden="true"></span>}
           {idx > 0 && idx < TOTAL - 1 && <span className="pbook-curl curl-next" aria-hidden="true"></span>}
@@ -230,6 +249,14 @@ function PassportScreen({ onNavigate, gotoLevel, highlightBookId }) {
           })}
         </div>
       </div>
+
+      {editOpen && (
+        <EditChildModal
+          child={child}
+          onClose={() => setEditOpen(false)}
+          onDone={() => setChildTick(t => t + 1)}
+        />
+      )}
     </main>
   );
 }
@@ -336,7 +363,7 @@ function JourneyPage({ cur, onNavigate }) {
   );
 }
 
-function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, onNavigate, childId, highlightBookId, completedSet }) {
+function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, onNavigate, childId, highlightBookId, completedSet, onEdit }) {
   const curName = (PASSPORT_LEVELS.find(l => l.n === cur) || {}).name || "";
 
   if (idx === 0) {
@@ -348,24 +375,29 @@ function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, 
   }
 
   if (idx === 1) {
-    // ----- Derive holder details from real website data -----
+    // ----- Holder details, read from the child's real record -----
     const nameParts = (child.displayName || "").trim().split(/\s+/);
-    const surname   = (nameParts.length > 1 ? nameParts[nameParts.length - 1] : (nameParts[0] || "")).toUpperCase();
-    const given     = (nameParts.length > 1 ? nameParts.slice(0, -1).join(" ") : "").toUpperCase();
+    const surname   = (child.lastName || (nameParts.length > 1 ? nameParts[nameParts.length - 1] : "") || "").toUpperCase();
+    const given     = (child.firstName || (nameParts.length > 1 ? nameParts.slice(0, -1).join(" ") : nameParts[0]) || "").toUpperCase();
     const readerNm  = (child.shortName || given.split(" ")[0] || "").toUpperCase();
-    const homeBase  = ((child.city || "Lagos") + ", Haaraya").toUpperCase();
+    const homeBase  = (child.city ? child.city + ", Haaraya" : "Haaraya").toUpperCase();
     const lvlName   = curName.toUpperCase();
-    const serial    = String(72467 + child.id).padStart(8, "0");
-    const issuedDate = child.startedAt ? new Date(child.startedAt) : new Date("2024-06-01");
+    // Sequential serial owned by the database. Older rows without one show a
+    // dash rather than the NaN the previous arithmetic produced on a uuid.
+    const serial    = child.passportSerial != null
+      ? String(child.passportSerial).padStart(8, "0") : null;
+    const issuedDate = child.startedAt ? new Date(child.startedAt) : null;
     const fmtDate = (d) => d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase();
-    const validDate = new Date(issuedDate); validDate.setFullYear(validDate.getFullYear() + 3);
-    const issuedYr  = issuedDate.getFullYear();
-    const readerId  = "HLR-" + issuedYr + "-" + serial;
+    const validDate = issuedDate ? new Date(issuedDate) : null;
+    if (validDate) validDate.setFullYear(validDate.getFullYear() + 3);
+    const issuedYr  = issuedDate ? issuedDate.getFullYear() : new Date().getFullYear();
+    const readerId  = serial ? "HLR-" + issuedYr + "-" + serial : "—";
+    const dob       = child.birthYear ? String(child.birthYear) : "—";
     // Machine-readable zone
     const mrz1 = ("P<HAARAYA<READING<PASSPORT" + "<".repeat(20)).slice(0, 44);
     const mrzName = readerNm + "<<" + surname + "<" + given.replace(/\s+/g, "<");
     const mrzTail = "READ<GROW<THRIVE<<" + String(cur).padStart(2, "0");
-    const mrzMid  = serial + "<" + mrzName;
+    const mrzMid  = (serial || "00000000") + "<" + mrzName;
     const mrz2 = mrzMid + "<".repeat(Math.max(2, 44 - mrzTail.length - mrzMid.length)) + mrzTail;
 
     const Field = ({ label, value, glyph }) => (
@@ -378,9 +410,18 @@ function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, 
     return (
       <div className="ppage ppid2">
         <div className="ppid2-serial">
-          <span className="ppid2-serial-num">HL{serial}</span>
+          <span className="ppid2-serial-num">{serial ? "HL" + serial : "HL\u2014"}</span>
           <span className="ppid2-flag" aria-hidden="true" />
         </div>
+
+        {onEdit && (
+          <button type="button" className="ppid2-edit" onClick={onEdit} aria-label="Edit passport details" title="Edit passport details">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            </svg>
+            <span>Edit</span>
+          </button>
+        )}
 
         {/* Left page — crest & dedication */}
         <div className="ppid2-left">
@@ -406,7 +447,11 @@ function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, 
           <div className="ppid2-rihead"><span>Reader Information</span></div>
 
           <div className="ppid2-body">
-            <div className="ppid2-photo" aria-label="Reader photo" />
+            <div className={"ppid2-photo" + (child.avatar && window.PassportAvatar ? " has-avatar" : " has-initial")} aria-label="Reader photo">
+              {child.avatar && window.PassportAvatar
+                ? <PassportAvatar config={child.avatar} size={96} shape="passport" />
+                : <span className="ppid2-photo-initial">{(child.shortName || "?").slice(0, 1).toUpperCase()}</span>}
+            </div>
             <div className="ppid2-info">
               <div className="ppid2-row3">
                 <Field label="Passport Type" value="Reading Passport" />
@@ -421,13 +466,13 @@ function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, 
           </div>
 
           <div className="ppid2-row3 ppid2-undercard">
-            <Field label="Date of Birth" value="12 MAY 2015" />
+            <Field label="Year of Birth" value={dob} />
             <Field label="Sex" value="—" />
             <Field label="Home Base" value={homeBase} />
           </div>
           <div className="ppid2-row2">
-            <Field label="Issued" value={fmtDate(issuedDate)} />
-            <Field label="Valid Through" value={fmtDate(validDate)} />
+            <Field label="Issued" value={issuedDate ? fmtDate(issuedDate) : "—"} />
+            <Field label="Valid Through" value={validDate ? fmtDate(validDate) : "—"} />
           </div>
           <Field label="Level" value={lvlName + " (Level " + cur + ")"} glyph />
           <Field label="Reader ID" value={readerId} />
@@ -447,12 +492,13 @@ function PassportSpread({ idx, child, name, summary, cur, levelCounts, started, 
   }
 
   const lv = PASSPORT_LEVELS[idx - 3];
-  return <LevelSpread level={lv} cur={cur} total={lv.total} completedThisLevel={summary.currentLevelCompleted} onNavigate={onNavigate} childId={childId} highlightBookId={highlightBookId} completedSet={completedSet} />;
+  return <LevelSpread level={lv} cur={cur} total={lv.total} completedThisLevel={summary.currentLevelCompleted} onNavigate={onNavigate} childId={childId} serial={child.passportSerial} highlightBookId={highlightBookId} completedSet={completedSet} />;
 }
 
-function LevelSpread({ level, cur, completedThisLevel, onNavigate, childId, highlightBookId, completedSet }) {
+function LevelSpread({ level, cur, completedThisLevel, onNavigate, childId, serial: passportSerial, highlightBookId, completedSet }) {
   const n = level.n;
-  const serial = "HL" + String(72467 + (childId || 1)).padStart(8, "0"); // passport serial, shown top-left
+  // Passport serial, shown top-left. Owned by the DB; blank rather than wrong.
+  const serial = passportSerial != null ? "HL" + String(passportSerial).padStart(8, "0") : "HL\u2014";
 
   // Real Tafiya books at this level + earned stamps from the reading-progress store.
   const TD = window.TafiyaData;
@@ -811,6 +857,157 @@ function friendlyChildError(res) {
   return detail || "Could not add this child. Please try again.";
 }
 
+/* ---- Edit a child's passport details -------------------------------------
+   Opens from the passport ID page and from the parent dashboard child row.
+   Writes through HaarayaEnrol.updateChild; only touches parent-owned fields.
+   The reading level is here too because a starting level chosen at signup
+   could previously fail to save, and a parent needs to be able to correct it. */
+function EditChildModal({ child, onClose, onDone }) {
+  const [first, setFirst]   = useStateScreens(child.firstName || child.shortName || "");
+  const [last, setLast]     = useStateScreens(child.lastName || "");
+  const [passport, setPass] = useStateScreens(child.displayName || "");
+  const [year, setYear]     = useStateScreens(child.birthYear ? String(child.birthYear) : "");
+  const [city, setCity]     = useStateScreens(child.city || "");
+  const [color, setColor]   = useStateScreens(child.passportColor || "green");
+  const [avatar, setAvatar] = useStateScreens(child.avatar || null);
+  const [level, setLevel]   = useStateScreens(child.currentLevelId || 1);
+  const [tab, setTab]       = useStateScreens("details");
+  const [busy, setBusy]     = useStateScreens(false);
+  const [msg, setMsg]       = useStateScreens("");
+
+  const levels = (window.HaarayaSeed && HaarayaSeed.levels) || [];
+  const thisYear = new Date().getFullYear();
+  const covers = window.PASSPORT_COVER_ORDER || ["green", "blue", "red", "beige"];
+  const coverMap = window.PASSPORT_COVERS || {};
+
+  const save = async () => {
+    if (!first.trim()) { setMsg("A first name is needed."); return; }
+    if (year && !/^\d{4}$/.test(year.trim())) { setMsg("Year of birth should be four digits, like 2018."); return; }
+    if (!window.HaarayaEnrol || !window.HaarayaEnrol.updateChild) {
+      setMsg("Enrolment layer not loaded — check enrolment.js is on the page."); return;
+    }
+    setBusy(true); setMsg("");
+    const res = await window.HaarayaEnrol.updateChild(child.id, {
+      firstName: first, lastName: last, passportName: passport,
+      year: year, city: city, passportColor: color, avatar: avatar,
+      currentLevelId: Number(level) || 1,
+    });
+    setBusy(false);
+    if (res && res.ok) {
+      const warn = (res.warnings || []).map(w => w && w.detail).filter(Boolean).join(" ");
+      if (warn) { setMsg(warn); return; }
+      onDone && onDone();
+      onClose && onClose();
+      return;
+    }
+    setMsg(friendlyChildError(res));
+  };
+
+  return (
+    <div className="assign-ov" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose && onClose(); }}>
+      <div className="assign-modal addkid-modal editkid-modal" role="dialog" aria-modal="true" aria-label="Edit passport details">
+        <div className="assign-head">
+          <div>
+            <h4>Passport details</h4>
+            <div className="sub">Changes appear on {first || "your reader"}'s passport straight away.</div>
+          </div>
+          <button className="assign-x" onClick={onClose} aria-label="Close">&times;</button>
+        </div>
+
+        <div className="editkid-tabs" role="tablist">
+          <button role="tab" aria-selected={tab === "details"} className={"editkid-tab" + (tab === "details" ? " on" : "")} onClick={() => setTab("details")}>Details</button>
+          <button role="tab" aria-selected={tab === "cover"} className={"editkid-tab" + (tab === "cover" ? " on" : "")} onClick={() => setTab("cover")}>Cover</button>
+          <button role="tab" aria-selected={tab === "picture"} className={"editkid-tab" + (tab === "picture" ? " on" : "")} onClick={() => setTab("picture")}>Picture</button>
+        </div>
+
+        <div className="assign-body addkid-body">
+          {tab === "details" && (
+            <React.Fragment>
+              <div className="addkid-row">
+                <div className="assign-col">
+                  <div className="assign-lbl">First name</div>
+                  <input className="assign-search" value={first} onChange={(e) => setFirst(e.target.value)} autoFocus />
+                </div>
+                <div className="assign-col">
+                  <div className="assign-lbl">Last name <span className="opt">optional</span></div>
+                  <input className="assign-search" value={last} onChange={(e) => setLast(e.target.value)} />
+                </div>
+              </div>
+              <div className="addkid-row">
+                <div className="assign-col">
+                  <div className="assign-lbl">Passport name</div>
+                  <input className="assign-search" value={passport} onChange={(e) => setPass(e.target.value)} placeholder="What the passport should say" />
+                </div>
+                <div className="assign-col">
+                  <div className="assign-lbl">Year of birth <span className="opt">optional</span></div>
+                  <input className="assign-search" value={year} onChange={(e) => setYear(e.target.value)} placeholder={String(thisYear - 8)} inputMode="numeric" maxLength={4} />
+                </div>
+              </div>
+              <div className="addkid-row">
+                <div className="assign-col">
+                  <div className="assign-lbl">Home base <span className="opt">optional</span></div>
+                  <input className="assign-search" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Lagos" />
+                </div>
+                <div className="assign-col">
+                  <div className="assign-lbl">Reading level</div>
+                  <select className="assign-search" value={level} onChange={(e) => setLevel(e.target.value)}>
+                    {(levels.length ? levels : [{ number: 1, name: "Level 1" }]).map(l => (
+                      <option key={l.number} value={l.number}>L{l.number} &middot; {l.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </React.Fragment>
+          )}
+
+          {tab === "cover" && (
+            <div className="editkid-cover">
+              <div className="pcolor-pick" role="radiogroup" aria-label="Passport colour">
+                {covers.map(k => {
+                  const c = coverMap[k] || { label: k, swatch: "#2C5A32" };
+                  const on = color === k;
+                  return (
+                    <button
+                      key={k}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      className={"pcolor-swatch" + (on ? " on" : "")}
+                      style={{ "--sw": c.swatch }}
+                      onClick={() => setColor(k)}
+                      title={c.label}
+                    >
+                      <span className="dot" />
+                      <span className="lbl">{c.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {window.PassportCover && (
+                <PassportCover className="pcolor-preview" color={color} name={passport || first} />
+              )}
+            </div>
+          )}
+
+          {tab === "picture" && (
+            window.AvatarBuilder
+              ? <AvatarBuilder value={avatar || (window.randomAvatar ? window.randomAvatar() : null)} onChange={setAvatar} name={passport || first} />
+              : <div className="assign-lbl">The picture builder is not loaded on this page.</div>
+          )}
+        </div>
+
+        <div className="assign-foot">
+          <div className="assign-count">{msg && <span className="addkid-err">{msg}</span>}</div>
+          <div className="assign-foot-btns">
+            <button className="btn btn-ghost-dark" onClick={onClose} disabled={busy}>Cancel</button>
+            <button className="btn btn-primary" onClick={save} disabled={busy}>{busy ? "Saving…" : "Save changes"}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AddChildModal({ onClose, onDone }) {
   const [first, setFirst]     = useStateScreens("");
   const [last, setLast]       = useStateScreens("");
@@ -836,6 +1033,8 @@ function AddChildModal({ onClose, onDone }) {
     });
     setBusy(false);
     if (res && res.ok) {
+      const warn = (res.warnings || []).map(w => w && w.detail).filter(Boolean).join(" ");
+      if (warn) { setMsg(warn); setTimeout(() => { onDone && onDone(); onClose && onClose(); }, 2600); return; }
       onDone && onDone();
       onClose && onClose();
       return;
@@ -907,6 +1106,7 @@ function ParentDashScreen({ onNavigate }) {
   const Api = HaarayaPlatformDB;
   const [kidTick, setKidTick] = useStateScreens(0);
   const [addOpen, setAddOpen] = useStateScreens(false);
+  const [editKid, setEditKid] = useStateScreens(null);
   const { data: parent }   = useApi(() => Api.getCurrentParent(), []);
   const { data: children } = useApi(() => Api.getChildrenForParent(), [kidTick]);
   const { data: sub }      = useApi(() => Api.getSubscriptionForParent(), [kidTick]);
@@ -1043,6 +1243,10 @@ function ParentDashScreen({ onNavigate }) {
                       <div className="lbl">Level progress</div>
                       <div className="bar"><span style={{ width: `${f.pct}%` }} /></div>
                     </div>
+                    <button
+                      className="child-row-edit"
+                      onClick={(e) => { e.stopPropagation(); setEditKid(c); }}
+                    >Edit details</button>
                     <div className="lvl-pill">Level {f.level}</div>
                   </div>
                 );
@@ -1096,10 +1300,17 @@ function ParentDashScreen({ onNavigate }) {
           onDone={() => setKidTick(t => t + 1)}
         />
       )}
+      {editKid && (
+        <EditChildModal
+          child={editKid}
+          onClose={() => setEditKid(null)}
+          onDone={() => setKidTick(t => t + 1)}
+        />
+      )}
     </main>
   );
 }
 
 Object.assign(window, {
-  PassportScreen, ChildDashScreen, ParentDashScreen, AddChildModal,
+  PassportScreen, ChildDashScreen, ParentDashScreen, AddChildModal, EditChildModal,
 });

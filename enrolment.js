@@ -64,14 +64,44 @@
   }
 
   // The flows carry a level NUMBER (1-12); the DB wants the levels.id uuid.
+  //  Returns null only when the level genuinely cannot be resolved — callers
+  //  must treat that as an error, not quietly fall back to level 1.
+  var levelMapP = null;
+  async function levelMap() {
+    if (levelMapP) return levelMapP;
+    levelMapP = (async function () {
+      var client = sb();
+      var byNumber = Object.create(null);
+      if (!client) return byNumber;
+      try {
+        var res = await client.from("levels").select("id, level_number");
+        (res.data || []).forEach(function (r) {
+          var n = Number(r.level_number);
+          if (n) byNumber[n] = r.id;
+        });
+      } catch (e) { /* leave empty; caller reports */ }
+      return byNumber;
+    })();
+    return levelMapP;
+  }
+
   async function levelIdFor(levelNumber) {
+    var n = Number(levelNumber) || 1;
+    var map = await levelMap();
+    if (map[n]) return map[n];
+
+    // Map came back empty (levels unreadable, or fetched before sign-in).
+    // Ask directly once more before giving up.
     var client = sb();
     if (!client) return null;
-    var n = Number(levelNumber) || 1;
     try {
-      var res = await client.from("levels").select("id").eq("level_number", n).maybeSingle();
-      return res.data ? res.data.id : null;
-    } catch (e) { return null; }
+      var res = await client.from("levels").select("id").eq("level_number", n).limit(1);
+      if (res.data && res.data[0]) {
+        levelMapP = null; // force a rebuild next time
+        return res.data[0].id;
+      }
+    } catch (e) { /* fall through */ }
+    return null;
   }
 
   /* ---------- shared: create the auth user (+ profile when we can) ----------
@@ -349,7 +379,12 @@
       enrolled_by_user_id: owner.enrolledBy || null,
     };
 
-    var lvl = await levelIdFor(kid.currentLevelId || 1);
+    if (kid.passportColor) row.passport_color = clean(kid.passportColor);
+    if (kid.avatar) row.avatar = kid.avatar;
+    if (kid.city) row.city = clean(kid.city);
+
+    var wantedLevel = Number(kid.currentLevelId) || 1;
+    var lvl = await levelIdFor(wantedLevel);
     if (lvl) row.current_level_id = lvl;
 
     if (kid.year) {
@@ -361,8 +396,66 @@
     try {
       var res = await client.from("children").insert(row).select("id, display_name").maybeSingle();
       if (res.error) return fail("child-failed", res.error.message);
-      return { ok: true, child: res.data };
+      var out = { ok: true, child: res.data };
+      // A dropped level is not worth losing the child over, but the caller
+      // must be able to tell the parent their choice did not stick.
+      if (!lvl) {
+        out.warnings = [fail("level-unresolved",
+          "Starting level " + wantedLevel + " could not be matched to the levels table; the reader starts at Level 1.")];
+      }
+      return out;
     } catch (e) { return fail("child-threw", String(e)); }
+  }
+
+  /* ---------- edit an existing child ----------
+     Parents correcting passport details. Only ever touches columns the parent
+     owns; level/progress stay system-controlled apart from an explicit
+     currentLevelId (used to fix a starting level that did not stick).
+  */
+  async function updateChild(childId, patch) {
+    var client = sb();
+    if (!client) return fail("no-client");
+    if (!childId) return fail("no-child");
+
+    var who = await resolveProfile();
+    if (!who.ok) return who;
+
+    var row = {};
+    if (patch.firstName != null) row.first_name = clean(patch.firstName);
+    if (patch.lastName != null) row.last_name = clean(patch.lastName) || clean(patch.firstName) || null;
+    if (patch.passportName != null || patch.displayName != null) {
+      row.display_name = clean(patch.passportName || patch.displayName);
+    }
+    if (patch.readingMode != null) {
+      row.reading_mode = patch.readingMode === "choose" ? "choose" : "automatic";
+    }
+    if (patch.dateOfBirth != null) row.date_of_birth = patch.dateOfBirth || null;
+    else if (patch.year != null && patch.year !== "") {
+      var y = Number(patch.year);
+      if (y > 1900 && y < 2100) row.date_of_birth = y + "-01-01";
+    }
+    if (patch.city != null) row.city = clean(patch.city) || null;
+    if (patch.passportColor != null) row.passport_color = clean(patch.passportColor) || "green";
+    if (patch.avatar !== undefined) row.avatar = patch.avatar || null;
+
+    var levelMissed = false;
+    if (patch.currentLevelId != null) {
+      var lvl = await levelIdFor(patch.currentLevelId);
+      if (lvl) row.current_level_id = lvl; else levelMissed = true;
+    }
+
+    if (!Object.keys(row).length) return { ok: true, child: null, unchanged: true };
+
+    try {
+      var res = await client.from("children").update(row).eq("id", childId)
+        .select("id, display_name, passport_color, city, date_of_birth, avatar").maybeSingle();
+      if (res.error) return fail("update-failed", res.error.message);
+      if (!res.data) return fail("update-blocked",
+        "The change was not saved. This child may not belong to your account.");
+      var out = { ok: true, child: res.data };
+      if (levelMissed) out.warnings = [fail("level-unresolved", "The reading level could not be changed.")];
+      return out;
+    } catch (e) { return fail("update-threw", String(e)); }
   }
 
   /* ---------- subscription ---------- */
@@ -602,6 +695,7 @@
 
     return {
       ok: true, child: res.child,
+      warnings: res.warnings || null,
       promptUpgrade: used + 1 > allowance,
       allowance: allowance, childCount: used + 1,
     };
@@ -675,6 +769,7 @@
     registerSponsored: registerSponsored,
     ensureProfile: ensureProfile,
     addChild: addChild,
+    updateChild: updateChild,
     resolveProfile: resolveProfile,
     createClassroom: createClassroom,
     enrolPupil: enrolPupil,

@@ -97,11 +97,19 @@
       if (!client) return out;
       try {
         var lv = await client.from("levels").select("id,level_number,level_name");
+        if (lv.error) throw lv.error;
         (lv.data || []).forEach(function (r) {
           out.levelById[r.id] = num(r.level_number);
           out.levelName[num(r.level_number)] = clean(r.level_name);
         });
-      } catch (e) { /* ignore */ }
+        // An empty map is not a harmless miss: every child then falls back to
+        // Level 1 and a correctly-stored level looks like a lost one.
+        if (!Object.keys(out.levelById).length && window.console) {
+          console.warn("[Platform] levels table returned no rows — every reader will display as Level 1. Check the SELECT grant/policy on public.levels.");
+        }
+      } catch (e) {
+        if (window.console) console.warn("[Platform] levels unreadable:", e.message || e, "— readers will display as Level 1.");
+      }
       try {
         // Count catalogue books per numeric level (books.level is text).
         var bk = await client.from("books").select("level");
@@ -150,10 +158,21 @@
     var short = clean(r.first_name) || firstName(dn) || dn;
     return {
       id: r.id,
+      firstName: clean(r.first_name),
+      lastName: clean(r.last_name),
       shortName: short,
       displayName: dn || short,
       avatarColor: avatarColor(dn || short),
       avatarUrl: clean(r.avatar_url) || null,
+      // The illustrated passport avatar (same config the signup builder makes).
+      // Null means never chosen — the UI falls back to an initial.
+      avatar: r.avatar || null,
+      passportColor: clean(r.passport_color) || "green",
+      passportSerial: r.passport_serial != null ? Number(r.passport_serial) : null,
+      dateOfBirth: r.date_of_birth || null,
+      birthYear: r.date_of_birth ? Number(String(r.date_of_birth).slice(0, 4)) : null,
+      city: clean(r.city) || "",
+      startedAt: r.created_at || null,
       currentLevelId: (lm && lm.levelById[r.current_level_id]) || 1,
       readingMode: clean(r.reading_mode) || "automatic",
       schoolId: r.school_id || null,
