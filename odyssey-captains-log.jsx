@@ -105,7 +105,11 @@ function OdysseyCaptainsLog({ onNavigate, initialBook }) {
 
   return (
     <main className="odx ody-log-page">
-      <button className="btn btn-ghost-dark btn-sm odl-back" onClick={() => onNavigate("odyssey")}>← The Odyssey</button>
+      <nav className="odl-nav">
+        <button className="btn btn-ghost-dark btn-sm odl-back" onClick={() => onNavigate("odyssey")}>← Odyssey dashboard</button>
+        <button className="btn btn-ghost-dark btn-sm" onClick={() => onNavigate("odyssey-library")}>Odyssey library</button>
+        <button className="btn btn-ghost-dark btn-sm" onClick={() => onNavigate("odyssey-medals")}>Medal case</button>
+      </nav>
 
       <section className="odl-hero">
         <img className="odl-hero-img" src="assets/captains-log-page-clean.png" alt="" />
@@ -136,7 +140,7 @@ function OdysseyCaptainsLog({ onNavigate, initialBook }) {
             </div>
 
             <div className="odl-ov odl-ov-yarn">
-              <p>{yarnText || "This entry has notes but no finished log yet."}</p>
+              {String(yarnText || "This entry has notes but no finished log yet.").split(/\n\s*\n|\n/).filter(Boolean).map((p, i) => <p key={i}>{p}</p>)}
             </div>
 
             {log.shipmate_note ? <span className="odl-ov odl-ov-note">{log.shipmate_note}</span> : null}

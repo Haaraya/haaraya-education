@@ -3,10 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Haaraya — A Literacy Journey</title>
-<link rel="icon" type="image/png" href="assets/favicon.png" />
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
-<meta name="theme-color" content="#1f7a34" />
+<title>Haaraya — A Nigerian Reading Journey</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Nunito:wght@400;600;700;800;900&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Caveat:wght@500;700&family=Boldonse&family=Lilita+One&family=Fredoka:wght@400;500;600;700&family=Bagel+Fat+One&family=DM+Serif+Display&family=Permanent+Marker&family=Caveat+Brush&family=Rubik+Beastly&display=swap" rel="stylesheet" />
@@ -16,46 +13,30 @@
 <link rel="stylesheet" href="skill-check.css" />
 <link rel="stylesheet" href="tafiya-reader.css" />
 <link rel="stylesheet" href="odyssey.css" />
-<link rel="stylesheet" href="odyssey-library.css" />
 <link rel="stylesheet" href="odyssey-screens.css" />
-<link rel="stylesheet" href="odyssey-captains-log.css" />
 <link rel="stylesheet" href="shipmate-scribe.css" />
-<link rel="stylesheet" href="dashboard-theme.css" />
-<link rel="stylesheet" href="onboarding.css" />
-<link rel="stylesheet" href="faq.css" />
-<link rel="stylesheet" href="avatar.css" />
 
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 <script src="image-slot.js"></script>
 
-<!-- Supabase auth stack (real reviewer sign-in for the page-review panel) -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="supabase-client.js"></script>
-<script src="auth.js"></script>
+<!-- Standalone Odyssey build: boot straight to the Odyssey page -->
+<script>try { sessionStorage.setItem("haaraya:landing", "odyssey"); } catch (e) {}</script>
 
 <!-- Data layer: load before any React component -->
 <script src="session.js"></script>
-<script src="countries.js"></script>
 <script src="data/seed.js"></script>
 <script src="data/api.js"></script>
-<script src="progression-v4_2.js"></script>
 <script src="tafiya-data.js"></script>
 <script src="tafiya-bridge.js"></script>
-<script src="page-review.js"></script>
 <script src="scribe-writer.js"></script>
 <script src="scribe-data.js"></script>
-<script src="odyssey-books.js"></script>
-<script src="odyssey-data.js"></script>
-<script src="odyssey-titles.js"></script>
+<!-- Reading checks served live from Supabase (pure DB, no baked fallback) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase-client.js"></script>
 <script src="odyssey-quiz-supabase.js"></script>
-<script src="odyssey-captains-log-prompts.js"></script>
 <script src="about-supabase.js"></script>
-<script src="admin-supabase.js"></script>
-<script src="platform-supabase.js"></script>
-<script src="enrolment.js"></script>
-<script src="progress-sync.js"></script>
 </head>
 <body>
 <template id="__bundler_thumbnail">
@@ -68,22 +49,13 @@
 
 <script type="text/babel" src="tweaks-panel.jsx"></script>
 <script type="text/babel" src="shared.jsx"></script>
-<!-- Illustrated passport avatars: shared with the registration flow so a parent
-     editing a passport gets the same builder the child used at signup. -->
-<script type="text/babel" src="reg-avatar.jsx"></script>
-<script type="text/babel" src="reg-avatar-builder.jsx"></script>
 <script type="text/babel" src="skill-check.jsx"></script>
 <script type="text/babel" src="home.jsx"></script>
 <script type="text/babel" src="screens.jsx"></script>
 <script type="text/babel" src="tafiya-reader.jsx"></script>
 <script type="text/babel" src="shipmate-scribe.jsx"></script>
 <script type="text/babel" src="odyssey.jsx"></script>
-<script type="text/babel" src="odyssey-captains-log.jsx"></script>
-<script type="text/babel" src="odyssey-library.jsx"></script>
-<script type="text/babel" src="school-enrol.jsx"></script>
 <script type="text/babel" src="admin-screens.jsx"></script>
-<script type="text/babel" src="onboarding.jsx"></script>
-<script type="text/babel" src="faq.jsx"></script>
 <script type="text/babel" src="app.jsx"></script>
 </body>
 </html>

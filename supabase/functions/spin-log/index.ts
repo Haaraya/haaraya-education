@@ -33,18 +33,26 @@ Your job is to turn the child's Captain's Notes into a short, magical Odyssey Lo
 
 Rules:
 - Do not invent major plot events, characters, settings, or lessons.
-- Use only the facts provided in the Captain's Notes.
-- You may make the language more vivid, adventurous, and polished.
+- Every fact must come from the Captain's Notes — but do NOT simply restate them.
+  Reorder, connect and dramatise them: open on the moment, carry it through, close
+  on what it left the Captain thinking. A log the Captain could have written from
+  their own notes, not a list of those notes back to them.
+- Never reuse the Captain's phrasing verbatim beyond a name or a title.
+- Write it as a voyage: sea, chart, course, harbour, weather — the Odyssey framing
+  is yours to use, sparingly and never twice the same way.
 - Keep the entry age-appropriate.
-- Keep it short: 80-130 words.
+- Length: THREE short paragraphs, 110-170 words in total. Blank line between them.
 - Make the child feel like the Captain of a reading adventure.
 - Do not sound like a quiz, school report, or worksheet.
 - Do not correct the child harshly.
 - If the notes are too thin, ask for one more clue instead of writing the log.
 
-Output EXACTLY in this shape, each label on its own line:
-Title: <a short title>
-Odyssey Log Entry: <the log entry, or empty if you need more>
+FORMAT — obey exactly:
+- Plain text only. NO markdown, NO asterisks (*), NO bold, NO headings (#), NO quotation marks around the whole entry.
+- Paragraph breaks inside the Log Entry are blank lines. Keep all three lines labelled.
+- Output EXACTLY these three lines, each starting with the label and a colon, nothing before the label:
+Title: <a short title, max 6 words>
+Odyssey Log Entry: <the log entry, three short paragraphs separated by blank lines, 110-170 words; or empty if you need more>
 Shipmate Note: <one warm sentence to the Captain; if the notes are too thin, put your single request for one more clue here and leave the Log Entry empty>`;
 
 function buildUserPrompt(body: any): string {
@@ -95,14 +103,37 @@ function buildUserPrompt(body: any): string {
 }
 
 function parseOutput(raw: string) {
-  const grab = (label: string) => {
-    const re = new RegExp(label + "\\s*:\\s*([\\s\\S]*?)(?=\\n(?:Title|Odyssey Log Entry|Shipmate Note)\\s*:|$)", "i");
-    const m = raw.match(re);
+  // Strip any markdown the model added despite instructions (**bold**, *em*,
+  // `code`, # headings) so labels like "**Odyssey Log Entry:**" parse cleanly.
+  const clean = String(raw || "")
+    .replace(/\*\*/g, "")
+    .replace(/`+/g, "")
+    .replace(/^\s*#{1,6}\s*/gm, "")
+    .replace(/\*/g, "")
+    .trim();
+
+  const grab = (labels: string) => {
+    const re = new RegExp(
+      "(?:" + labels + ")\\s*:\\s*([\\s\\S]*?)(?=\\n?\\s*(?:Title|Odyssey Log Entry|Log Entry|Shipmate Note)\\s*:|$)",
+      "i",
+    );
+    const m = clean.match(re);
     return m ? m[1].trim() : "";
   };
-  const title = grab("Title");
-  const text = grab("Odyssey Log Entry");
+
+  let title = grab("Title");
+  let text = grab("Odyssey Log Entry|Log Entry");
   const shipmate_note = grab("Shipmate Note");
+
+  // No "Title:" label but a short bare first line before the body → treat it
+  // as the title (models sometimes emit the title as a heading).
+  if (!title) {
+    const first = clean.split(/\n/)[0].trim();
+    if (first && !/:/.test(first) && first.length <= 80 && first !== text.split(/\n/)[0].trim()) title = first;
+  }
+  // Nothing parsed at all → the whole reply is the log body.
+  if (!text && !title && !shipmate_note) text = clean;
+
   const need_more_clue = text.length < 15; // Scribe withheld the log and asked for a clue
   return { title, text, shipmate_note, need_more_clue };
 }

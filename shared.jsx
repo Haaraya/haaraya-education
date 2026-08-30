@@ -255,21 +255,36 @@ Object.assign(window, { StrandPill });
 
 /* ------------ Stamp ------------ */
 
+/* Book titles are set in Title Case — children are never taught in caps. */
+function titleCase(s) {
+  const small = { a:1, an:1, and:1, as:1, at:1, but:1, by:1, for:1, from:1, in:1, into:1, nor:1, of:1, on:1, onto:1, or:1, the:1, to:1, up:1, with:1 };
+  const words = String(s || "").trim().split(/\s+/);
+  return words.map((w, i) => {
+    const bare = w.toLowerCase();
+    const keep = i !== 0 && i !== words.length - 1 && small[bare.replace(/[^a-z']/g, "")];
+    return keep ? bare : bare.charAt(0).toUpperCase() + bare.slice(1);
+  }).join(" ");
+}
+
 /* A stamp is the printed level plate (level number top, level name foot) with
    the book's own title set in the clear centre. Falls back to the old
    typographic stamp when no plate exists for the level. */
 function Stamp({ strand, title, sub, locked, rotate = -3, size, level }) {
   const lv = Number(level) || 0;
-  const plate = (lv >= 1 && lv <= 12) ? ("assets/stamp-plate-l" + lv + ".png") : "";
+  const plate = (lv >= 1 && lv <= 12) ? ("assets/plate-l" + lv + ".png") : "";
   if (plate && !locked) {
+    const label = titleCase(title);
+    // Long titles step down a size so they always sit inside the clear centre.
+    const fit = label.length > 26 ? " is-long" : (label.length > 15 ? " is-med" : "");
     return (
       <div
         className="stamp stamp--plate"
         style={{ "--r": `${rotate}deg`, ...(size ? { width: size, height: size } : {}) }}
+        title={label}
       >
         <img className="stamp-plate-img" src={plate} alt="" onError={(e) => { const p = e.currentTarget.closest(".stamp"); if (p) p.classList.add("stamp--noplate"); e.currentTarget.remove(); }} />
-        <div className="stamp-plate-text">
-          <span className="stamp-plate-title">{title}</span>
+        <div className={"stamp-plate-text" + fit}>
+          <span className="stamp-plate-title">{label}</span>
           {sub && <span className="stamp-plate-sub">{sub}</span>}
         </div>
       </div>
@@ -339,7 +354,8 @@ function Book({ book, onClick, size = "md", locked = false, past = false }) {
           <StrandLogo strand={book.strand} height={12} dark />
         </div>
         <div className="bc-art">
-          <img className="book-cover-img" src={thumb} alt="" onError={(e) => { const p = e.currentTarget.closest(".book--cover"); if (p) p.classList.add("book--nocover"); e.currentTarget.remove(); }} />
+          <img className="book-cover-img" src={thumb} alt="" onError={(e) => { const p = e.currentTarget.closest(".book--cover"); if (p) p.classList.add("book--cover-missing"); }} />
+          <span className="bc-art-missing" aria-hidden="true">Cover not uploaded</span>
         </div>
         {locked && (
           <div className="book-locktag" aria-label="Subscriber only">

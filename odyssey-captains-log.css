@@ -12,7 +12,14 @@
   padding-bottom: 60px;
 }
 
-.odl-back { display: block; width: max-content; margin: 24px auto 0; }
+.odl-nav {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  flex-wrap: wrap; padding: 12px 16px;
+  background: rgba(250,248,242,.93); backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(120,90,40,.18);
+}
+.odl-back { display: inline-block; width: max-content; margin: 0; }
 
 .odl-hero {
   position: relative;
@@ -61,20 +68,25 @@
 }
 
 .odl-ov-notes {
-  left: 20.6%; top: 53.5%; width: 19.5%; height: 17%;
-  overflow: hidden; text-align: left;
+  left: 20.6%; top: 53.5%; width: 20.5%; height: 24%;
+  overflow-y: auto; text-align: left;
   font-family: var(--font-display, Georgia, serif); font-style: italic;
   color: #3a2f1f; font-size: clamp(8px, 1.05vw, 14.5px); line-height: 1.7;
 }
 .odl-ov-notes p { margin: 0 0 .5em; }
 
+/* Width stops short of the engraved pocket-watch in the frame's lower right. */
 .odl-ov-yarn {
-  left: 46.5%; top: 53.5%; width: 32.5%; height: 19%;
-  overflow: hidden; text-align: left;
+  left: 46.5%; top: 53.5%; width: 31.5%; height: 26%;
+  overflow-y: auto; text-align: left;
   font-family: var(--font-display, Georgia, serif);
   color: #3a2f1f; font-size: clamp(8px, 1.05vw, 14.5px); line-height: 1.65;
 }
-.odl-ov-yarn p { margin: 0; }
+.odl-ov-yarn p { margin: 0 0 .6em; }
+.odl-ov-yarn p:last-child { margin-bottom: 0; }
+/* Slim scrollbars so a long entry never looks broken on the page. */
+.odl-ov-notes::-webkit-scrollbar, .odl-ov-yarn::-webkit-scrollbar { width: 5px; }
+.odl-ov-notes::-webkit-scrollbar-thumb, .odl-ov-yarn::-webkit-scrollbar-thumb { background: rgba(120,90,40,.3); border-radius: 3px; }
 
 .odl-ov-note {
   left: 40%; top: 81.8%; width: 23%; height: 3.6%;
@@ -100,8 +112,11 @@
 }
 
 .odl-pager {
+  position: sticky; bottom: 0; z-index: 20;
   display: flex; align-items: center; justify-content: center; gap: 18px;
-  margin-top: 22px; font-family: var(--font-body);
+  margin-top: 22px; padding: 12px 16px; font-family: var(--font-body);
+  background: rgba(250,248,242,.93); backdrop-filter: blur(6px);
+  border-top: 1px solid rgba(120,90,40,.18);
 }
 .odl-pager button {
   background: none; border: none; cursor: pointer;

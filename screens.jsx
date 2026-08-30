@@ -694,8 +694,8 @@ function ChildDashScreen({ onNavigate }) {
   const LEVEL_ID = (summary && summary.child && summary.child.currentLevelId) || null;
   const { data: continueReading } = useApi(() => CHILD_ID ? TafiyaBooks.getContinueReading(CHILD_ID, 4, LEVEL_ID) : Promise.resolve([]), [CHILD_ID, readTick, LEVEL_ID]);
   const { data: readingPath }     = useApi(() => CHILD_ID ? TafiyaBooks.getReadingPath(CHILD_ID, 4, LEVEL_ID)     : Promise.resolve([]), [CHILD_ID, readTick, LEVEL_ID]);
-  const { data: storyPractice }   = useApi(() => CHILD_ID ? TafiyaBooks.getStoryPractice(CHILD_ID, 4)   : Promise.resolve([]), [CHILD_ID]);
-  const { data: exploreBooks }    = useApi(() => CHILD_ID ? TafiyaBooks.getExploreLibrary(CHILD_ID, 4)  : Promise.resolve([]), [CHILD_ID, readTick]);
+  const { data: storyPractice }   = useApi(() => CHILD_ID ? TafiyaBooks.getStoryPractice(CHILD_ID, 4, LEVEL_ID)   : Promise.resolve([]), [CHILD_ID, LEVEL_ID]);
+  const { data: exploreBooks }    = useApi(() => CHILD_ID ? TafiyaBooks.getExploreLibrary(CHILD_ID, 4, LEVEL_ID)  : Promise.resolve([]), [CHILD_ID, readTick, LEVEL_ID]);
   const { data: pathProgress }    = useApi(
     () => CHILD_ID ? HaarayaPlatformDB.getReadingPathProgress(CHILD_ID) : Promise.resolve(null),
     [CHILD_ID]

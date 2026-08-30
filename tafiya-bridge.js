@@ -117,11 +117,16 @@
     return past.concat(ahead.slice(0, 2));
   }
 
-  async function getExploreLibrary(childId, n) {
+  async function getExploreLibrary(childId, n, levelId) {
     const list = await all();
     const done = new Set(T ? T.completedCodes() : []);
-    const fresh = (T ? T.sortedCatalog(list) : list).filter(b => !done.has(b.code));
-    return (fresh.length ? fresh : list).slice(0, n || 4);
+    let seq = (T ? T.sortedCatalog(list) : list);
+    if (levelId != null) {
+      const inLevel = seq.filter(b => b.levelId === Number(levelId));
+      if (inLevel.length) seq = inLevel;
+    }
+    const fresh = seq.filter(b => !done.has(b.code));
+    return (fresh.length ? fresh : seq).slice(0, n || 4);
   }
 
   /* My reading path — the books of the level the parent placed the child on,
@@ -133,10 +138,18 @@
     return (inLevel.length ? inLevel : list).slice(0, n || 4);
   }
 
-  async function getStoryPractice(childId, n) {
+  async function getStoryPractice(childId, n, levelId) {
     const list = await all();
-    const f = list.filter(b => b.strandUi === "folktale" || /poet|practice/i.test(b.bookType || ""));
-    return (f.length ? f : list).slice(0, n || 4);
+    let seq = (T ? T.sortedCatalog(list) : list);
+    if (levelId != null) {
+      const inLevel = seq.filter(b => b.levelId === Number(levelId));
+      if (inLevel.length) seq = inLevel;
+    }
+    const f = seq.filter(b => b.strandUi === "folktale" || /poet|practice/i.test(b.bookType || ""));
+    // Folktale/poetry titles are thin at any single level, so top the rail up
+    // with the rest of the level's books rather than showing a short rail.
+    const codes = new Set(f.map(b => b.code));
+    return f.concat(seq.filter(b => !codes.has(b.code))).slice(0, n || 4);
   }
 
   // How many books exist / are completed at each level — for passport figures.

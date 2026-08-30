@@ -131,44 +131,20 @@
   // ---- the spin ------------------------------------------------
   function tidy(s) { return String(s || "").trim(); }
 
-  // Deterministic, no-AI fallback: assemble the child's OWN words into
-  // a warm log. Never invents facts — it only reorders what they wrote.
+  // The local writer (scribe-writer.js) does the real work: no AI, no network,
+  // free to run. It never invents facts — it frames the child's own words.
   function templateSpin(input) {
-    // Book-question path: assemble the child's OWN answers to whatever
-    // questions they were asked. Never invents facts.
+    if (window.ScribeWriter && window.ScribeWriter.write) return window.ScribeWriter.write(input);
+    // Bare-bones safety net if the writer script failed to load.
     var qa = (input.qa || []).filter(function (p) { return tidy(p.answer); });
-    if (qa.length) {
-      var first2 = (input.person || "first") !== "third";
-      var Cap = first2 ? "I" : "The Captain";
-      var parts2 = [Cap + " charted a course through \u201C" + (input.book_title || "this book") + ".\u201D"];
-      qa.forEach(function (p) { parts2.push(cap(tidy(p.answer))); });
-      var text2 = parts2.join(" ");
-      return {
-        title: (input.book_title ? tidy(input.book_title) : "The Voyage") + " \u2014 Log",
-        text: text2,
-        shipmate_note: "Another page of your Odyssey, Captain \u2014 written in your own hand.",
-        need_more_clue: false,
-        source: "template",
-      };
-    }
-    var n = input.notes || {};
-    var first = (input.person || "first") !== "third";
-    var I = first ? "I" : "The Captain";
-    var my = first ? "my" : "their";
-    var me = first ? "me" : "the Captain";
-    var parts = [];
-    if (tidy(n.what_happened)) parts.push(I + " sailed into \u201C" + (input.book_title || "this book") + "\u201D, where " + lower(n.what_happened));
-    if (tidy(n.who_mattered_most)) parts.push("The one who mattered most? " + tidy(n.who_mattered_most));
-    if (tidy(n.big_idea)) parts.push("The heart of it: " + lower(n.big_idea));
-    if (tidy(n.what_i_noticed)) parts.push(cap(I + " noticed " + lower(n.what_i_noticed)));
-    if (tidy(n.new_word)) parts.push("A word " + (first ? "I" : "the Captain") + " pulled from the deep: \u201C" + tidy(n.new_word) + "\u201D.");
-    if (tidy(n.feeling)) parts.push("By the last page the voyage left " + me + " feeling " + lower(n.feeling) + ".");
-    var text = parts.join(" ");
-    var title = (input.book_title ? tidy(input.book_title) : "The Voyage") + " \u2014 Log";
+    var bits = qa.length
+      ? qa.map(function (p) { return tidy(p.answer); })
+      : Object.keys(input.notes || {}).map(function (k) { return tidy((input.notes || {})[k]); });
+    var text = bits.filter(Boolean).map(cap).join(" ");
     return {
-      title: title,
-      text: text || "The Captain's notes are still short \u2014 add one more clue and the Scribe will write the tale.",
-      shipmate_note: text ? "Another page of your Odyssey, written in your own hand, Captain." : "Give me one more clue, Captain, and I'll spin the yarn.",
+      title: (tidy(input.book_title) || "The Voyage") + " \u2014 Log",
+      text: text,
+      shipmate_note: text ? "Another page of your Odyssey, Captain." : "Give me one more clue, Captain.",
       need_more_clue: !text,
       source: "template",
     };
@@ -201,7 +177,7 @@
     var n = input.notes || {};
     var voice = input.voice_level === "older_reader" ? "Older reader: richer vocabulary is fine." : "Younger reader: simple, warm, short sentences.";
     var person = input.person === "third" ? "Third person, call the child 'the Captain'." : "First person, as the Captain ('I ...').";
-    var system = "You are Shipmate Scribe, the loyal log-writer for a child reading the 100 Book Odyssey. Turn the child's Captain's Notes into a short, magical Odyssey Log Entry. Rules: Do not invent major plot events, characters, settings, or lessons. Use only the facts provided. You may make the language more vivid and polished. Age-appropriate. Keep it SHORT: 45-70 words, one paragraph, never longer. Make the child feel like the Captain of a reading adventure. Do not sound like a quiz or worksheet. Do not correct harshly. Plain text only — no markdown, asterisks, or headings. If the notes are too thin, ask for one more clue instead of writing the log. Output exactly: 'Title:' line, 'Odyssey Log Entry:' line, 'Shipmate Note:' line.";
+    var system = "You are Shipmate Scribe, the loyal log-writer for a child reading the 100 Book Odyssey. Turn the child's Captain's Notes into a magical Odyssey Log Entry. Rules: Do not invent major plot events, characters, settings, or lessons. Every fact must come from the notes, but never simply restate them — reorder, connect and dramatise: open on the moment, carry it through, close on what it left the Captain thinking. Never reuse the Captain's phrasing verbatim beyond a name or title. Write it as a voyage (sea, chart, course, harbour, weather), sparingly and never twice the same way. Age-appropriate. Length: three short paragraphs, 110-170 words total, blank line between them. Make the child feel like the Captain of a reading adventure. Do not sound like a quiz or worksheet. Do not correct harshly. Plain text only — no markdown, asterisks, or headings. If the notes are too thin, ask for one more clue instead of writing the log. Output exactly: 'Title:' line, 'Odyssey Log Entry:' line, 'Shipmate Note:' line.";
     var qa = (input.qa || []).filter(function (p) { return tidy(p.question); });
     var user;
     if (qa.length) {
@@ -232,13 +208,15 @@
     return { title: grab("Title"), text: text, shipmate_note: grab("Shipmate Note"), need_more_clue: text.length < 15, source: "claude" };
   }
 
+  // The Odyssey is free, so the default writer is local: no API, no key, no
+  // per-entry cost, works offline. Set window.HAARAYA_SCRIBE_AI = true to route
+  // through the Edge Function instead (a paid-tier perk).
   async function spin(input) {
     input = input || {};
-    // 1) real edge function (live site)
-    try { return await viaEdge(input); } catch (e) { /* try next */ }
-    // 2) in-preview Claude helper (design environment)
-    try { return await viaClaudeHelper(input); } catch (e) { /* try next */ }
-    // 3) deterministic template (always works)
+    if (window.HAARAYA_SCRIBE_AI) {
+      try { return await viaEdge(input); } catch (e) { /* fall back to local */ }
+      try { return await viaClaudeHelper(input); } catch (e) { /* fall back to local */ }
+    }
     return templateSpin(input);
   }
 
