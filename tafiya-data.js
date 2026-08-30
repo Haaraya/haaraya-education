@@ -159,7 +159,14 @@
   function isFree(code, list) { return freeCodes(list).indexOf(code) >= 0; }
 
   // ---- Reading progress (per child, localStorage) ----
-  function childId() { return (window.HaarayaSession && HaarayaSession.childId && HaarayaSession.childId()) || 1; }
+  function childId() {
+    var s = window.HaarayaSession;
+    if (s && s.activeChildId) { var a = s.activeChildId(); if (a) return a; }
+    return (s && s.childId && s.childId()) || 1;
+  }
+  // Mirror a local reading event up to the live DB (real users only; no-op
+  // for demo). Guarded so a sync hiccup never breaks the reader.
+  function syncPush(evt) { try { if (window.HaarayaProgressSync) window.HaarayaProgressSync.push(evt); } catch (e) { /* ignore */ } }
   function progKey(cid) { return "haaraya:reading:" + (cid || childId()); }
   function readProgress(cid) { try { return JSON.parse(localStorage.getItem(progKey(cid)) || "{}") || {}; } catch (e) { return {}; } }
   function writeProgress(cid, obj) { try { localStorage.setItem(progKey(cid), JSON.stringify(obj)); } catch (e) {} }
@@ -168,16 +175,19 @@
     if (!code) return; var cid = childId(); var p = readProgress(cid); var e = p[code] || {};
     e.opened = true; e.startedAt = e.startedAt || Date.now(); e.lastAt = Date.now(); if (total) e.total = total;
     p[code] = e; writeProgress(cid, p); emit();
+    syncPush({ type: "progress", code: code, status: "in_progress", currentPage: 0, total: total });
   }
   function recordProgress(code, screen, total) {
     if (!code) return; var cid = childId(); var p = readProgress(cid); var e = p[code] || {};
     e.opened = true; e.lastScreen = screen; e.total = total || e.total; e.lastAt = Date.now();
     p[code] = e; writeProgress(cid, p);
+    syncPush({ type: "progress", code: code, status: "in_progress", currentPage: screen, total: total || e.total });
   }
   function recordComplete(code) {
     if (!code) return; var cid = childId(); var p = readProgress(cid); var e = p[code] || {};
     e.opened = true; e.completed = true; e.completedAt = e.completedAt || Date.now(); e.lastAt = Date.now();
     p[code] = e; writeProgress(cid, p); emit();
+    syncPush({ type: "complete", code: code });
   }
   function isCompleted(code, cid) { var e = readProgress(cid)[code]; return !!(e && e.completed); }
   function progressOf(code, cid) { return readProgress(cid)[code] || null; }
