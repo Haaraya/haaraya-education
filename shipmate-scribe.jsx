@@ -6,7 +6,7 @@
                    onClose={fn} embedded />
 
    Flow:  Captain's Notes  →  Spin My Log Yarn  →  The Odyssey Log
-   Data:  window.ShipmateScribe (scribe-data.js)
+   Data:  window.ShipmateScribe (scribe-data.js) · local Yarn engine
    ============================================================ */
 const { useState: useStateSc, useEffect: useEffectSc, useRef: useRefSc } = React;
 
@@ -142,7 +142,7 @@ function ScribeTeacherPanel({ notes, signal, status, fields }) {
         <span className={"sc-teacher-sig sig-" + signal}>{sigLabel}</span>
       </summary>
       <div className="sc-teacher-body">
-        <p className="sc-teacher-lede">The Captain’s own words — the evidence behind the log. The Scribe only polishes; it never invents facts.</p>
+        <p className="sc-teacher-lede">The Captain’s own words are the evidence. The Scribe keeps them intact and writes only the thread between them.</p>
         <dl className="sc-teacher-notes">
           {fields.map(f => (
             <div key={f.key} className="sc-teacher-row">
@@ -245,11 +245,25 @@ function ShipmateScribePanel({ book, onClose, onSaved, embedded }) {
     if (!S) return;
     setSpinning(true);
     try {
-      // Send question→answer pairs so the log reflects the exact questions
-      // asked (book-specific or generic), plus the book's creative brief.
-      const qa = fields.map(f => ({ question: f.label, answer: notes[f.key] || "" }));
-      const raw = await S.spin({ notes, qa, spin_prompt: spinPrompt, book_title: book.book_title || book.title, voice_level: voice, person: person });
-      const out = Object.assign({}, scCleanLog(raw), { _v: (log && log._v ? log._v + 1 : 1), need_more_clue: raw && raw.need_more_clue });
+      // The free Scribe never sends the child's notes to an AI service.
+      // It uses the authored questions + creative brief as structure, then
+      // keeps at most one short phrase from the Captain's own notes as an anchor.
+      const qa = fields.map(f => ({ key: f.key, question: f.label, answer: notes[f.key] || "" }));
+      const nextVersion = (log && log._v ? log._v + 1 : 1);
+      const raw = await S.spin({
+        notes,
+        qa,
+        spin_prompt: spinPrompt,
+        book_code: bookCode,
+        book_number: book.book_number || null,
+        book_title: book.book_title || book.title,
+        stream: book.stream || book.world || null,
+        voice_level: voice,
+        person: person,
+        reader_key: S.readerKey(),
+        spin_version: nextVersion,
+      });
+      const out = Object.assign({}, scCleanLog(raw), { _v: nextVersion, need_more_clue: raw && raw.need_more_clue });
       setLog(out);
       if (!out.need_more_clue) {
         const savedRow = await persist(out, isRespin);
@@ -287,7 +301,7 @@ function ShipmateScribePanel({ book, onClose, onSaved, embedded }) {
 
       {phase === "notes" && (
         <React.Fragment>
-          <p className="sc-lede">Captain, jot your notes from the voyage. A word or two each is plenty — your loyal Scribe will spin them into your Odyssey Log.</p>
+          <p className="sc-lede">Captain, jot your clues from the voyage. Your notes stay exactly yours; the Scribe will turn the trail between them into a short Yarn.</p>
           <ScribeVoice voice={voice} person={person} onVoice={setVoice} onPerson={setPerson} />
           <div className="sc-section-label">Captain’s Notes</div>
           <CaptainsNotes notes={notes} setNote={setNote} fields={fields} />
