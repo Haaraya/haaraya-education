@@ -480,7 +480,7 @@ function TfrQuizDone({ total, write, ant, onContinue }) {
           </div>
         )}
         <div className="quiz-actions" style={{ marginTop: "3.6cqh" }}>
-          <button className="quiz-btn" type="button" onClick={onContinue}>See what&rsquo;s next →</button>
+          <button className="quiz-btn" type="button" onClick={onContinue}>Click to collect your stamp →</button>
         </div>
       </div>
     </div>

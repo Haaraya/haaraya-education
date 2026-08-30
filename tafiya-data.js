@@ -115,8 +115,9 @@
   function codeOf(b) { return (b && (b.book_code || b.code)) || ""; }
   function getCatalogEntry(code) { return (_catalogCache || TAFIYA_CATALOG).find(function (b) { return codeOf(b) === code; }) || null; }
 
-  // ---- Free samples: first N books in catalogue order ----
-  var SAMPLE_LIMIT = 15;
+  // ---- Free samples: first N books of EACH level, in catalogue order ----
+  var SAMPLES_PER_LEVEL = 2;
+  var SAMPLE_LIMIT = SAMPLES_PER_LEVEL; // legacy alias: per-level count
   function levelNum(b) { var m = String(b.level || "").match(/\d+/); return m ? +m[0] : (typeof b.level === "number" ? b.level : 999); }
   // Strand taxonomy — resolve a book to its UI strand key, and rank strands in
   // pedagogical reading order so the catalogue sequences sensibly.
@@ -155,7 +156,15 @@
       return (levelNum(a) - levelNum(b)) || (seqNum(a) - seqNum(b)) || codeOf(a).localeCompare(codeOf(b), undefined, { numeric: true });
     });
   }
-  function freeCodes(list) { return sortedCatalog(list).slice(0, SAMPLE_LIMIT).map(codeOf); }
+  function freeCodes(list) {
+    var seen = {}, out = [];
+    sortedCatalog(list).forEach(function (b) {
+      var lv = levelNum(b);
+      seen[lv] = (seen[lv] || 0) + 1;
+      if (seen[lv] <= SAMPLES_PER_LEVEL) out.push(codeOf(b));
+    });
+    return out;
+  }
   function isFree(code, list) { return freeCodes(list).indexOf(code) >= 0; }
 
   // ---- Reading progress (per child, localStorage) ----
@@ -196,6 +205,7 @@
 
   window.TafiyaData = {
     SAMPLE_LIMIT: SAMPLE_LIMIT,
+    SAMPLES_PER_LEVEL: SAMPLES_PER_LEVEL,
     loadCatalog: loadCatalog,
     getCatalog: getCatalog,
     getCatalogEntry: getCatalogEntry,
