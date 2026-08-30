@@ -255,7 +255,26 @@ Object.assign(window, { StrandPill });
 
 /* ------------ Stamp ------------ */
 
-function Stamp({ strand, title, sub, locked, rotate = -3, size }) {
+/* A stamp is the printed level plate (level number top, level name foot) with
+   the book's own title set in the clear centre. Falls back to the old
+   typographic stamp when no plate exists for the level. */
+function Stamp({ strand, title, sub, locked, rotate = -3, size, level }) {
+  const lv = Number(level) || 0;
+  const plate = (lv >= 1 && lv <= 12) ? ("assets/stamp-plate-l" + lv + ".png") : "";
+  if (plate && !locked) {
+    return (
+      <div
+        className="stamp stamp--plate"
+        style={{ "--r": `${rotate}deg`, ...(size ? { width: size, height: size } : {}) }}
+      >
+        <img className="stamp-plate-img" src={plate} alt="" onError={(e) => { const p = e.currentTarget.closest(".stamp"); if (p) p.classList.add("stamp--noplate"); e.currentTarget.remove(); }} />
+        <div className="stamp-plate-text">
+          <span className="stamp-plate-title">{title}</span>
+          {sub && <span className="stamp-plate-sub">{sub}</span>}
+        </div>
+      </div>
+    );
+  }
   const cls = `stamp s-${strand} ${locked ? "s-locked" : ""}`;
   return (
     <div
@@ -275,7 +294,33 @@ function Stamp({ strand, title, sub, locked, rotate = -3, size }) {
 
 /* ------------ Book card ------------ */
 
-function Book({ book, onClick, size = "md", locked = false }) {
+/* Hover tooltip: the book's "About this book" text, so a parent can judge a
+   title without opening it. Fetched lazily from the live about_pages layer. */
+function BookAboutTip({ code, title }) {
+  const [text, setText] = React.useState(null);
+  React.useEffect(() => {
+    let live = true;
+    const db = window.HaarayaAboutDB;
+    if (!code || !db || !db.ready()) { setText(""); return; }
+    db.get(code).then(a => { if (live) setText((a && (a.about || a.read)) || ""); }).catch(() => { if (live) setText(""); });
+    return () => { live = false; };
+  }, [code]);
+  return (
+    <div className="book-tip" role="tooltip">
+      <b>{title}</b>
+      <p>{text === null ? "Loading\u2026" : (text || "No description yet for this book.")}</p>
+    </div>
+  );
+}
+
+function Book({ book, onClick, size = "md", locked = false, past = false }) {
+  const [tip, setTip] = React.useState(false);
+  const tipProps = {
+    onMouseEnter: () => setTip(true),
+    onMouseLeave: () => setTip(false),
+    onFocus: () => setTip(true),
+    onBlur: () => setTip(false),
+  };
   const s = STRANDS[book.strand];
   const thumb = book.thumb && window.TafiyaData ? window.TafiyaData.assetUrl(book.thumb) : book.thumb;
   if (thumb) {
@@ -284,9 +329,11 @@ function Book({ book, onClick, size = "md", locked = false }) {
     // typeset title + level below, on a clean card. Used by the dashboards.
     return (
       <div
-        className={"book book--cover" + (locked ? " book--locked" : "")}
+        className={"book book--cover" + (locked ? " book--locked" : "") + (past ? " book--past" : "")}
         onClick={onClick}
         role="button"
+        tabIndex={0}
+        {...tipProps}
       >
         <div className="bc-top">
           <StrandLogo strand={book.strand} height={12} dark />
@@ -302,18 +349,22 @@ function Book({ book, onClick, size = "md", locked = false }) {
         )}
         <div className="bc-meta">
           <h4 className="bc-title">{book.title}</h4>
-          <div className="bc-sub">Level {book.level}</div>
+          <div className="bc-sub">{past ? "Finished" : "Level " + book.level}</div>
         </div>
+        {tip && <BookAboutTip code={book.id} title={book.title} />}
       </div>
     );
   }
   return (
     <div
-      className={"book" + (locked ? " book--locked" : "")}
+      className={"book" + (locked ? " book--locked" : "") + (past ? " book--past" : "")}
       style={{ "--bg": book.bg, "--c": book.c }}
       onClick={onClick}
       role="button"
+      tabIndex={0}
+      {...tipProps}
     >
+      {tip && <BookAboutTip code={book.id} title={book.title} />}
       {locked && (
         <div className="book-locktag" aria-label="Subscriber only">
           <span className="book-lockicon" aria-hidden="true">🔒</span>

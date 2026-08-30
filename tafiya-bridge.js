@@ -27,6 +27,9 @@
 
   function toBook(b) {
     const code = b.book_code || b.code;
+    // The cover-PAGE thumbnail is the card image. The catalogue RPC doesn't
+    // always carry the path, so _COVERS (from the books table) fills the gap.
+    const cover = b.thumbnail_image_path || _COVERS[code] || b.cover_image_path || "";
     return {
       id: code, code: code,
       title: b.title,
@@ -34,12 +37,38 @@
       levelId: levelNum(b),
       bookType: b.book_type,
       audioUrl: null,
-      thumbnail_image_path: b.thumbnail_image_path || b.cover_image_path || "",
+      thumbnail_image_path: cover,
     };
   }
 
+  // Cover paths straight from the books table, keyed by book_code. One query,
+  // cached, so every dashboard card can show its real front cover.
+  let _COVERS = {};
+  let _coverPromise = null;
+  function loadCovers() {
+    if (_coverPromise) return _coverPromise;
+    const client = window.HaarayaSupabase;
+    if (!client) return (_coverPromise = Promise.resolve(_COVERS));
+    _coverPromise = client.from("books").select("book_code,cover_image_path")
+      .then(res => {
+        // PostgREST resolves on error, so check it explicitly — a schema change
+        // must surface here rather than silently emptying the fallback.
+        if (res.error) { console.warn("[tafiya-bridge] cover query failed:", res.error.message || res.error); return _COVERS; }
+        (res.data || []).forEach(r => {
+          const p = r.cover_image_path;
+          if (r.book_code && p) _COVERS[r.book_code] = p;
+        });
+        return _COVERS;
+      })
+      .catch(() => _COVERS);
+    return _coverPromise;
+  }
+
   async function all() {
-    const list = (T && T.loadCatalog) ? await T.loadCatalog() : (T ? T.getCatalog() : []);
+    const [list] = await Promise.all([
+      (T && T.loadCatalog) ? T.loadCatalog() : Promise.resolve(T ? T.getCatalog() : []),
+      loadCovers(),
+    ]);
     return list.filter(b => b && (b.book_code || b.code)).map(toBook);
   }
   function allSync() { return (T ? T.getCatalog() : []).map(toBook); }
@@ -69,13 +98,23 @@
     return out;
   }
 
-  async function getContinueReading(childId, n) {
+  /* Keep reading — a short window around where the child actually is:
+     the last two books they finished (marked past → shown in grey) and the
+     next two ahead of them in programme order (in full colour). */
+  async function getContinueReading(childId, n, levelId) {
     const list = await all();
+    let seq = T ? T.sortedCatalog(list) : list;
+    if (levelId != null) {
+      const inLevel = seq.filter(b => b.levelId === Number(levelId));
+      if (inLevel.length) seq = inLevel;
+    }
+    const done = new Set(T ? T.completedCodes() : []);
     const ip = new Set(T ? T.inProgressCodes() : []);
-    const inProg = list.filter(b => ip.has(b.code));
-    // Fall back to the first few books if nothing is in progress yet.
-    const result = inProg.length ? inProg : (T ? T.sortedCatalog(list).slice(0, n || 4) : list.slice(0, n || 4));
-    return result.slice(0, n || 4);
+    const past = seq.filter(b => done.has(b.code)).slice(-2).map(b => Object.assign({}, b, { past: true }));
+    const ahead = seq.filter(b => !done.has(b.code));
+    // Anything already open comes first among the books ahead.
+    ahead.sort((a, b) => (ip.has(b.code) ? 1 : 0) - (ip.has(a.code) ? 1 : 0));
+    return past.concat(ahead.slice(0, 2));
   }
 
   async function getExploreLibrary(childId, n) {
@@ -85,9 +124,13 @@
     return (fresh.length ? fresh : list).slice(0, n || 4);
   }
 
-  async function getReadingPath(childId, n) {
+  /* My reading path — the books of the level the parent placed the child on,
+     in programme order. Falls back to the whole catalogue if the level is
+     unknown or empty. */
+  async function getReadingPath(childId, n, levelId) {
     const list = T ? T.sortedCatalog(await all()) : await all();
-    return list.slice(0, n || 4);
+    const inLevel = (levelId != null) ? list.filter(b => b.levelId === Number(levelId)) : [];
+    return (inLevel.length ? inLevel : list).slice(0, n || 4);
   }
 
   async function getStoryPractice(childId, n) {

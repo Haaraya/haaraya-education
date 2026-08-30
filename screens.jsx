@@ -690,8 +690,10 @@ function ChildDashScreen({ onNavigate }) {
     return () => window.removeEventListener("haaraya:reading", on);
   }, []);
   const { data: levelCounts }     = useApi(() => TafiyaBooks.levelCounts(), []);
-  const { data: continueReading } = useApi(() => CHILD_ID ? TafiyaBooks.getContinueReading(CHILD_ID, 4) : Promise.resolve([]), [CHILD_ID, readTick]);
-  const { data: readingPath }     = useApi(() => CHILD_ID ? TafiyaBooks.getReadingPath(CHILD_ID, 4)     : Promise.resolve([]), [CHILD_ID, readTick]);
+  // The level the parent placed the child on drives both rails below.
+  const LEVEL_ID = (summary && summary.child && summary.child.currentLevelId) || null;
+  const { data: continueReading } = useApi(() => CHILD_ID ? TafiyaBooks.getContinueReading(CHILD_ID, 4, LEVEL_ID) : Promise.resolve([]), [CHILD_ID, readTick, LEVEL_ID]);
+  const { data: readingPath }     = useApi(() => CHILD_ID ? TafiyaBooks.getReadingPath(CHILD_ID, 4, LEVEL_ID)     : Promise.resolve([]), [CHILD_ID, readTick, LEVEL_ID]);
   const { data: storyPractice }   = useApi(() => CHILD_ID ? TafiyaBooks.getStoryPractice(CHILD_ID, 4)   : Promise.resolve([]), [CHILD_ID]);
   const { data: exploreBooks }    = useApi(() => CHILD_ID ? TafiyaBooks.getExploreLibrary(CHILD_ID, 4)  : Promise.resolve([]), [CHILD_ID, readTick]);
   const { data: pathProgress }    = useApi(
@@ -704,7 +706,7 @@ function ChildDashScreen({ onNavigate }) {
   if (!summary) return null;
 
   const child           = summary.child;
-  const continueBooks   = (continueReading || []).map(bookToCardProps);
+  const continueBooks   = (continueReading || []).map(b => Object.assign(bookToCardProps(b), { past: !!b.past }));
   const pathBooks       = (readingPath     || []).map(bookToCardProps);
   const practiceBooks   = (storyPractice   || []).map(bookToCardProps);
   const exploreList     = (exploreBooks    || []).map(bookToCardProps);
@@ -787,7 +789,7 @@ function ChildDashScreen({ onNavigate }) {
             <div className="nd-panel">
               <div className="nd-phead"><h4>Keep reading</h4><span className="side" onClick={() => onNavigate("library")}>See all</span></div>
               <div className="nd-rail">
-                {continueBooks.map(b => <Book key={b.id} book={b} onClick={() => onNavigate("reader", { bookCode: b.id })} />)}
+                {continueBooks.map(b => <Book key={b.id} book={b} past={b.past} onClick={() => onNavigate("reader", { bookCode: b.id })} />)}
               </div>
             </div>
 
@@ -848,7 +850,7 @@ function ChildDashScreen({ onNavigate }) {
               <div className="nd-stamps">
                 {recentStamps.map((st, i) => {
                   const uiKey = st.strandUi || "tafiya";
-                  return <Stamp key={st.code || st.bookId || i} strand={uiKey} title={st.title} rotate={(i % 7) - 3} />;
+                  return <Stamp key={st.code || st.bookId || i} strand={uiKey} level={st.levelId} title={st.title} rotate={(i % 7) - 3} />;
                 })}
                 {recentStamps.length === 0 && <Stamp strand="locked" title="?" rotate={2} locked />}
               </div>
@@ -1384,7 +1386,7 @@ function ParentDashScreen({ onNavigate }) {
                 <h5>Recently earned</h5>
                 <div className="dash-passport-mini" style={{ gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                   {recentStamps.map((st, i) => (
-                    <Stamp key={st.code || st.bookId || i} strand={st.strandUi || "tafiya"} title={st.title} rotate={(i % 7) - 3} />
+                    <Stamp key={st.code || st.bookId || i} strand={st.strandUi || "tafiya"} level={st.levelId} title={st.title} rotate={(i % 7) - 3} />
                   ))}
                   {recentStamps.length === 0 && <Stamp strand="locked" title="?" rotate={2} locked />}
                 </div>
