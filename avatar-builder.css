@@ -1,0 +1,37 @@
+/* ============================================================
+   Haaraya — Avatar builder styles (v1 artwork)
+   Adapted from the shipped package: the generic blue accent and
+   system greys are replaced with brand tokens so the builder looks
+   like the rest of the site, and the passport renderer's frame
+   styles live here too.
+   ============================================================ */
+.hab{--hab-border:var(--sand-dk,#DDD9D0);--hab-accent:var(--forest,#228B22);width:min(100%,880px);margin:0 auto;color:var(--ink,#1A2A1A);font-family:inherit}
+.hab-preview-card{display:grid;place-items:center;min-height:280px;padding:16px;border:1.5px solid var(--hab-border);border-radius:24px;background:linear-gradient(180deg,#fff,var(--cream,#FAFAF7));overflow:hidden}
+.hab-stage{position:relative;width:min(72vw,390px);aspect-ratio:1}
+.hab-layer,.hab-layer img,.hab-mini-layer,.hab-mini-layer img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none}
+.hab-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:14px}
+.hab-tab{min-height:44px;padding:8px 10px;border:1.5px solid var(--hab-border);border-radius:14px;background:#fff;color:var(--ink,#1A2A1A);font:inherit;font-weight:800;cursor:pointer;transition:background .12s ease,border-color .12s ease,color .12s ease}
+.hab-tab:hover{border-color:var(--hab-accent)}
+.hab-tab.is-active{background:var(--hab-accent);border-color:var(--hab-accent);color:#fff}
+.hab-panel{margin-top:10px;padding:12px;border:1.5px solid var(--hab-border);border-radius:18px;background:#fff}
+.hab-grid{display:grid;gap:10px}
+.hab-grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.hab-grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.hab-grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.hab-grid-5{grid-template-columns:repeat(5,minmax(0,1fr))}
+.hab-option{display:flex;min-width:0;min-height:112px;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:8px;border:2px solid transparent;border-radius:16px;background:var(--cream,#FAFAF7);color:var(--ink,#1A2A1A);font:inherit;cursor:pointer}
+.hab-option:hover{background:var(--sand,#EEEAE2)}
+.hab-option.is-selected{border-color:var(--hab-accent);background:color-mix(in oklab,var(--forest,#228B22) 9%,#fff);box-shadow:0 0 0 3px rgba(245,197,24,.35)}
+.hab-option-label{width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;font-size:.82rem;font-weight:800}
+.hab-mini-stage{position:relative;display:block;width:78px;aspect-ratio:1}
+.hab-swatch{display:block;width:54px;height:54px;border:5px solid #fff;border-radius:50%;box-shadow:0 0 0 1.5px var(--sand-dk,#DDD9D0)}
+@media(max-width:680px){.hab-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}.hab-grid-5{grid-template-columns:repeat(3,minmax(0,1fr))}.hab-grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}.hab-option{min-height:96px}.hab-mini-stage{width:64px}}
+
+/* ── Passport renderer ──────────────────────────────────────
+   The artwork is square but a passport frame is portrait, so the
+   stage is anchored top: a crop takes the feet, never the face. */
+.pp-avatar--v1{position:relative;display:inline-block;overflow:hidden;background:var(--cream,#FAFAF7);flex:none}
+.pp-avatar--v1.is-circle{border-radius:50%}
+.pp-avatar--v1.is-passport{border-radius:10px}
+.pp-avatar-stage{position:absolute;left:0;top:0;width:100%;aspect-ratio:1}
+.pp-avatar-layer,.pp-avatar-layer img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none}

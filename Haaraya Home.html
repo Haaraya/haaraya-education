@@ -24,6 +24,7 @@
 <link rel="stylesheet" href="onboarding.css" />
 <link rel="stylesheet" href="faq.css" />
 <link rel="stylesheet" href="avatar.css" />
+<link rel="stylesheet" href="avatar-builder.css" />
 
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -74,6 +75,10 @@
      editing a passport gets the same builder the child used at signup. -->
 <script type="text/babel" src="reg-avatar.jsx"></script>
 <script type="text/babel" src="reg-avatar-builder.jsx"></script>
+<!-- v1 layered artwork. Loads LAST so its AvatarBuilder + PassportAvatar
+     replace the SVG versions above at every existing call site. -->
+<script src="avatar-config.js"></script>
+<script type="text/babel" src="avatar-v1.jsx"></script>
 <script type="text/babel" src="skill-check.jsx"></script>
 <script type="text/babel" src="home.jsx"></script>
 <script type="text/babel" src="screens.jsx"></script>
