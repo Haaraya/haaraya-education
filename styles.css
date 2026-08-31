@@ -3309,3 +3309,11 @@ body[data-hero-variant="journey"] .hero-subject .passport-card { display: none; 
 .avatar-modal .av-builder{grid-template-columns:250px 1fr;gap:22px}
 .avatar-modal .av-stage-frame{max-width:220px}
 @media (max-width:680px){.avatar-modal .av-builder{grid-template-columns:1fr}}
+
+/* Reading Scholarship: earned state — gold, celebratory, same shape as the plan strip. */
+.plan-strip.earned{border-color:var(--yellow-dk);background:linear-gradient(90deg,rgba(245,197,24,.16),rgba(245,197,24,.05))}
+.plan-strip.earned .plan-strip-t{color:var(--deep-forest)}
+
+/* Scholarship counts: their own quiet line, not a run-on with the sentence. */
+.plan-strip-count{display:flex;align-items:center;gap:.5rem;margin-top:.2rem;font-size:.78rem;font-weight:700;letter-spacing:.02em;color:var(--ink-soft,#6b6357)}
+.plan-strip-dot{opacity:.5}

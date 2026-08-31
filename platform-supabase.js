@@ -324,6 +324,14 @@
         renewsOn: s.expires_at || null,
         trialEndsAt: s.trial_ends_at || null,
         billingCycle: clean(s.billing_cycle),
+        // Needed by the Reading Scholarship: who owns the plan, and when the
+        // window opened. Both are already in hand here — no extra query.
+        ownerUserId: p.id,
+        startedAt: s.created_at || null,
+        // Earned rate from the Reading Scholarship. Checkout must read these
+        // before any UI claims a discount is applied.
+        discountPct: num(s.discount_pct) || 0,
+        discountReason: clean(s.discount_reason),
       };
     } catch (e) { return null; }
   }

@@ -228,6 +228,15 @@
   async function finishPending(client, profile, pending, created) {
     var out = { ok: true, profile: profile, created: !!created, children: [], warnings: [] };
 
+    // Claim the trial now that there IS a session — the anon signup call could
+    // not do it. Idempotent, so running again on a repair pass is harmless.
+    var TG = window.HaarayaTrialGuard;
+    if (TG && pending && pending.kind === "parent" && (pending.plan || "") !== "sponsored") {
+      try {
+        await TG.recordTrial({ email: profile.email, children: pending.children || [] });
+      } catch (e) { /* non-fatal */ }
+    }
+
     try {
       if (pending.kind === "school" && pending.school) {
         var sres = await client.from("schools").insert({
@@ -267,7 +276,7 @@
           var plan = pending.plan || "individual";
           var sub = await insertSubscription({
             ownerUserId: profile.id, plan: plan, cycle: pending.cycle,
-            maxChildren: plan === "family" ? 4 : 1,
+            maxChildren: plan === "family" ? 4 : 1, noTrial: !!pending.noTrial,
           });
           if (sub.ok) out.subscription = sub.subscription;
           else out.warnings.push(sub);
@@ -468,8 +477,13 @@
       school_id: opts.schoolId || null,
       plan_type: planType(opts.plan),
       billing_cycle: opts.cycle === "yearly" ? "annual" : (opts.cycle === "monthly" ? "monthly" : "none"),
-      status: "trial",
-      trial_ends_at: trialEnd(),
+      // No second free trial: the account is created awaiting payment instead.
+      // 'expired' (not 'unpaid') because subscriptions.status is constrained to
+      // active/expired/cancelled/trial — see supabase-dashboard-tables.sql.
+      status: opts.noTrial ? "expired" : "trial",
+      trial_ends_at: opts.noTrial ? new Date().toISOString() : trialEnd(),
+      // The Reading Scholarship window opens here — don't rely on a DB default.
+      created_at: new Date().toISOString(),
     };
     if (opts.maxChildren) row.max_children = opts.maxChildren;
     try {
@@ -490,6 +504,25 @@
     var kids = Array.isArray(payload.children) ? payload.children : [];
     var plan = (payload.subscription && payload.subscription.plan) || "individual";
 
+    // Trial guard (see trial-guard.js). Two different outcomes on purpose:
+    //  * a throwaway inbox is REFUSED outright — the message tells them why;
+    //  * an email or child that already had a trial is still allowed to
+    //    register, but WITHOUT a second free trial. Blocking them would
+    //    dead-end the only route to paying us.
+    // Fails open: if the check itself errors, registration proceeds.
+    var G = window.HaarayaTrialGuard;
+    var noTrial = false, trialNote = "";
+    if (G && plan !== "sponsored") {
+      var verdict = await G.checkTrial({ email: acc.email, children: kids });
+      if (!verdict.ok) {
+        if (verdict.code === "disposable" || verdict.code === "malformed") {
+          return fail(verdict.code, verdict.reason);
+        }
+        noTrial = true;
+        trialNote = verdict.reason;
+      }
+    }
+
     var created = await createAccount({
       email: acc.email, password: acc.password, phone: acc.phone,
       fullName: acc.fullName || [acc.firstName, acc.lastName].filter(Boolean).join(" "),
@@ -499,13 +532,23 @@
       children: kids,
       plan: plan,
       cycle: payload.subscription && payload.subscription.cycle,
+      noTrial: noTrial,
     });
     if (!created.ok) return created;
 
     // Confirmation pending: nothing is written yet, and that is fine —
     // ensureProfile() builds it all on their first sign-in.
     if (created.deferred) {
-      return { ok: true, role: "parent", profile: null, children: [], needsConfirmation: true };
+      return {
+        ok: true, role: "parent", profile: null, children: [],
+        needsConfirmation: true, noTrial: noTrial, trialNote: trialNote,
+      };
+    }
+
+    // Session in hand — claim the trial now. (The deferred path above claims it
+    // in finishPending(), on the first successful sign-in.)
+    if (G && plan !== "sponsored") {
+      try { await G.recordTrial({ email: acc.email, children: kids }); } catch (e) { /* non-fatal */ }
     }
 
     var parentId = created.profile.id;
@@ -519,12 +562,13 @@
       ownerUserId: parentId, plan: plan,
       cycle: payload.subscription && payload.subscription.cycle,
       maxChildren: plan === "family" ? 4 : 1,
+      noTrial: noTrial,
     });
 
     return {
       ok: true, role: "parent", profile: created.profile,
       children: madeKids, subscription: sub.ok ? sub.subscription : null,
-      needsConfirmation: false,
+      needsConfirmation: false, noTrial: noTrial, trialNote: trialNote,
       warnings: kidErrors.concat(sub.ok ? [] : [sub]),
     };
   }

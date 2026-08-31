@@ -1235,6 +1235,29 @@ function ParentDashScreen({ onNavigate }) {
     [readerId, readTick]
   );
 
+  // Reading Scholarship: visible from day one, because a milestone nobody can
+  // see is no incentive. Verified server-side before anything is granted.
+  // Declared above the early return below — hooks must run on every render.
+  const [schol, setSchol] = useStateScreens(null);
+  const scholIds = (children || []).map(c => c.id).join(",");
+  useEffectScreens(() => {
+    const S = window.HaarayaScholarship;
+    const ids = (children || []).map(c => c.id).filter(Boolean);
+    if (!S || !ids.length) return;
+    let alive = true;
+    S.progressFor(ids, sub && sub.startedAt)
+      .then(p => {
+        if (!alive) return;
+        setSchol(p);
+        // The reward is a recurring 50% discount on every invoice, so it is
+        // worth something on ANY plan state — an active subscriber who reads
+        // earns it too. Granted on either bar; the server re-verifies both.
+        if (p && p.qualified && sub && sub.ownerUserId) S.award(sub.ownerUserId);
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [scholIds, readTick, sub && sub.status]);
+
   if (!children || !summaries) return null;
 
   // Live family figures, from the per-child Supabase summaries.
@@ -1268,6 +1291,7 @@ function ParentDashScreen({ onNavigate }) {
     ? Math.max(0, Math.ceil((new Date(sub.trialEndsAt).getTime() - Date.now()) / 86400000))
     : null;
   const allowance = (sub && sub.maxChildren) || 0;
+
   const readerName   = (children.find(c => c.id === readerId) || children[0] || {}).shortName || "Your reader";
   const totalBooks   = (summaries || []).reduce((a, s) => a + (s ? s.booksCompleted : 0), 0);
   const totalStamps  = realStamps;
@@ -1302,6 +1326,42 @@ function ParentDashScreen({ onNavigate }) {
               </div>
               <button className="btn btn-ghost-dark btn-sm" onClick={() => setAddOpen(true)}>+ Add child</button>
             </div>
+
+            {schol && schol.ready && window.HaarayaScholarship && sub && (
+              <div className={"plan-strip" + (schol.qualified ? " earned" : "")}>
+                <div className="plan-strip-main">
+                  <div className="plan-strip-t">
+                    {schol.qualified ? "Haaraya Reading Rate earned \u2014 50% off." : "Reading Scholarship"}
+                  </div>
+                  <div className="plan-strip-s">
+                    {schol.qualified
+                      ? "Half price for as long as you stay, saved to your account."
+                      : window.HaarayaScholarship.summarise(schol)}
+                  </div>
+                  {!schol.qualified && (
+                    <div className="plan-strip-count">
+                      {schol.books + " of " + window.HaarayaScholarship.RULE.books + " books"}
+                      <span className="plan-strip-dot">·</span>
+                      {schol.days + " of " + window.HaarayaScholarship.RULE.days + " days"}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {sub && (sub.status === "expired" || sub.status === "cancelled") && (
+              <div className="plan-strip urgent">
+                <div className="plan-strip-main">
+                  <div className="plan-strip-t">
+                    {sub.status === "cancelled" ? "Your plan is cancelled." : "Choose a plan to unlock the full library."}
+                  </div>
+                  <div className="plan-strip-s">
+                    Two books per level and the whole Odyssey stay free — every passport, stamp and log entry is kept.
+                  </div>
+                </div>
+                <a className="btn btn-gold btn-sm" href="Haaraya Home.html#home" onClick={(e) => { e.preventDefault(); onNavigate("pricing"); }}>See plans</a>
+              </div>
+            )}
 
             {sub && sub.status === "trial" && (
               <div className={"plan-strip" + (trialLeft !== null && trialLeft <= 3 ? " urgent" : "")}>

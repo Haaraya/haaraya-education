@@ -501,7 +501,7 @@ function TfrQuizCards({ questions, write, retryNote, ant, alreadyPassed, onPass,
   const q = questions[qi];
   const pick = (oi) => { if (st === "correct") return; setSel(oi); setSt("idle"); };
   const check = () => { if (sel < 0) return; setSt(sel === q.answer ? "correct" : "wrong"); };
-  const advance = () => { if (qi < n - 1) { setQi(qi + 1); setSel(-1); setSt("idle"); } else { setDone(true); onPass && onPass(); } };
+  const advance = () => { if (qi < n - 1) { setQi(qi + 1); setSel(-1); setSt("idle"); } else { setDone(true); onPass && onPass({ score: n, total: n }); } };
   const stateOf = (oi) => { if (st === "correct") return oi === q.answer ? "correct" : "dim lock"; if (st === "wrong" && oi === sel) return "wrong"; if (oi === sel) return "sel"; return ""; };
   return (
     <div className="surface quiz quiz-cards">
@@ -539,7 +539,7 @@ function TfrQuizSheet({ questions, write, retryNote, ant, alreadyPassed, onPass,
   const check = () => {
     const nl = questions.map((q, i) => locked[i] || ans[i] === q.answer);
     setLocked(nl); setChecked(true);
-    if (nl.every(Boolean)) { setDone(true); onPass && onPass(); }
+    if (nl.every(Boolean)) { setDone(true); onPass && onPass({ score: nl.filter(Boolean).length, total: n }); }
   };
   const stateOf = (qi, oi) => { if (locked[qi]) return oi === questions[qi].answer ? "correct lock" : "dim lock"; if (checked && ans[qi] === oi && oi !== questions[qi].answer) return "wrong"; if (ans[qi] === oi) return "sel"; return ""; };
   const anyWrong = checked && !locked.every(Boolean);
@@ -950,9 +950,28 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
     return (i >= 0 && i < sorted.length - 1) ? sorted[i + 1] : null;
   }, [catalog, code]);
 
-  const handlePass = () => {
+  const handlePass = (result) => {
     if (window.TafiyaData) window.TafiyaData.recordComplete(code);
     setQuizPassed(true);
+    // Store the check result — the only comprehension evidence we hold, and
+    // what the Reading Scholarship counts. Fire and forget; never block the child.
+    try {
+      const client = window.HaarayaSupabase;
+      if (client) {
+        const childId = (window.HaarayaSession && (window.HaarayaSession.activeChildId
+          ? window.HaarayaSession.activeChildId()
+          : window.HaarayaSession.childId())) || null;
+        if (childId) {
+          client.rpc("record_reading_check", {
+            p_child_id: childId,
+            p_book_code: code,
+            p_score: (result && result.score) || null,
+            p_total: (result && result.total) || null,
+            p_reader_key: (window.ShipmateScribe && window.ShipmateScribe.readerKey && window.ShipmateScribe.readerKey()) || null,
+          }).then(function () {}, function () {});
+        }
+      }
+    } catch (e) { /* non-fatal */ }
   };
 
   const progressKey = "tafiya-reader:" + code + ":screen";
