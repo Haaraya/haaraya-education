@@ -24,7 +24,7 @@
     { id: "indigo", label: "Indigo", swatch: "#5968C9" }
   ];
   var HAIR_OPTIONS = {
-    girl: [{ id: "braids", label: "Braids" }, { id: "afro", label: "Afro" }, { id: "short", label: "Short Natural" }, { id: "hijab", label: "Hijab" }],
+    girl: [{ id: "bun", label: "Bun" }, { id: "braids", label: "Plaited" }, { id: "hijab", label: "Hijab" }, { id: "short", label: "Short Natural" }],
     boy: [{ id: "ultra-short", label: "Ultra Short" }, { id: "short", label: "Short Natural" }, { id: "low-fade", label: "Low Fade" }, { id: "afro", label: "Rounded Afro" }]
   };
   var GLASSES_OPTIONS = [
@@ -34,7 +34,7 @@
   ];
 
   var DEFAULT_AVATAR = Object.freeze({
-    character: "girl", skin: "warm", hair: "braids", glasses: "none", face: "default", clothes: "teal"
+    character: "girl", skin: "warm", hair: "bun", glasses: "none", face: "default", clothes: "teal"
   });
 
   function valid(xs, id) { for (var i = 0; i < xs.length; i++) if (xs[i].id === id) return true; return false; }
@@ -69,8 +69,11 @@
     ebony: "deep", deep: "deep", umber: "brown", sienna: "brown",
     caramel: "warm", honey: "light", almond: "very-light"
   };
+  /* The girl set has no afro layer (the export never lined up), so old
+     afro-family choices land on the closest thing that exists: loose
+     natural hair for an afro, the bun for gathered styles. */
   var HAIR_MAP_GIRL = {
-    afro: "afro", puffs: "afro", bantu: "afro",
+    afro: "short", puffs: "bun", bantu: "bun",
     cornrows: "braids", braids: "braids", twists: "braids", locs: "braids",
     fade: "short", headwrap: "hijab"
   };
@@ -99,7 +102,7 @@
     return {
       character: character,
       skin: SKIN_MAP[v.skinTone] || "warm",
-      hair: hairMap[v.hairStyle] || (character === "boy" ? "short" : "braids"),
+      hair: hairMap[v.hairStyle] || (character === "boy" ? "short" : "bun"),
       glasses: glasses,
       face: "default",
       clothes: CLOTHES_MAP[v.outfitColor] || "teal"
