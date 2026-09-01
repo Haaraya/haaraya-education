@@ -112,13 +112,30 @@
       }
       try {
         // Count catalogue books per numeric level (books.level is text).
-        var bk = await client.from("books").select("level");
+        // PostgREST caps a plain select at 1000 rows; the catalogue is heading
+        // past that, and a truncated count would quietly understate the total.
+        var bk = await client.from("books").select("level").range(0, 4999);
+        if (bk.error) throw bk.error;
         (bk.data || []).forEach(function (r) {
           var n = num(r.level);
           if (n == null) return;
           out.levelTotals[n] = (out.levelTotals[n] || 0) + 1;
         });
-      } catch (e) { /* ignore */ }
+      } catch (e) {
+        if (window.console) console.warn("[Platform] book level counts unreadable:", e.message || e);
+      }
+      // A total of zero makes every level bar read "0 of 0 \u00b7 0%" no matter
+      // how much the child has read, so fall back to the app's own catalogue
+      // rather than showing a broken bar.
+      if (!Object.keys(out.levelTotals).length) {
+        try {
+          if (window.TafiyaBooks && window.TafiyaBooks.levelCounts) {
+            var lc = await window.TafiyaBooks.levelCounts();
+            Object.keys(lc || {}).forEach(function (k) { var n = num(k); if (n != null) out.levelTotals[n] = lc[k]; });
+            if (window.console) console.warn("[Platform] books table gave no per-level counts \u2014 level totals fell back to the local catalogue. Check the SELECT grant on public.books and that books.level is populated.");
+          }
+        } catch (e2) { /* ignore */ }
+      }
       return out;
     })();
     return mapsP;

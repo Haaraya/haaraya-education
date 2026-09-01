@@ -698,7 +698,7 @@ function ChildDashScreen({ onNavigate }) {
   const { data: exploreBooks }    = useApi(() => CHILD_ID ? TafiyaBooks.getExploreLibrary(CHILD_ID, 4, LEVEL_ID)  : Promise.resolve([]), [CHILD_ID, readTick, LEVEL_ID]);
   const { data: pathProgress }    = useApi(
     () => CHILD_ID ? HaarayaPlatformDB.getReadingPathProgress(CHILD_ID) : Promise.resolve(null),
-    [CHILD_ID]
+    [CHILD_ID, readTick]
   );
   const { data: stampsList }      = useApi(() => CHILD_ID ? HaarayaPlatformDB.getPassportStamps(CHILD_ID) : Promise.resolve(null), [CHILD_ID, readTick]);
   const [avOpen, setAvOpen] = useStateScreens(false);

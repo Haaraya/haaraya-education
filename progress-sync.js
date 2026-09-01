@@ -60,7 +60,7 @@
     try {
       var kids = await childP;
       if (kids && kids.length) {
-        if (s.setActiveChild) s.setActiveChild(kids[0].id);
+        if (s.setActiveChild) s.setActiveChild(kids[0].id, kids[0].displayName || kids[0].shortName || null);
         return kids[0].id;
       }
     } catch (e) { childP = null; stats.lastError = e.message || String(e); }
@@ -135,15 +135,21 @@
         }
         return;                            // keep the queue, retry later
       }
-      var remaining = [];
+      var remaining = [], wrote = 0;
       for (var i = 0; i < q.length; i++) {
         var res = "retry";
         try { res = await apply(q[i], childId); }
         catch (e) { res = "retry"; stats.lastError = e.message || String(e); }
-        if (res === "ok") stats.written++;
+        if (res === "ok") { stats.written++; wrote++; }
         else if (res === "retry") { stats.retried++; remaining.push(q[i]); }
       }
       writeQ(remaining);
+      // The local store emits "haaraya:reading" the instant a book is finished,
+      // but the DB row only exists once THIS flush succeeds \u2014 several seconds
+      // later. Every dashboard figure had already refetched against the old
+      // data, so the level bar sat still until a manual reload. Re-emit now
+      // that the write has actually landed.
+      if (wrote) { try { window.dispatchEvent(new Event("haaraya:reading")); } catch (e) { /* ignore */ } }
     } finally {
       flushing = false;
     }
