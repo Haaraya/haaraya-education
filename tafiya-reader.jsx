@@ -97,7 +97,36 @@ function TfrPage({ page, local }) {
   // punctuation-parse it here. Falls back to page_text when absent.
   const text = tfrText(page.display_text) || tfrText(page.page_text);
   const textRef = useRefTfr(null);
+  const wrapRef = useRefTfr(null);
   const [single, setSingle] = useStateTfr(false);
+  // The illustration is letterboxed inside a full-width band (object-fit:
+  // contain), so its left edge sits inboard of the page margin by a different
+  // amount on every page. Measure the rendered image and match the text block
+  // to it, so the first character lines up with the picture's left edge.
+  const [bounds, setBounds] = useStateTfr(null);
+  useEffectTfr(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const sync = () => {
+      const band = wrap.querySelector(".story-img");
+      const img = wrap.querySelector(".story-img img");
+      if (!band || !img || !img.naturalWidth) { setBounds(null); return; }
+      const b = band.getBoundingClientRect(), r = img.getBoundingClientRect();
+      if (!b.width || !r.width) { setBounds(null); return; }
+      setBounds({ x: Math.max(0, Math.round(r.left - b.left)), w: Math.round(r.width) });
+    };
+    sync();
+    const img = wrap.querySelector(".story-img img");
+    if (img) img.addEventListener("load", sync);
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(sync) : null;
+    if (ro) { ro.observe(wrap); if (img) ro.observe(img); }
+    window.addEventListener("resize", sync);
+    return () => {
+      if (img) img.removeEventListener("load", sync);
+      if (ro) ro.disconnect();
+      window.removeEventListener("resize", sync);
+    };
+  }, [page]);
   // The illustration is a CONSTANT size on every page (see .story-img), and so
   // is the STORY TEXT: every page renders at the same base size (6cqw, set in
   // .story-text) so the reading experience doesn't lurch between pages. The
@@ -115,25 +144,34 @@ function TfrPage({ page, local }) {
       // Centre only a genuinely tiny label (a single letter/word page, e.g.
       // Soundables). Real story sentences stay left-aligned.
       setSingle(el.scrollHeight <= lh * 1.6 && text.indexOf("\n") < 0 && text.length <= 24);
-      const avail = el.clientHeight;
+      // 3px of slack: this <p> is a flex item, so its own box height is set by
+      // the layout and can sit a subpixel or two under its content height even
+      // when the text plainly fits. Without the slack that rounding artefact
+      // reads as an overflow the loop can never clear, and a perfectly short
+      // passage gets shrunk all the way to the floor.
+      const avail = el.clientHeight + 3;
       if (el.scrollHeight <= avail) return;  // fits at the standard size → done
       // Overflow only: step down in fixed 5% increments (deterministic, so
-      // passages of similar length land on the same size) until it fits.
+      // passages of similar length land on the same size) until it fits. Bail
+      // out if a step stops buying height — nothing smaller will help either.
       const min = base * 0.6;
-      let size = base, guard = 0;
+      let size = base, guard = 0, prev = el.scrollHeight;
       while (size > min && el.scrollHeight > avail && guard++ < 40) {
         size = Math.max(min, size - base * 0.05);
         el.style.fontSize = size + "px";
+        if (el.scrollHeight >= prev) { el.style.fontSize = ""; break; }
+        prev = el.scrollHeight;
       }
     };
     fit();
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
-  }, [text]);
+  }, [text, bounds]);
+  const textStyle = bounds ? { width: bounds.w + "px", marginLeft: bounds.x + "px" } : null;
   return (
-    <div className="surface story">
+    <div className="surface story" ref={wrapRef}>
       <TfrImage className="story-img" path={page.image_path} local={local} label={"illustration · page " + page.page_number} />
-      <p ref={textRef} className={"story-text" + (text ? "" : " is-empty") + (single ? " is-single" : "")}>{text || "Story text will appear here"}</p>
+      <p ref={textRef} style={textStyle} className={"story-text" + (text ? "" : " is-empty") + (single ? " is-single" : "")}>{text || "Story text will appear here"}</p>
     </div>
   );
 }

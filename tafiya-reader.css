@@ -182,8 +182,9 @@
    screens. Story text is LEFT aligned; the block itself is centred under the
    illustration. */
 .tfr .story-text {
-  position: relative; width: 100%; max-width: 46ch; margin-inline: auto;
-  flex: 1 1 0; min-height: 0; overflow: hidden;
+  /* width + margin-left are set inline by TfrPage so the text block matches
+     the rendered illustration's left edge and width; these are the fallback. */
+  position: relative; width: 100%; flex: 1 1 0; min-height: 0; overflow: hidden;
   font-weight: 700; font-size: 6cqw; line-height: 1.27; color: var(--tfr-ink);
   white-space: pre-line; text-align: left; text-wrap: pretty;
 }
