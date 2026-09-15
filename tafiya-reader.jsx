@@ -91,7 +91,11 @@ function TfrCover({ pkg }) {
 }
 
 function TfrPage({ page, local }) {
-  const text = tfrText(page.page_text);
+  // Reader-formatted manuscript. `display_text` is the SAME wording as
+  // `page_text` with the editorial line breaks already applied; it is rendered
+  // verbatim (white-space: pre-line in .story-text). Never split, reflow or
+  // punctuation-parse it here. Falls back to page_text when absent.
+  const text = tfrText(page.display_text) || tfrText(page.page_text);
   const textRef = useRefTfr(null);
   const [single, setSingle] = useStateTfr(false);
   // The illustration is a CONSTANT size on every page (see .story-img), and so
@@ -108,7 +112,9 @@ function TfrPage({ page, local }) {
       if (!text) { setSingle(false); return; }
       const base = parseFloat(getComputedStyle(el).fontSize) || 16;
       const lh = parseFloat(getComputedStyle(el).lineHeight) || base * 1.27;
-      setSingle(el.scrollHeight <= lh * 1.6); // single short line → centre it
+      // Centre only a genuinely tiny label (a single letter/word page, e.g.
+      // Soundables). Real story sentences stay left-aligned.
+      setSingle(el.scrollHeight <= lh * 1.6 && text.indexOf("\n") < 0 && text.length <= 24);
       const avail = el.clientHeight;
       if (el.scrollHeight <= avail) return;  // fits at the standard size → done
       // Overflow only: step down in fixed 5% increments (deterministic, so
@@ -814,6 +820,46 @@ function TfrReviewPanel(props) {
   );
 }
 
+/* Save-to-my-library toggle, shown in the reader top bar. Self-contained so
+   the reader itself needs no shelf state. */
+function TfrSaveButton({ code, book }) {
+  const Lib = window.HaarayaLibrary;
+  const [, bump] = React.useState(0);
+  React.useEffect(() => {
+    if (!Lib) return undefined;
+    const on = () => bump(t => t + 1);
+    window.addEventListener("haaraya:library", on);
+    Lib.load().then(on).catch(() => {});
+    return () => window.removeEventListener("haaraya:library", on);
+  }, [Lib]);
+  if (!Lib || !code) return null;
+  const saved = Lib.has("tafiya", code);
+  const full = Lib.isFull() && !saved;
+  return (
+    <button
+      className={"btn btn-ghost tfr-savebtn" + (saved ? " is-saved" : "")}
+      type="button"
+      disabled={full}
+      title={saved ? "In my reading library \u2014 tap to remove"
+        : full ? ("Your library is full (" + Lib.CAP + " books) \u2014 remove one first")
+        : "Add this book to my reading library"}
+      onClick={() => {
+        if (full) return;
+        Lib.toggle({
+          source: "tafiya", code: code,
+          title: (book && tfrText(book.title)) || code,
+          level: book ? book.level : null,
+          strandUi: book ? tfrStrandUi(book) : null,
+          thumb: (book && (book.thumbnail_image_path || book.cover_image_path)) || ""
+        });
+      }}
+    >
+      <span className="ico" aria-hidden="true">{saved ? "✓" : "+"}</span>
+      <span>{saved ? "In my library" : "Add to my library"}</span>
+    </button>
+  );
+}
+
 /* ============================================================
    READER SCREEN
    ============================================================ */
@@ -1111,6 +1157,7 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
             <button className="btn btn-ghost" type="button" onClick={() => onNavigate("passport")}>
               <span className="ico" aria-hidden="true">❖</span><span>Passport</span>
             </button>
+            <TfrSaveButton code={code} book={b} />
           </div>
           <div className="running">
             <span className="running-title">{tfrText(b.title) || "\u00a0"}</span>
@@ -1278,6 +1325,14 @@ function tfrStrandUi(b) {
 var TFL_STATE = { strandFilter: "all", levelFilter: "all", query: "", sampleOnly: false, scrollY: 0 };
 
 function LibraryScreen({ onNavigate, initialLevel }) {
+  // The child's saved shelf, so every card knows whether it is already on it.
+  const [libTick, setLibTick] = useStateTfr(0);
+  React.useEffect(() => {
+    const on = () => setLibTick(t => t + 1);
+    window.addEventListener("haaraya:library", on);
+    if (window.HaarayaLibrary) window.HaarayaLibrary.load().then(on).catch(() => {});
+    return () => window.removeEventListener("haaraya:library", on);
+  }, []);
   const [catalog, setCatalog] = useStateTfr(() => (window.TafiyaData ? window.TafiyaData.getCatalog() : []));
   const [strandFilter, setStrandFilter] = useStateTfr(TFL_STATE.strandFilter);
   const [levelFilter, setLevelFilter] = useStateTfr(initialLevel ? Number(initialLevel) : TFL_STATE.levelFilter);
@@ -1465,11 +1520,18 @@ function LibraryScreen({ onNavigate, initialLevel }) {
               const free = freeSet.has(code);
               const locked = isVisitor && !free;
               const done = window.TafiyaData && window.TafiyaData.isCompleted(code);
+              const Lib = window.HaarayaLibrary;
+              const saved = !!(Lib && Lib.has("tafiya", code));
+              const full = !!(Lib && Lib.isFull() && !saved);
+              const openBook = () => locked ? onNavigate("home") : onNavigate("reader", { bookCode: code });
               return (
-                <button
+                <div
                   key={code}
                   className={"tfl-card" + (locked ? " tfl-card--locked" : "")}
-                  onClick={() => locked ? onNavigate("home") : onNavigate("reader", { bookCode: code })}
+                  role="button"
+                  tabIndex={0}
+                  onClick={openBook}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openBook(); } }}
                 >
                   <div className="tfl-thumb">
                     {(b.thumbnail_image_path || b.cover_image_path)
@@ -1478,11 +1540,27 @@ function LibraryScreen({ onNavigate, initialLevel }) {
                     <span className="tfl-thumb-ph" style={(b.thumbnail_image_path || b.cover_image_path) ? { display: "none" } : undefined}>{code}</span>
                     {done && <span className="tfl-tag tfl-tag--done" title="You finished this book">✓ Read</span>}
                     {locked && <span className="tfl-lock" aria-label="Subscriber only">🔒</span>}
+                    {!locked && Lib && (
+                      <button
+                        type="button"
+                        className={"tfl-save" + (saved ? " is-saved" : "") + (full ? " is-full" : "")}
+                        title={saved ? "In my reading library \u2014 tap to remove"
+                          : full ? ("Your library is full (" + Lib.CAP + " books) \u2014 remove one first")
+                          : "Add to my reading library"}
+                        aria-label={saved ? "Remove from my reading library" : "Add to my reading library"}
+                        aria-pressed={saved}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (full) return;
+                          Lib.toggle({ source: "tafiya", code: code, title: tfrText(b.title) || code, level: b.level, strandUi: tfrStrandUi(b), thumb: b.thumbnail_image_path || b.cover_image_path || "" });
+                        }}
+                      >{saved ? "✓" : "+"}</button>
+                    )}
                   </div>
                   <div className="tfl-code">{code}</div>
                   <div className="tfl-title">{tfrText(b.title) || code}</div>
                   <div className="tfl-meta">{tfrMeta({ level: b.level, book_type: b.book_type })}</div>
-                </button>
+                </div>
               );
             })}
           </div>
