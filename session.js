@@ -16,6 +16,7 @@
   // accounts carry their childId on the account itself; real accounts pick one
   // at runtime (a child reads under the parent session), stored here.
   const CHILD_KEY = "haaraya:activeChild";
+  const CHILD_NAME_KEY = "haaraya:activeChildName";
 
   // Demo/base personas, keyed by role. These are NO LONGER sign-in identities:
   // every signed-in session is a real Supabase session (see signInReal). They
@@ -129,10 +130,22 @@
       }
       return current.childId;
     },
-    setActiveChild(id) {
+    // The reader's own name, for screens that address the child directly
+    // (the Medal Case, the Captain's Log). Null when unknown — callers must
+    // fall back to a neutral label rather than inventing a name.
+    activeChildName() {
+      if (current.real) {
+        try { return sessionStorage.getItem(CHILD_NAME_KEY) || null; } catch (e) { return null; }
+      }
+      return current.childName || null;
+    },
+    setActiveChild(id, name) {
       try {
-        if (id == null) sessionStorage.removeItem(CHILD_KEY);
-        else sessionStorage.setItem(CHILD_KEY, String(id));
+        if (id == null) { sessionStorage.removeItem(CHILD_KEY); sessionStorage.removeItem(CHILD_NAME_KEY); }
+        else {
+          sessionStorage.setItem(CHILD_KEY, String(id));
+          if (name) sessionStorage.setItem(CHILD_NAME_KEY, String(name));
+        }
       } catch (e) { /* ignore */ }
       try { window.dispatchEvent(new CustomEvent("haaraya:activechild", { detail: id })); } catch (e) { /* ignore */ }
       return id;

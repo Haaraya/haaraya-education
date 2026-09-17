@@ -611,10 +611,14 @@ function SponsoredFlow({ onBack, onComplete, submitting, submitError }) {
 /* ============================================================
    SUCCESS
    ============================================================ */
-function SuccessScreen({ payload, result, onDashboard, onRestart }) {
+function SuccessScreen({ payload, result, onDashboard, onPlans, onRestart }) {
   const isSchool = payload.role === "school";
   const isSponsored = payload.role === "sponsored";
   const needsConfirm = !!(result && result.needsConfirmation);
+  // A repeat trial: the account exists but there are no free days. Say so
+  // plainly and point at a plan, rather than promising a trial they haven't got.
+  const noTrial = !!(result && result.noTrial);
+  const trialNote = (result && result.trialNote) || "";
 
   let title, sub, btn, stamp, eyebrow, meta;
   if (isSchool) {
@@ -635,10 +639,16 @@ function SuccessScreen({ payload, result, onDashboard, onRestart }) {
     const kidNames = payload.children.map(k => k.passportName || k.firstName).filter(Boolean);
     eyebrow = "Passport ready";
     title = kidNames.length > 1 ? "Your children's Haaraya passports are ready." : (kidNames[0] || "Your child") + "'s Haaraya passport is ready.";
-    sub = "We've reserved your place. Your dashboard is set up — explore the library and your 14-day trial starts today.";
-    btn = "Enter Dashboard";
+    sub = noTrial
+      ? (trialNote || "This reader has already had a free trial, so this account starts without one. Choose a plan to unlock the full library — two books per level and the whole Odyssey stay free either way.")
+      : "We've reserved your place. Your dashboard is set up — explore the library and your 14-day trial starts today.";
+    btn = noTrial ? "Choose a plan" : "Enter Dashboard";
     stamp = "assets/stamp-l1.png";
-    meta = [kidNames.join(", "), payload.subscription.plan === "family" ? "Family plan" : "Individual", "14-day trial"];
+    meta = [
+      kidNames.join(", "),
+      payload.subscription.plan === "family" ? "Family plan" : "Individual",
+      noTrial ? "No trial · choose a plan" : "14-day trial",
+    ];
   }
 
   const previewChild = isSchool ? null
@@ -671,7 +681,7 @@ function SuccessScreen({ payload, result, onDashboard, onRestart }) {
       </div>
 
       <div className="reg-success-actions">
-        <button className="reg-btn-next reg-btn-gold" onClick={onDashboard} disabled={needsConfirm} style={{ fontSize: 17, padding: "16px 30px" }}>
+        <button className="reg-btn-next reg-btn-gold" onClick={(noTrial && onPlans) ? onPlans : onDashboard} disabled={needsConfirm} style={{ fontSize: 17, padding: "16px 30px" }}>
           {needsConfirm ? "Confirm your email first" : btn}
           {!needsConfirm && <Ic d={ICONS.arrowR} size={18} sw={2.4} />}
         </button>

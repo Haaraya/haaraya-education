@@ -436,7 +436,7 @@ function OdysseyCTA({ onNavigate }) {
    SIX STAGES / MEDAL CASE  (ported from the standalone Odyssey pages)
    ============================================================ */
 const ODY_STAGE_DATA = (window.ODYSSEY && window.ODYSSEY.stages) ? window.ODYSSEY : {
-  totalBooks: 100, completedBooks: 22, currentBook: 23, reader: "Amaka",
+  totalBooks: 100, completedBooks: 22, currentBook: 23, reader: null,
   stages: [
     { name: "Wonder Stage",   medal: "Nsude Wonder",   medalFile: "odyssey_nsude_wonder.png",  start: 1,  end: 15  },
     { name: "Explorer Stage", medal: "Ocean Explorer", medalFile: "odyssey_ocean_explorer.png", start: 16, end: 30  },
@@ -550,7 +550,11 @@ function OdysseyMedals({ onNavigate }) {
           <div className="odm-case-inner">
             <div className="odm-crest">
               <img className="odm-crest-logo" src="assets/odyssey-logo-white-trim.png" alt="The Odyssey · 100 Book Challenge" />
-              <span className="lbl">{O.reader ? `${O.reader}'s Medal Case` : "The Odyssey Medal Case"}</span>
+              <span className="lbl">{(() => {
+                const who = (window.HaarayaSession && window.HaarayaSession.activeChildName
+                  && window.HaarayaSession.activeChildName()) || O.reader;
+                return who ? `${who}'s Medal Case` : "The Odyssey Medal Case";
+              })()}</span>
             </div>
             <div className="odm-stations">
               {O.stages.map((s, i) => {

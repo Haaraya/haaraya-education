@@ -112,7 +112,7 @@ function AvatarBuilder({ value, onChange, name }) {
           </div>
         )}
         {tab === "hair" && (
-          <div className="hab-grid hab-grid-4">
+          <div className={"hab-grid hab-grid-" + cfg.HAIR_OPTIONS[current.character].length}>
             {cfg.HAIR_OPTIONS[current.character].map((o) => option(o.id, o.label, current.hair === o.id, <AvMini value={{ ...current, hair: o.id }} />, () => commit({ hair: o.id })))}
           </div>
         )}

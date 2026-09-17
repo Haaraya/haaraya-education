@@ -82,8 +82,8 @@ function OdysseyCaptainsLog({ onNavigate, initialBook }) {
   // entries to whole sentences within a word budget so they never clip.
   const fitYarn = (t) => {
     const words = String(t || "").trim().split(/\s+/);
-    if (words.length <= 70) return String(t || "").trim();
-    let out = words.slice(0, 70).join(" ");
+    if (words.length <= 95) return String(t || "").trim();
+    let out = words.slice(0, 95).join(" ");
     const stop = Math.max(out.lastIndexOf("."), out.lastIndexOf("!"), out.lastIndexOf("?"));
     if (stop > 40) out = out.slice(0, stop + 1); else out = out.replace(/[,;:\s]+$/, "") + "…";
     return out;
@@ -109,6 +109,9 @@ function OdysseyCaptainsLog({ onNavigate, initialBook }) {
         <button className="btn btn-ghost-dark btn-sm odl-back" onClick={() => onNavigate("odyssey")}>← Odyssey dashboard</button>
         <button className="btn btn-ghost-dark btn-sm" onClick={() => onNavigate("odyssey-library")}>Odyssey library</button>
         <button className="btn btn-ghost-dark btn-sm" onClick={() => onNavigate("odyssey-medals")}>Medal case</button>
+        {rows && rows.length ? (
+          <button className="btn btn-gold btn-sm odl-edit-btn" onClick={openBook}>Edit this entry</button>
+        ) : null}
       </nav>
 
       <section className="odl-hero">
@@ -130,7 +133,6 @@ function OdysseyCaptainsLog({ onNavigate, initialBook }) {
             <span className="odl-ov odl-ov-chip1">{row.book_number ? `Book ${row.book_number} of 100` : "Odyssey Log"}</span>
             <span className="odl-ov odl-ov-chip2"><span>World:</span> <span>{world}</span></span>
 
-            <span className="odl-ov odl-ov-booktitle">{row.book_title || "Untitled voyage"}</span>
             <h3 className="odl-ov odl-ov-title">{log.title || row.book_title || "An Odyssey Log Entry"}</h3>
 
             <div className="odl-ov odl-ov-notes">

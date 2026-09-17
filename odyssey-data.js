@@ -6,7 +6,10 @@ window.ODYSSEY = {
   totalBooks: 100,
   completedBooks: 22,   // books 1–22 are lit
   currentBook: 23,      // the book being read right now
-  reader: "Amaka",
+  // No name here: the Medal Case reads the signed-in child from the session
+  // and falls back to a neutral label. A hardcoded name showed every visitor
+  // "Amaka's Medal Case".
+  reader: null,
   stages: [
     { name: "Wonder Stage",   medal: "Nsude Wonder",   medalFile: "odyssey_nsude_wonder.png",  start: 1,  end: 15  },
     { name: "Explorer Stage", medal: "Ocean Explorer", medalFile: "odyssey_ocean_explorer.png", start: 16, end: 30  },

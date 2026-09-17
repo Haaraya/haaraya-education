@@ -689,6 +689,15 @@ function ChildDashScreen({ onNavigate }) {
     window.addEventListener("haaraya:reading", on);
     return () => window.removeEventListener("haaraya:reading", on);
   }, []);
+  // The child's own shelf. Separate tick: saving a book must repaint the
+  // library rail without refetching every reading figure on the page.
+  const [libTick, setLibTick] = useStateScreens(0);
+  useEffectScreens(() => {
+    const on = () => setLibTick(t => t + 1);
+    window.addEventListener("haaraya:library", on);
+    if (window.HaarayaLibrary) window.HaarayaLibrary.load().then(on).catch(() => {});
+    return () => window.removeEventListener("haaraya:library", on);
+  }, []);
   const { data: levelCounts }     = useApi(() => TafiyaBooks.levelCounts(), []);
   // The level the parent placed the child on drives both rails below.
   const LEVEL_ID = (summary && summary.child && summary.child.currentLevelId) || null;
@@ -711,6 +720,9 @@ function ChildDashScreen({ onNavigate }) {
   const practiceBooks   = (storyPractice   || []).map(bookToCardProps);
   const exploreList     = (exploreBooks    || []).map(bookToCardProps);
   const recentStamps    = (stampsList || []).slice(-6).reverse();
+  const _ignoreLibTick  = libTick;
+  const savedBooks      = window.HaarayaLibrary ? window.HaarayaLibrary.toCards() : [];
+  const openSaved       = (b) => onNavigate(b.source === "odyssey" ? "odyssey-reader" : "reader", { bookCode: b.id });
 
   // Live passport figures, straight from the child's Supabase summary.
   const _ignoreTick     = readTick;
@@ -786,18 +798,41 @@ function ChildDashScreen({ onNavigate }) {
               </div>
             )}
 
-            <div className="nd-panel">
-              <div className="nd-phead"><h4>Keep reading</h4><span className="side" onClick={() => onNavigate("library")}>See all</span></div>
-              <div className="nd-rail">
-                {continueBooks.map(b => <Book key={b.id} book={b} past={b.past} onClick={() => onNavigate("reader", { bookCode: b.id })} />)}
-              </div>
-            </div>
-
+            {/* The level journey — chosen by the programme, in teaching order. */}
             <div className="nd-panel">
               <div className="nd-phead"><h4>My reading path</h4><span className="side">{pathProgress ? (pathProgress.completed + " / " + pathProgress.total + " \u00b7 " + pathProgress.pct + "%") : ""}</span></div>
               <div className="nd-rail">
                 {pathBooks.map(b => <Book key={b.id} book={b} onClick={() => onNavigate("reader", { bookCode: b.id })} />)}
               </div>
+            </div>
+
+            {/* The child's own shelf — chosen by them, from either catalogue. */}
+            <div className="nd-panel">
+              <div className="nd-phead">
+                <h4>My reading library</h4>
+                <span className="side" onClick={() => onNavigate("library")}>{savedBooks.length ? (savedBooks.length + " of " + (window.HaarayaLibrary ? window.HaarayaLibrary.CAP : 20) + " saved") : "Browse library"}</span>
+              </div>
+              {savedBooks.length ? (
+                <div className="nd-rail">
+                  {savedBooks.map(b => (
+                    <div className="nd-saved" key={b.source + ":" + b.id}>
+                      <Book book={b} onClick={() => openSaved(b)} />
+                      <button
+                        type="button"
+                        className="nd-saved-x"
+                        title={"Remove \u201c" + b.title + "\u201d from my library"}
+                        aria-label={"Remove \u201c" + b.title + "\u201d from my library"}
+                        onClick={(e) => { e.stopPropagation(); window.HaarayaLibrary.remove(b.source, b.id); }}
+                      >×</button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="nd-empty">
+                  <p>Nothing saved yet — tap <span className="nd-empty-plus" aria-hidden="true">+</span> on any book to keep it here.</p>
+                  <button type="button" className="nd-empty-btn" onClick={() => onNavigate("library")}>Find a book</button>
+                </div>
+              )}
             </div>
 
             <div className="nd-panel">

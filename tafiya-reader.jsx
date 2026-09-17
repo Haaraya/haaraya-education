@@ -619,6 +619,18 @@ function TfrNextUp({ book, nextBook, onStartNext, onReread, onLibrary }) {
     left: (i * 6.1 + 3) % 100, delay: (i % 5) * 0.12, color: ["#2f9e6e", "#f5c518", "#2a6fdb", "#e0653f", "#8a5fc0"][i % 5],
   })), []);
   const nextCode = nextBook ? (nextBook.book_code || nextBook.code) : null;
+  // Thumb chain: authored thumbnail → the book's own cover → strand logo (local
+  // asset, always present) → code chip. Many catalogue rows carry only a cover.
+  const nextThumb = nextBook ? (nextBook.thumbnail_image_path || nextBook.cover_image_path || "") : "";
+  const nextStrand = nextBook && window.STRANDS ? window.STRANDS[tfrStrandUi(nextBook)] : null;
+  const nextStrandLogo = (nextStrand && nextStrand.logo) || "";
+  const [miniStep, setMiniStep] = useStateTfr(0);
+  React.useEffect(() => { setMiniStep(0); }, [nextCode]);
+  const miniSrc = miniStep === 0 && nextThumb ? tfrSrc(nextThumb)
+    : (miniStep <= 1 && nextStrandLogo ? tfrSrc(nextStrandLogo, true) : "");
+  // Derive from the source actually in use — a book with no thumb AND no cover
+  // lands on the strand logo while miniStep is still 0.
+  const miniIsStrand = !(miniStep === 0 && nextThumb);
   const [scribeOpen, setScribeOpen] = useStateTfr(false);
   const bookCodeForScribe = book.book_code || book.code;
   const isOdysseyBook = !!(window.HaarayaOdyssey && window.HaarayaOdyssey.has(bookCodeForScribe));
@@ -644,8 +656,8 @@ function TfrNextUp({ book, nextBook, onStartNext, onReread, onLibrary }) {
         <React.Fragment>
           <div className="nextup-card">
             <div className="nextup-mini">
-              {nextBook.thumbnail_image_path
-                ? <img src={tfrSrc(nextBook.thumbnail_image_path)} alt="" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+              {miniSrc
+                ? <img className={miniIsStrand ? "is-strand" : ""} src={miniSrc} alt="" onError={() => setMiniStep(miniStep + 1)} />
                 : <span className="ph">{nextCode}</span>}
             </div>
             <div className="nextup-info">
@@ -913,6 +925,25 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
   const [quizPassed, setQuizPassed] = useStateTfr(false);
   const bookRef = useRefTfr(null);
 
+  // ---- Paid-access gate ----
+  // Signed in is NOT the same as entitled: an elapsed trial or a lapsed plan
+  // keeps the account but loses the paid library. Free samples stay open.
+  const [access, setAccess] = useStateTfr(() => (window.HaarayaAccess
+    ? window.HaarayaAccess.state()
+    : { known: true, full: true, reason: "no-gate" }));
+  useEffectTfr(() => {
+    if (!window.HaarayaAccess) return;
+    let alive = true;
+    const on = () => { if (alive) setAccess(Object.assign({}, window.HaarayaAccess.state())); };
+    window.addEventListener("haaraya:access", on);
+    window.HaarayaAccess.ready().then(on);
+    return () => { alive = false; window.removeEventListener("haaraya:access", on); };
+  }, []);
+  const isFreeBook = !!(window.TafiyaData && catalog.length && window.TafiyaData.isFree(code, catalog));
+  // Only lock once BOTH the entitlement and the catalogue are known, so a free
+  // sample never flashes locked while the catalogue is still loading.
+  const gated = !!(access.known && !access.full && catalog.length > 0 && !isFreeBook);
+
   // ---- Page review (QA) mode ----
   const [reviewMode, setReviewMode] = useStateTfr(() => {
     try { return localStorage.getItem("tafiya-reader:reviewMode") === "1"; } catch (e) { return false; }
@@ -1175,6 +1206,41 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
   else if (cur && cur.type === "page") reviewTarget = { key: "page-" + cur.page.page_number, page: cur.page.page_number, label: "Page " + cur.page.page_number };
   const reviewActive = reviewMode && reviewTarget && status === "ready";
 
+  if (gated) {
+    const A = window.HaarayaAccess;
+    return (
+      <div className="tfr">
+        <div className="reader">
+          <header className="topbar">
+            <div className="topbar-nav">
+              <button className="btn btn-ghost" type="button" onClick={() => onNavigate("home")}>
+                <span className="ico" aria-hidden="true">⌂</span><span>Home</span>
+              </button>
+              <button className="btn btn-ghost" type="button" onClick={() => onNavigate("library")}>
+                <span className="ico" aria-hidden="true">‹</span><span>Library</span>
+              </button>
+            </div>
+            <div className="running"><span className="running-title">{tfrText(b.title) || code}</span></div>
+          </header>
+          <main className="stage">
+            <article className="book">
+              <div className="surface gate">
+                <div className="gate-lock" aria-hidden="true">🔒</div>
+                <div className="gate-eyebrow">{access.reason === "trial_expired" ? "Free trial ended" : "Subscribers only"}</div>
+                <h2 className="gate-title">{tfrText(b.title) || code}</h2>
+                <p className="gate-body">{A ? A.message() : "Choose a plan to open the full library."}</p>
+                <div className="gate-actions">
+                  <button className="quiz-btn" type="button" onClick={() => onNavigate("pricing")}>See plans →</button>
+                  <button className="quiz-btn ghost" type="button" onClick={() => onNavigate("library")}>Back to library</button>
+                </div>
+              </div>
+            </article>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="tfr">
       <div className={"reader" + (reviewActive ? " review-on" : "")}>
@@ -1405,8 +1471,22 @@ function LibraryScreen({ onNavigate, initialLevel }) {
 
   // Role gates which books open; visitors get the free samples only.
   const [role, setRole] = useStateTfr(() => (window.HaarayaSession ? HaarayaSession.role() : "visitor"));
+  const [access, setAccess] = useStateTfr(() => (window.HaarayaAccess
+    ? window.HaarayaAccess.state()
+    : { known: true, full: true, reason: "no-gate" }));
+  useEffectTfr(() => {
+    if (!window.HaarayaAccess) return;
+    let alive = true;
+    const on = () => { if (alive) setAccess(Object.assign({}, window.HaarayaAccess.state())); };
+    window.addEventListener("haaraya:access", on);
+    window.HaarayaAccess.ready().then(on);
+    return () => { alive = false; window.removeEventListener("haaraya:access", on); };
+  }, []);
   const [readTick, setReadTick] = useStateTfr(0);
   const isVisitor = role === "visitor";
+  // Entitled = paid or inside the trial window. Signed-in-but-lapsed accounts
+  // get exactly what a visitor gets: the free samples.
+  const entitled = !access.known || access.full;
 
   // Load the catalogue live (auto-grows when the backend exposes more books).
   useEffectTfr(() => {
@@ -1556,12 +1636,12 @@ function LibraryScreen({ onNavigate, initialLevel }) {
             {filtered.map(b => {
               const code = codeOf(b);
               const free = freeSet.has(code);
-              const locked = isVisitor && !free;
+              const locked = !entitled && !free;
               const done = window.TafiyaData && window.TafiyaData.isCompleted(code);
               const Lib = window.HaarayaLibrary;
               const saved = !!(Lib && Lib.has("tafiya", code));
               const full = !!(Lib && Lib.isFull() && !saved);
-              const openBook = () => locked ? onNavigate("home") : onNavigate("reader", { bookCode: code });
+              const openBook = () => locked ? onNavigate("pricing") : onNavigate("reader", { bookCode: code });
               return (
                 <div
                   key={code}
@@ -1604,10 +1684,11 @@ function LibraryScreen({ onNavigate, initialLevel }) {
           </div>
         )}
 
-        {isVisitor ? (
+        {!entitled ? (
           <div className="tfl-note">
-            <strong>You’re previewing the library.</strong> The first {freeSet.size} books are free to read —
-            subscribe to unlock all {catalog.length} Tafiya books across every level.
+            <strong>{isVisitor ? "You’re previewing the library." : (access.reason === "trial_expired" ? "Your free trial has ended." : "Your plan isn’t active.")}</strong>{" "}
+            The first {freeSet.size} books stay free to read —{" "}
+            {isVisitor ? "subscribe" : "choose a plan"} to unlock all {catalog.length} Tafiya books across every level.
           </div>
         ) : (
           <div className="tfl-note">

@@ -154,7 +154,13 @@ function RegApp() {
     setSubmitting(false);
 
     if (!res || !res.ok) {
-      setSubmitError(REG_ERRORS[res && res.reason] || "We could not create your account. Please try again.");
+      // A guard refusal carries its own parent-facing sentence in .detail —
+      // prefer it over the generic fallback so nobody sees a machine token.
+      setSubmitError(
+        REG_ERRORS[res && res.reason] ||
+        (res && res.detail) ||
+        "We could not create your account. Please try again."
+      );
       return;
     }
     setPayload(p);
@@ -179,6 +185,20 @@ function RegApp() {
     window.location.href = "Haaraya Home.html";
   };
 
+  // Same hand-off as enterDashboard, but landing on the plans page — for a
+  // parent who was refused a second free trial and needs to choose one.
+  const enterPlans = () => {
+    if (!payload) return goHome();
+    try {
+      sessionStorage.setItem("haaraya:session", "parent");
+      // "pricing" is a section, not a screen — land on the dashboard (a real,
+      // access-checked screen) and let app.jsx act on the scroll key.
+      sessionStorage.setItem("haaraya:landing", "parent");
+      sessionStorage.setItem("haaraya:landing-scroll", "pricing");
+    } catch (e) { /* ignore */ }
+    window.location.href = "Haaraya Home.html";
+  };
+
   return (
     <React.Fragment>
       <RegTop onHome={goHome} />
@@ -187,7 +207,7 @@ function RegApp() {
       {view === "parent" && <ParentFlow onBack={goHome} onComplete={complete} submitting={submitting} submitError={submitError} />}
       {view === "school" && <SchoolFlow onBack={goHome} onComplete={complete} submitting={submitting} submitError={submitError} />}
       {view === "sponsored" && <SponsoredFlow onBack={goHome} onComplete={complete} submitting={submitting} submitError={submitError} />}
-      {view === "success" && payload && <SuccessScreen payload={payload} result={result} onDashboard={enterDashboard} onRestart={goHome} />}
+      {view === "success" && payload && <SuccessScreen payload={payload} result={result} onDashboard={enterDashboard} onPlans={enterPlans} onRestart={goHome} />}
 
       <TweaksPanel title="Tweaks">
         <TweakSection label="Design direction" />

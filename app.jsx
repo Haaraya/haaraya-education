@@ -508,6 +508,17 @@ function App() {
     }
   }, [role, screen]);
 
+  // One-time deep link to a home-page SECTION (registration's "Choose a plan"
+  // hand-off). Runs after mount so navigate() exists and the DOM is there.
+  useEffectApp(() => {
+    let target = null;
+    try {
+      target = sessionStorage.getItem("haaraya:landing-scroll");
+      if (target) sessionStorage.removeItem("haaraya:landing-scroll");
+    } catch (e) { /* ignore */ }
+    if (target) navigate(target);
+  }, []);
+
   const navigate = (key, p = {}) => {
     // "pricing" is a section on the home page, not a screen — go home (if needed), then scroll to it.
     if (key === "pricing") {
