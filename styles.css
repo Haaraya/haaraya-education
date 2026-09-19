@@ -2883,11 +2883,25 @@ body[data-hero-variant="journey"] .hero-subject .passport-card { display: none; 
 
 /* Nav swap happens where the inline links disappear (≤ 980px) */
 @media (max-width: 980px) {
-  .nav-actions { display: none; }
   .nav-odyssey { display: none; }
   .nav-burger { display: flex; }
   .nav-mobile { display: block; }
   .nav-inner { padding: 11px 18px; gap: 10px; }
+  /* Keep a visible Sign in on mobile — the burger alone hides it */
+  .nav-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .nav-actions .btn { display: none; }
+  .nav-actions .signin {
+    background: var(--yellow); color: var(--deep-forest);
+    font-size: 14px; padding: 9px 16px; min-height: 40px;
+    white-space: nowrap; flex-shrink: 0;
+    display: inline-flex; align-items: center;
+    box-shadow: 0 2px 0 rgba(0,0,0,.18);
+  }
+  .nav-actions .signin:hover { background: var(--yellow); }
+  /* Signed in: dot only in the bar; Sign out lives in the menu */
+  .nav-actions .nav-identity + .signin { display: none; }
+  .nav-identity-text { display: none; }
+  .nav-identity { padding: 5px; border-radius: 50%; }
 }
 
 @media (max-width: 760px) {

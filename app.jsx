@@ -589,7 +589,8 @@ function App() {
     const d = DEMO_LOGINS[r];
     if (!d || !window.HaarayaAuth) return;
     try {
-      await window.HaarayaAuth.signIn({ email: d.email, password: DEMO_PASSWORD });
+      // Demo accounts are shared on purpose — the device cap does not apply.
+      await window.HaarayaAuth.signIn({ email: d.email, password: DEMO_PASSWORD, skipDeviceGuard: true });
       const profileRow = await window.HaarayaAuth.getProfile();
       if (profileRow) applyRole(profileRow.role, profileRow, d.dest);
     } catch (e) {

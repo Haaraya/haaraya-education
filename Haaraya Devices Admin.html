@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Haaraya — Device Sharing</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Lora:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{--forest:#1f7a34;--forest-d:#155c27;--ink:#142a14;--muted:#5d6b60;--line:#e2e0d6;--bg:#faf9f5;--card:#fff;--gold:#c9922b;--red:#b3261e;--amber:#8a6400;--cream:#f7f2e7}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Nunito",system-ui,-apple-system,sans-serif;background:radial-gradient(120% 70% at 90% -10%,#eef4ec 0%,rgba(238,244,236,0) 55%),var(--bg);color:var(--ink);min-height:100vh;padding:40px 20px}
+a{color:var(--forest);font-weight:700}a:hover{color:var(--forest-d)}
+.wrap{width:100%;max-width:1000px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.seal{width:46px;height:46px;border-radius:12px;background:var(--forest);display:grid;place-items:center;color:#fff;font-weight:900;font-size:22px;font-family:"Lora",serif;box-shadow:0 6px 16px rgba(31,122,52,.28)}
+.brand h1{font-size:20px;margin:0;letter-spacing:-.01em}
+.k{font-size:12.5px;color:var(--muted);font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.lede{background:var(--cream);border:1px solid #ece2c8;border-radius:14px;padding:15px 17px;font-size:14px;line-height:1.55;color:#5b5330;margin-bottom:20px}
+.lede strong{color:var(--ink)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 10px 30px rgba(20,42,20,.06)}
+.auth{max-width:420px}
+label{display:block;font-size:12.5px;font-weight:800;color:var(--muted);margin:0 0 6px}
+input{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:11px;font-size:15px;margin-bottom:14px;background:#fff;color:var(--ink);font-family:inherit}
+input:focus{outline:none;border-color:var(--forest);box-shadow:0 0 0 3px rgba(31,122,52,.13)}
+.btn{border:0;background:var(--forest);color:#fff;font-weight:800;font-size:15px;padding:12px 18px;border-radius:12px;cursor:pointer;font-family:inherit;min-height:44px}
+.btn:hover{background:var(--forest-d)}
+.btn[disabled]{opacity:.55;cursor:default}
+.btn.full{width:100%}
+.btn.sm{font-size:13px;padding:0 13px;min-height:38px;border-radius:999px;background:#eef2ee;color:var(--forest-d);white-space:nowrap}
+.btn.sm:hover{background:#dfe8e0}
+.btn.sm.danger{background:#fdecea;color:var(--red)}.btn.sm.danger:hover{background:#f7d6d2}
+.msg{font-size:13.5px;padding:12px 14px;border-radius:11px;margin-bottom:14px;display:none;line-height:1.5}
+.msg.show{display:block}
+.msg.err{background:#fdecea;color:var(--red);border:1px solid #f5c2bd}
+.msg.ok{background:#e9f5ec;color:var(--forest-d);border:1px solid #bfe2c8}
+.who{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.who .av{width:42px;height:42px;border-radius:50%;background:var(--forest);color:#fff;display:grid;place-items:center;font-weight:800;font-size:17px}
+.who .nm{font-weight:800;font-size:15.5px}.who .em{font-size:13px;color:var(--muted)}
+.who .sp{flex:1}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.bar .k{margin-right:auto}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
+.scroll table{min-width:940px}
+th{text-align:left;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding:9px 12px;border-bottom:1.5px solid var(--line);white-space:nowrap}
+td{padding:12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr.flag td{background:#fdf6e3}
+.em2{font-weight:800}
+.sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+.num{font-variant-numeric:tabular-nums;font-weight:800}
+.pill{display:inline-block;background:#eef5ef;color:var(--forest-d);font-weight:800;padding:3px 10px;border-radius:999px;font-size:11.5px;white-space:nowrap}
+.pill.warn{background:#fdf6e3;color:var(--amber)}
+.pill.bad{background:#fdecea;color:var(--red)}
+.acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:nowrap}
+.devs{background:#f6f7f4;border-radius:12px;padding:12px 14px;margin:0}
+.devrow{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px dashed var(--line)}
+.devrow:last-child{border-bottom:0}
+.devrow .m{flex:1;min-width:0}
+.empty{text-align:center;color:var(--muted);font-weight:700;padding:34px 10px}
+.foot{font-size:12px;color:var(--muted);text-align:center;margin-top:18px;line-height:1.6}
+.scroll{overflow-x:auto}
+@media(max-width:700px){td,th{padding:10px 8px}.acts{justify-content:flex-start}}
+</style>
+</head>
+<body>
+<template id="__bundler_thumbnail">
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="100" fill="#1f7a34"/>
+    <text x="50" y="52" font-family="Georgia,serif" font-size="30" font-weight="900" fill="#fff" text-anchor="middle" dominant-baseline="central">H</text>
+  </svg>
+</template>
+<div class="wrap">
+  <div class="brand">
+    <div class="seal">H</div>
+    <div><div class="k">Haaraya · staff</div><h1>Device Sharing</h1></div>
+  </div>
+
+  <div class="lede">
+    Every account may keep <strong>one device per reader, plus one</strong> (minimum 3, maximum 8).
+    This page shows accounts that
+    are signing in from more places than a single family plausibly would — many devices, many networks,
+    or repeated refusals. Raise the allowance for a school, or sign an account's devices out.
+  </div>
+
+  <div class="card auth" id="authCard">
+    <div class="msg" id="authMsg"></div>
+    <label for="em">Staff email</label>
+    <input id="em" type="email" autocomplete="username" placeholder="admin@haarayaeducation.org">
+    <label for="pw">Password</label>
+    <input id="pw" type="password" autocomplete="current-password">
+    <button class="btn full" id="loginBtn" type="button">Log in</button>
+  </div>
+
+  <div class="card" id="mainCard" style="display:none">
+    <div class="who">
+      <div class="av" id="avatar">?</div>
+      <div><div class="nm" id="whoName">—</div><div class="em" id="whoEmail">—</div></div>
+      <div class="sp"></div>
+      <span class="pill" id="whoRole">staff</span>
+      <button class="btn sm" id="signOutBtn" type="button">Sign out</button>
+    </div>
+    <div class="msg" id="mainMsg"></div>
+    <div class="bar">
+      <span class="k" id="summary">Loading…</span>
+      <button class="btn sm" id="refreshBtn" type="button">Refresh</button>
+    </div>
+    <div class="scroll"><table id="tbl"><thead><tr>
+      <th>Account</th><th>Readers</th><th>Devices</th><th>Networks</th><th>Sign-ins (30d)</th><th>Refused</th><th>Last seen</th><th></th>
+    </tr></thead><tbody id="rows"></tbody></table></div>
+    <div class="empty" id="empty" style="display:none">No account has registered a device yet.</div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase-client.js"></script>
+<script src="auth.js"></script>
+<script>
+var sb = window.HaarayaSupabase;
+var $ = function (id) { return document.getElementById(id); };
+function say(el, text, kind) {
+  el.textContent = text || "";
+  el.className = "msg" + (text ? " show " + (kind || "err") : "");
+}
+function esc(s) { return String(s == null ? "" : s); }
+function ago(ts) {
+  if (!ts) return "—";
+  var d = new Date(ts), days = Math.floor((Date.now() - d.getTime()) / 86400000);
+  return days <= 0 ? "today" : days === 1 ? "yesterday" : days < 30 ? days + " days ago" : d.toLocaleDateString();
+}
+
+$("loginBtn").onclick = async function () {
+  var btn = $("loginBtn"); btn.disabled = true; say($("authMsg"), "");
+  try {
+    // Staff work from many machines; the device cap is for family accounts.
+    await window.HaarayaAuth.signIn({ email: $("em").value.trim(), password: $("pw").value, skipDeviceGuard: true });
+    await boot();
+  } catch (e) {
+    say($("authMsg"), (e && e.message) || "Could not sign in.");
+  }
+  btn.disabled = false;
+};
+$("signOutBtn").onclick = async function () {
+  await window.HaarayaAuth.signOut();
+  $("mainCard").style.display = "none"; $("authCard").style.display = "";
+};
+$("refreshBtn").onclick = function () { load(); };
+
+async function boot() {
+  var user = await window.HaarayaAuth.getUser();
+  if (!user) { $("authCard").style.display = ""; $("mainCard").style.display = "none"; return; }
+  var p = null;
+  try { p = await window.HaarayaAuth.getProfile(); } catch (e) { /* ignore */ }
+  if (!p || p.role !== "haaraya_admin") {
+    $("authCard").style.display = "";
+    say($("authMsg"), "That account is signed in but is not Haaraya staff, so it cannot see this page.");
+    return;
+  }
+  $("authCard").style.display = "none"; $("mainCard").style.display = "";
+  $("whoName").textContent = p.full_name || "Haaraya staff";
+  $("whoEmail").textContent = p.email || user.email;
+  $("avatar").textContent = (p.full_name || p.email || "H").trim().charAt(0).toUpperCase();
+  load();
+}
+
+async function load() {
+  say($("mainMsg"), "");
+  $("summary").textContent = "Loading…";
+  var res = await sb.rpc("admin_device_report", { p_days: 30 });
+  if (res.error) {
+    $("summary").textContent = "";
+    say($("mainMsg"), res.error.message.indexOf("does not exist") > -1
+      ? "The device guard is not deployed in this database yet — run supabase/device_guard.sql."
+      : res.error.message);
+    return;
+  }
+  render(res.data || []);
+}
+
+function render(rows) {
+  var body = $("rows"); body.innerHTML = "";
+  $("empty").style.display = rows.length ? "none" : "";
+  var flagged = rows.filter(function (r) { return r.devices >= r.device_limit || r.refused > 0 || r.networks > 6; });
+  $("summary").textContent = rows.length + " accounts with devices · " + flagged.length + " worth a look";
+
+  rows.forEach(function (r) {
+    var over = r.devices >= r.device_limit, hot = r.refused > 0 || r.networks > 6;
+    var tr = document.createElement("tr");
+    if (over || hot) tr.className = "flag";
+    tr.innerHTML =
+      '<td><div class="em2"></div><div class="sub"></div></td>' +
+      '<td class="num"></td>' +
+      '<td><span class="num"></span> <span class="pill"></span></td>' +
+      '<td class="num"></td><td class="num"></td>' +
+      '<td><span class="pill"></span></td>' +
+      '<td class="sub"></td>' +
+      '<td><div class="acts"></div></td>';
+    var td = tr.children;
+    td[0].querySelector(".em2").textContent = r.email || "(no email)";
+    td[0].querySelector(".sub").textContent = (r.full_name || "—") + " · " + (r.role || "—");
+    td[1].textContent = r.readers == null ? "—" : r.readers;
+    td[2].querySelector(".num").textContent = r.devices;
+    var lim = td[2].querySelector(".pill");
+    lim.textContent = "of " + r.device_limit + (r.limit_is_override ? " (set)" : "");
+    lim.className = "pill" + (over ? " warn" : "");
+    td[3].textContent = r.networks;
+    td[4].textContent = r.sign_ins;
+    var ref = td[5].querySelector(".pill");
+    ref.textContent = r.refused ? r.refused + " refused" : "none";
+    ref.className = "pill" + (r.refused ? " bad" : "");
+    td[6].textContent = ago(r.last_sign_in);
+
+    var acts = td[7].querySelector(".acts");
+    acts.appendChild(mkBtn("Devices", function () { toggleDevices(tr, r); }));
+    acts.appendChild(mkBtn("Set allowance", function () { setLimit(r); }));
+    acts.appendChild(mkBtn("Sign all out", function () { revokeAll(r); }, true));
+    body.appendChild(tr);
+  });
+}
+
+function mkBtn(text, fn, danger) {
+  var b = document.createElement("button");
+  b.type = "button"; b.className = "btn sm" + (danger ? " danger" : "");
+  b.textContent = text; b.onclick = fn;
+  return b;
+}
+
+function toggleDevices(tr, r) {
+  if (tr.nextSibling && tr.nextSibling.dataset && tr.nextSibling.dataset.devs) {
+    tr.nextSibling.remove(); return;
+  }
+  var row = document.createElement("tr");
+  row.dataset.devs = "1";
+  var cell = document.createElement("td");
+  cell.colSpan = 8;
+  var box = document.createElement("div"); box.className = "devs";
+  (r.device_list || []).forEach(function (d) {
+    var line = document.createElement("div"); line.className = "devrow";
+    var m = document.createElement("div"); m.className = "m";
+    m.innerHTML = '<div class="em2"></div><div class="sub"></div>';
+    m.querySelector(".em2").textContent = d.label || "Unknown device";
+    m.querySelector(".sub").textContent = "first seen " + ago(d.first_seen) + " · last used " + ago(d.last_seen);
+    line.appendChild(m);
+    line.appendChild(mkBtn("Remove", async function () {
+      await call("admin_revoke_devices", { p_email: r.email, p_device_id: d.device_id }, "Device removed.");
+    }, true));
+    box.appendChild(line);
+  });
+  if (!(r.device_list || []).length) box.textContent = "No active devices.";
+  cell.appendChild(box); row.appendChild(cell);
+  tr.parentNode.insertBefore(row, tr.nextSibling);
+}
+
+async function setLimit(r) {
+  var v = window.prompt("Devices allowed for " + r.email + " (1–50, blank = automatic: one per reader plus one):",
+                        r.limit_is_override ? r.device_limit : "");
+  if (v === null) return;
+  var n = v.trim() === "" ? null : parseInt(v, 10);
+  if (n !== null && (isNaN(n) || n < 1 || n > 50)) { say($("mainMsg"), "Enter a number between 1 and 50."); return; }
+  await call("admin_set_device_limit", { p_email: r.email, p_limit: n }, "Allowance updated.");
+}
+
+async function revokeAll(r) {
+  if (!window.confirm("Sign every device out of " + r.email + "? They can add devices again, up to their allowance.")) return;
+  await call("admin_revoke_devices", { p_email: r.email, p_device_id: null }, "All devices signed out.");
+}
+
+async function call(fn, args, okMsg) {
+  var res = await sb.rpc(fn, args);
+  if (res.error) { say($("mainMsg"), res.error.message); return; }
+  say($("mainMsg"), okMsg, "ok");
+  load();
+}
+
+boot();
+</script>
+</body>
+</html>

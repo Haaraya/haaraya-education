@@ -48,6 +48,17 @@
     });
     if (res.error) throw res.error;
     clearProfile();
+    // Device allowance (device-guard.js). Absent on pages that do not load it,
+    // and it never blocks on its own failure — only on a genuine refusal.
+    if (window.HaarayaDeviceGuard && opts.skipDeviceGuard !== true) {
+      var allowed = await window.HaarayaDeviceGuard.enforce();
+      if (!allowed) {
+        clearProfile();
+        var err = new Error("Too many devices are signed in to this account. Remove one to carry on.");
+        err.code = "device_limit";
+        throw err;
+      }
+    }
     return res.data;
   }
 
