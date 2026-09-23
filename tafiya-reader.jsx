@@ -227,6 +227,13 @@ function TfrAbout({ pkg, about }) {
             <p className="about-hook-text">{about.antHook}</p>
           </div>
         )}
+
+        {about.soundAlike && (
+          <div className="about-hook about-alike">
+            <span className="about-hook-label">Sound alikes</span>
+            <p className="about-hook-text">{about.soundAlike}</p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -29,11 +29,16 @@
     "focus_visible,focus_sound,soundbite,sound_cue,sound_cue_check";
   // Ant hunt is additive. If the DB predates the migration, drop the column
   // (permanently, for this session) so the whole About layer keeps working.
-  var antAvailable = true;
-  function cols() { return antAvailable ? BASE_COLS + ",about_ant_hook" : BASE_COLS; }
+  // Same for sound_alike_prompt: each optional column is dropped independently.
+  var optCols = ["about_ant_hook", "sound_alike_prompt"];
+  var antAvailable = true; // true while any optional column remains
+  function cols() { return optCols.length ? BASE_COLS + "," + optCols.join(",") : BASE_COLS; }
   function missingAntCol(e) {
     var m = e && (e.message || e.msg || "") + "";
-    return antAvailable && /about_ant_hook/.test(m) && /does not exist|schema cache/i.test(m);
+    if (!/does not exist|schema cache/i.test(m)) return false;
+    var before = optCols.length;
+    optCols = optCols.filter(function (c) { return m.indexOf(c) < 0; });
+    return optCols.length < before;
   }
 
   var cache = Object.create(null); // code -> page | null (negative cached too)
@@ -58,6 +63,7 @@
       soundCue: clean(r.sound_cue),
       soundCueCheck: !!r.sound_cue_check,
       antHook: clean(r.about_ant_hook),
+      soundAlike: clean(r.sound_alike_prompt),
     };
   }
 
@@ -78,7 +84,7 @@
       cache[code] = page;   // cache hit or miss
       return page;
     } catch (e) {
-      if (missingAntCol(e)) { antAvailable = false; return get(code); } // retry once without ant col
+      if (missingAntCol(e)) { return get(code); } // retry once without ant col
       if (window.console) console.warn("[About] Supabase get(" + code + ") failed:", e.message || e);
       return null; // do NOT poison cache on a transient/network error
     }
@@ -101,7 +107,7 @@
         preloaded = true;
         return true;
       } catch (e) {
-        if (missingAntCol(e)) { antAvailable = false; preloadPromise = null; return preload(); }
+        if (missingAntCol(e)) { preloadPromise = null; return preload(); }
         if (window.console) console.warn("[About] Supabase preload failed:", e.message || e);
         preloadPromise = null; // allow a later retry
         return false;
