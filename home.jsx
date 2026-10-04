@@ -845,7 +845,7 @@ function Footer({ onNavigate }) {
               <a href="#faq" onClick={(e) => { if (onNavigate) { e.preventDefault(); onNavigate("faq"); } }}>Frequently asked questions</a>
               <a href="#">About Haaraya</a>
               <a href="#">Press</a>
-              <a href="#">Contact</a>
+              <a href="mailto:info@haarayaeducation.org">Contact</a>
               <a href="#">Careers</a>
             </div>
           </div>

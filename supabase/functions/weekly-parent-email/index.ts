@@ -52,7 +52,10 @@ function kidBlock(k: Kid) {
 }
 
 function render(r: Row) {
-  const first = (r.full_name || "").split(" ")[0] || "there";
+  // Sign-up falls back to the email's local part when no name was given — never greet with that.
+  const raw = (r.full_name || "").trim();
+  const local = (r.email || "").split("@")[0].toLowerCase();
+  const first = raw && raw.toLowerCase() !== local && !raw.includes("@") ? raw.split(/\s+/)[0] : "there";
   const unsub = `${FN_URL}?unsubscribe=${r.email_token}`;
   const html = `<!doctype html><html><body style="margin:0;background:#faf9f5"><table role="presentation" width="100%"><tr><td align="center" style="padding:24px 12px">
   <table role="presentation" width="100%" style="max-width:560px"><tr><td style="font-family:Arial,sans-serif;color:#142a14">
@@ -93,7 +96,9 @@ Deno.serve(async (req) => {
   });
 
   const dry = url.searchParams.get("dry");
-  const rows = (data as Row[]).slice(0, dry ? 1 : undefined);
+  // Dry run: use the tester's own family if they are a parent, else the first one.
+  const all = data as Row[];
+  const rows = dry ? [all.find((r) => r.email.toLowerCase() === dry.toLowerCase()) ?? all[0]].filter(Boolean) : all;
   let sent = 0; const failed: string[] = [];
   for (const r of rows) {
     const m = render(r);
