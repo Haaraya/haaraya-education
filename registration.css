@@ -469,6 +469,9 @@ body[data-reg-preview="false"] .reg-rail .reg-passport-card { display: none; }
   padding-right: 40px;
 }
 .reg-field .hint { font-size: 12.5px; color: var(--ink-soft); font-weight: 600; line-height: 1.4; }
+.reg-consent{display:flex;gap:12px;align-items:flex-start;font-size:14px;line-height:1.5;color:var(--ink);font-weight:600;cursor:pointer;padding:14px 16px;border:1.5px solid var(--sand-dk,#e2d9c3);border-radius:12px;background:#fffdf7}
+.reg-consent input{width:20px;height:20px;margin:2px 0 0;flex:none;accent-color:var(--forest,#1f7a34)}
+.reg-consent a{color:var(--forest,#1f7a34);font-weight:800}
 
 /* input with leading prefix (phone code) */
 .reg-input-group { display: flex; }

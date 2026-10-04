@@ -97,6 +97,7 @@ function ParentFlow({ onBack, onComplete, submitting, submitError }) {
   const [manualLevel, setManualLevel] = useStateF("");
   const [plan, setPlan] = useStateF("");
   const [cycle, setCycle] = useStateF("annual");
+  const [consent, setConsent] = useStateF(false);
 
   const setAccF = (k) => (e) => setAcc({ ...acc, [k]: e.target.value });
   const setKid = (i, k, v) => setKids(kids.map((kid, j) => j === i ? { ...kid, [k]: v } : kid));
@@ -107,13 +108,13 @@ function ParentFlow({ onBack, onComplete, submitting, submitError }) {
   const planLabel = plan === "family" ? "Family plan" : plan === "individual" ? "Individual child" : "";
 
   const accFullName = [acc.firstName, acc.lastName].map(s => s.trim()).filter(Boolean).join(" ");
-  const accValid = acc.firstName.trim() && acc.lastName.trim() && /.+@.+\..+/.test(acc.email) && acc.password.length >= 6 && acc.country;
+  const accValid = acc.firstName.trim() && acc.lastName.trim() && /.+@.+\..+/.test(acc.email) && acc.password.length >= 6 && acc.country && consent;
   const kidsValid = kids.every(k => k.firstName.trim() && k.passportName.trim() && k.year && k.confidence);
   const next = () => {
     if (step < STEPS.length - 1) { setStep(step + 1); window.scrollTo({ top: 0, behavior: "smooth" }); }
     else {
       onComplete({
-        role: "parent", account: { ...acc, fullName: accFullName },
+        role: "parent", account: { ...acc, fullName: accFullName }, consent: consentRecord(),
         children: kids.map(k => ({
           ...k,
           ...buildReadingRecord(readingStart, manualLevel),
@@ -163,6 +164,7 @@ function ParentFlow({ onBack, onComplete, submitting, submitError }) {
                     </div>
                   </Field>
                 </div>
+                <ConsentCheck checked={consent} onChange={setConsent} />
               </div>
               <Actions onBack={back} backLabel="All account types" onNext={next} nextDisabled={!accValid} />
             </React.Fragment>
@@ -351,15 +353,16 @@ function SchoolFlow({ onBack, onComplete, submitting, submitError }) {
   const [s, setS] = useStateF({ schoolName: "", adminName: "", email: "", password: "", country: "Nigeria", city: "", role: "" });
   const [setup, setSetup] = useStateF({ pupils: "", groups: "", intent: "" });
   const [action, setAction] = useStateF("");
+  const [consent, setConsent] = useStateF(false);
   const setF = (k) => (e) => setS({ ...s, [k]: e.target.value });
   const setUp = (k) => (e) => setSetup({ ...setup, [k]: e.target.value });
 
-  const accValid = s.schoolName.trim() && s.adminName.trim() && /.+@.+\..+/.test(s.email) && s.password.length >= 6 && s.city.trim() && s.role;
+  const accValid = s.schoolName.trim() && s.adminName.trim() && /.+@.+\..+/.test(s.email) && s.password.length >= 6 && s.city.trim() && s.role && consent;
   const setupValid = setup.pupils && setup.intent;
 
   const next = () => {
     if (step < STEPS.length - 1) { setStep(step + 1); window.scrollTo({ top: 0, behavior: "smooth" }); }
-    else onComplete({ role: "school", school: s, setup, nextAction: action });
+    else onComplete({ role: "school", school: s, setup, nextAction: action, consent: consentRecord() });
   };
   const back = () => step === 0 ? onBack() : (setStep(step - 1), window.scrollTo({ top: 0, behavior: "smooth" }));
 
@@ -399,6 +402,7 @@ function SchoolFlow({ onBack, onComplete, submitting, submitError }) {
                   </Field>
                   <Field label="City"><Input value={s.city} onChange={setF("city")} placeholder="e.g. Lagos" /></Field>
                 </div>
+                <ConsentCheck school checked={consent} onChange={setConsent} />
               </div>
               <Actions onBack={back} backLabel="All account types" onNext={next} nextDisabled={!accValid} />
             </React.Fragment>
@@ -478,6 +482,7 @@ function SponsoredFlow({ onBack, onComplete, submitting, submitError }) {
   const [programme, setProgramme] = useStateF("");
   const [email, setEmail] = useStateF("");
   const [password, setPassword] = useStateF("");
+  const [consent, setConsent] = useStateF(false);
   const [kid, setKid] = useStateF({ passportName: "", firstName: "", confidence: "", passportColor: "green", avatar: randomAvatar() });
 
   // Real check against public.access_codes (never consumes the code here).
@@ -501,12 +506,12 @@ function SponsoredFlow({ onBack, onComplete, submitting, submitError }) {
   };
 
   const child0 = { firstName: kid.firstName, passportName: kid.passportName, lastName: "", passportColor: kid.passportColor, avatar: kid.avatar };
-  const codeValid = verified && email.trim() && password.length >= 8;
+  const codeValid = verified && email.trim() && password.length >= 8 && consent;
   const kidValid = kid.passportName.trim() && kid.firstName.trim();
 
   const next = () => {
     if (step < STEPS.length - 1) { setStep(step + 1); window.scrollTo({ top: 0, behavior: "smooth" }); }
-    else onComplete({ role: "sponsored", accessCode: code, guardianEmail: email, password, programme, child: { ...kid, readingStartMethod: "assigned_path" } });
+    else onComplete({ role: "sponsored", accessCode: code, guardianEmail: email, password, programme, consent: consentRecord(), child: { ...kid, readingStartMethod: "assigned_path" } });
   };
   const back = () => step === 0 ? onBack() : (setStep(step - 1), window.scrollTo({ top: 0, behavior: "smooth" }));
 
@@ -549,6 +554,7 @@ function SponsoredFlow({ onBack, onComplete, submitting, submitError }) {
                 <Field label="Create a password" hint="At least 8 characters.">
                   <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
                 </Field>
+                <ConsentCheck checked={consent} onChange={setConsent} />
               </div>
               <Actions onBack={back} backLabel="All account types" onNext={next} nextDisabled={!codeValid} />
             </React.Fragment>

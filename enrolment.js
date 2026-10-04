@@ -125,6 +125,9 @@
       role: role,
       phone: clean(opts.phone) || null,
       haaraya_pending: pending || null,
+      // Parental consent record {version, at} — kept on auth.users so no schema
+      // change is needed to capture it; privacy_tools.sql copies it to public.users.
+      consent: opts.consent || null,
     };
 
     var signUp;
@@ -526,7 +529,7 @@
     var created = await createAccount({
       email: acc.email, password: acc.password, phone: acc.phone,
       fullName: acc.fullName || [acc.firstName, acc.lastName].filter(Boolean).join(" "),
-      role: "parent",
+      role: "parent", consent: payload.consent,
     }, {
       kind: "parent",
       children: kids,
@@ -584,7 +587,7 @@
 
     var created = await createAccount({
       email: s.email, password: s.password,
-      fullName: s.adminName, role: "school_admin",
+      fullName: s.adminName, role: "school_admin", consent: payload.consent,
     }, {
       kind: "school",
       school: {
@@ -649,7 +652,7 @@
     var created = await createAccount({
       email: payload.guardianEmail, password: payload.password,
       fullName: payload.guardianName || clean(payload.guardianEmail).split("@")[0],
-      role: "parent",
+      role: "parent", consent: payload.consent,
     }, {
       kind: "parent",
       children: [payload.child || {}],

@@ -332,7 +332,25 @@ function PassportColorPicker({ value, onChange, name }) {
   );
 }
 
+/* ---------- Parental consent (NDPA / COPPA) ---------- */
+const CONSENT_VERSION = "2026-09-29";
+function ConsentCheck({ checked, onChange, school }) {
+  return (
+    <label className="reg-consent">
+      <input type="checkbox" checked={!!checked} onChange={e => onChange(e.target.checked)} />
+      <span>
+        {school
+          ? "I confirm our school has the authority to enrol pupils and share their names and reading records with Haaraya for teaching. "
+          : "I am the parent or legal guardian, and I consent to Haaraya storing my child's name, age and reading progress to run their reading programme. "}
+        I have read the <a href="Haaraya Privacy.html" target="_blank" rel="noopener">privacy policy</a>.
+      </span>
+    </label>
+  );
+}
+const consentRecord = () => ({ version: CONSENT_VERSION, at: new Date().toISOString() });
+
 Object.assign(window, {
+  ConsentCheck, consentRecord, CONSENT_VERSION,
   Ic, ICONS, Field, Input, Select, Choice, Trail,
   ChildPassportPreview, SchoolAccountPreview, FlowRail, StepHead, Actions, RegError,
   READING_START_LABEL, CONFIDENCE_LABEL, COUNTRIES, YEARS,

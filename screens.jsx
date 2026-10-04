@@ -1492,6 +1492,7 @@ function ParentDashScreen({ onNavigate }) {
                 </div>
               </div>
             </div>
+            <FamilyDataCard children={children} onChanged={() => setKidTick(t => t + 1)} />
           </div>
         </div>
       </div>
@@ -1512,6 +1513,63 @@ function ParentDashScreen({ onNavigate }) {
   );
 }
 
+/* Privacy & your data — NDPA / COPPA parent rights: see, download, delete. */
+function FamilyDataCard({ children, onChanged }) {
+  const [busy, setBusy] = useStateScreens("");
+  const [msg, setMsg] = useStateScreens("");
+  const sb = window.HaarayaSupabase;
+  const download = async (c) => {
+    setBusy("dl" + c.id); setMsg("");
+    const res = sb ? await sb.rpc("export_child_data", { p_child: c.id }) : { error: { message: "offline" } };
+    setBusy("");
+    if (res.error) { setMsg("We could not prepare the download. Please try again, or email info@haarayaeducation.org."); return; }
+    const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "haaraya-" + (c.shortName || "child").toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-data.json";
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+  const remove = async (c) => {
+    const typed = window.prompt("This permanently deletes " + c.shortName + "'s profile, passport, stamps and reading history. It cannot be undone.\n\nType DELETE to confirm.");
+    if (typed !== "DELETE") return;
+    setBusy("rm" + c.id); setMsg("");
+    const res = await sb.rpc("delete_child_data", { p_child: c.id });
+    setBusy("");
+    if (res.error) { setMsg("We could not delete this profile. Please email info@haarayaeducation.org and we will do it for you."); return; }
+    setMsg(c.shortName + "'s data has been deleted.");
+    onChanged && onChanged();
+  };
+  const removeAccount = async () => {
+    const typed = window.prompt("This permanently deletes your Haaraya account and every child on it, including all reading history. Any paid plan ends. It cannot be undone.\n\nType DELETE MY ACCOUNT to confirm.");
+    if (typed !== "DELETE MY ACCOUNT") return;
+    setBusy("acct"); setMsg("");
+    const res = await sb.rpc("delete_my_account");
+    if (res.error) { setBusy(""); setMsg(res.error.message.indexOf("school") > -1 ? res.error.message : "We could not delete your account. Please email info@haarayaeducation.org and we will do it for you."); return; }
+    try { await window.HaarayaAuth.signOut(); } catch (e) { /* already gone */ }
+    window.location.href = "Haaraya Home.html";
+  };
+  return (
+    <div className="dash-card" style={{ marginTop: 28 }}>
+      <h5>Privacy &amp; your data</h5>
+      <div style={{ fontSize: 13, color: "var(--ink-mid)", marginBottom: 12, lineHeight: 1.5 }}>
+        Download a copy of what we hold about a child, or delete it for good. Read our <a href="Haaraya Privacy.html" target="_blank" rel="noopener">privacy policy</a>.
+      </div>
+      {children.map((c, i) => (
+        <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "10px 0", borderBottom: i < children.length - 1 ? "1px dashed var(--sand-dk)" : "none" }}>
+          <div style={{ flex: 1, minWidth: 140, fontWeight: 800, fontSize: 14 }}>{c.shortName}</div>
+          <button className="btn btn-ghost-dark btn-sm" disabled={!!busy} onClick={() => download(c)}>{busy === "dl" + c.id ? "Preparing…" : "Download data"}</button>
+          <button className="btn btn-ghost-dark btn-sm" style={{ color: "#b3261e" }} disabled={!!busy} onClick={() => remove(c)}>{busy === "rm" + c.id ? "Deleting…" : "Delete child"}</button>
+        </div>
+      ))}
+      <div style={{ marginTop: 14, display: "flex", justifyContent: "flex-end" }}>
+        <button className="btn btn-ghost-dark btn-sm" style={{ color: "#b3261e" }} disabled={!!busy} onClick={removeAccount}>{busy === "acct" ? "Deleting…" : "Delete my whole account"}</button>
+      </div>
+      {msg && <div style={{ marginTop: 10, fontSize: 13, fontWeight: 700, color: "var(--ink)" }}>{msg}</div>}
+    </div>
+  );
+}
+
 Object.assign(window, {
+  FamilyDataCard,
   PassportScreen, ChildDashScreen, ParentDashScreen, AddChildModal, EditChildModal,
 });

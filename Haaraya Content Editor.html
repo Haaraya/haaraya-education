@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Haaraya — Content Editor</title>
+<script src="sentry-init.js"></script>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Lora:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{--forest:#1f7a34;--forest-d:#155c27;--ink:#142a14;--muted:#5d6b60;--line:#e2e0d6;--bg:#faf9f5;--card:#fff;--red:#b3261e;--amber:#8a6400;--cream:#f7f2e7}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Nunito",system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;padding:40px 20px}
+a{color:var(--forest);font-weight:700}a:hover{color:var(--forest-d)}
+.wrap{max-width:1000px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.seal{width:46px;height:46px;border-radius:12px;background:var(--forest);display:grid;place-items:center;color:#fff;font-weight:900;font-size:22px;font-family:"Lora",serif;box-shadow:0 6px 16px rgba(31,122,52,.28)}
+.brand h1{font-size:20px;margin:0}
+.k{font-size:12.5px;color:var(--muted);font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+.lede{background:var(--cream);border:1px solid #ece2c8;border-radius:14px;padding:15px 17px;font-size:14px;line-height:1.55;color:#5b5330;margin-bottom:20px}
+.lede strong{color:var(--ink)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 10px 30px rgba(20,42,20,.06);margin-bottom:18px}
+.auth{max-width:420px}
+label{display:block;font-size:12.5px;font-weight:800;color:var(--muted);margin:0 0 6px}
+input,textarea,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:11px;font-size:15px;background:#fff;color:var(--ink);font-family:inherit}
+textarea{resize:vertical;min-height:46px;line-height:1.5;white-space:pre-wrap}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--forest);box-shadow:0 0 0 3px rgba(31,122,52,.13)}
+.auth input{margin-bottom:14px}
+.btn{border:0;background:var(--forest);color:#fff;font-weight:800;font-size:15px;padding:0 18px;border-radius:12px;cursor:pointer;font-family:inherit;min-height:44px}
+.btn:hover{background:var(--forest-d)}.btn[disabled]{opacity:.45;cursor:default}
+.btn.full{width:100%}
+.btn.sm{font-size:13px;padding:0 14px;min-height:38px;border-radius:999px;background:#eef2ee;color:var(--forest-d)}
+.btn.sm:hover{background:#dfe8e0}
+.btn.save{font-size:13px;min-height:38px;border-radius:999px;padding:0 16px}
+.msg{font-size:13.5px;padding:12px 14px;border-radius:11px;margin-bottom:14px;display:none;line-height:1.5}
+.msg.show{display:block}.msg.err{background:#fdecea;color:var(--red);border:1px solid #f5c2bd}.msg.ok{background:#e9f5ec;color:var(--forest-d);border:1px solid #bfe2c8}
+.who{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.who .nm{font-weight:800}.who .em{font-size:13px;color:var(--muted)}.who .sp{flex:1}
+.search{display:flex;gap:10px;margin-top:18px}
+.search input{max-width:260px;text-transform:uppercase;font-weight:800;letter-spacing:.05em}
+h2{font-family:"Lora",serif;font-size:21px;margin:0 0 4px}
+h3{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+.row{display:grid;grid-template-columns:150px minmax(0,1fr) auto;gap:12px;align-items:start;padding:10px 0;border-bottom:1px dashed var(--line)}
+.row:last-child{border-bottom:0}
+.row .lb{font-size:13px;font-weight:800;padding-top:11px}
+.row .lb small{display:block;font-weight:600;color:var(--muted)}
+.row.dirty textarea,.row.dirty select{border-color:#e0b64a;background:#fffcf2}
+.q{border:1px solid var(--line);border-radius:14px;padding:6px 14px;margin-bottom:12px}
+.hist{width:100%;border-collapse:collapse;font-size:13px}
+.hist th{text-align:left;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding:8px;border-bottom:1.5px solid var(--line)}
+.hist td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+.hist .old{color:var(--red);text-decoration:line-through}.hist .new{color:var(--forest-d);font-weight:700}
+.empty{color:var(--muted);font-weight:700;padding:10px 0}
+@media(max-width:700px){.row{grid-template-columns:1fr}.row .lb{padding-top:0}}
+</style>
+</head>
+<body>
+<template id="__bundler_thumbnail"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#1f7a34"></rect><text x="50" y="52" font-family="Georgia,serif" font-size="30" font-weight="900" fill="#fff" text-anchor="middle" dominant-baseline="central">H</text></svg></template>
+<div class="wrap">
+<div class="brand"><div class="seal">H</div><div><div class="k">Haaraya · staff</div><h1>Content Editor</h1></div></div>
+<div class="lede">Fix a typo in a book, its title, its <strong>About this book</strong> page or its quiz. Changes go live as soon as you save — readers see them on their next page load. Every save is recorded below with who made it and the old wording. <strong>Also correct the source CSV/manuscript</strong>, or the next import will bring the old text back.</div>
+
+<div class="card auth" id="authCard">
+<div class="msg" id="authMsg"></div>
+<label for="em">Staff email</label><input id="em" type="email" autocomplete="username">
+<label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password">
+<button class="btn full" id="loginBtn" type="button">Log in</button>
+</div>
+
+<div id="main" style="display:none">
+<div class="card">
+<div class="who"><div><div class="nm" id="whoName">—</div><div class="em" id="whoEmail">—</div></div><div class="sp"></div><button class="btn sm" id="signOutBtn" type="button">Sign out</button></div>
+<div class="search"><input id="code" placeholder="Book code, e.g. S-08-02"><button class="btn" id="loadBtn" type="button">Open book</button></div>
+</div>
+<div class="msg" id="mainMsg"></div>
+<div id="book"></div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase-client.js"></script>
+<script src="auth.js"></script>
+<script>
+var sb = window.HaarayaSupabase, $ = function (id) { return document.getElementById(id); };
+var current = null;
+function say(el, t, kind) { el.textContent = t || ""; el.className = "msg" + (t ? " show " + (kind || "err") : ""); }
+function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+$("loginBtn").onclick = async function () {
+  $("loginBtn").disabled = true; say($("authMsg"), "");
+  try { await HaarayaAuth.signIn({ email: $("em").value.trim(), password: $("pw").value, skipDeviceGuard: true }); await boot(); }
+  catch (e) { say($("authMsg"), (e && e.message) || "Could not sign in."); }
+  $("loginBtn").disabled = false;
+};
+$("signOutBtn").onclick = async function () { await HaarayaAuth.signOut(); $("main").style.display = "none"; $("authCard").style.display = ""; };
+$("loadBtn").onclick = function () { load($("code").value); };
+$("code").onkeydown = function (e) { if (e.key === "Enter") load($("code").value); };
+
+async function boot() {
+  var user = await HaarayaAuth.getUser();
+  if (!user) return;
+  var p = null; try { p = await HaarayaAuth.getProfile(); } catch (e) {}
+  if (!p || p.role !== "haaraya_admin") { say($("authMsg"), "That account is not Haaraya staff."); return; }
+  $("authCard").style.display = "none"; $("main").style.display = "";
+  $("whoName").textContent = p.full_name || "Haaraya staff"; $("whoEmail").textContent = p.email || user.email;
+  var q = new URLSearchParams(location.search).get("code"); if (q) { $("code").value = q; load(q); }
+}
+
+async function load(code) {
+  code = String(code || "").trim().toUpperCase(); if (!code) return;
+  say($("mainMsg"), ""); $("book").innerHTML = '<div class="card empty">Loading…</div>';
+  var res = await sb.rpc("admin_content_lookup", { p_code: code });
+  if (res.error) {
+    $("book").innerHTML = "";
+    say($("mainMsg"), /does not exist/.test(res.error.message) ? "The editor is not installed in the database yet — run supabase/content_editor.sql." : res.error.message);
+    return;
+  }
+  current = res.data; history.replaceState(null, "", "?code=" + encodeURIComponent(code)); render();
+}
+
+// one editable field: label, input, Save (enabled only when changed)
+function field(label, sub, value, save, opts) {
+  opts = opts || {};
+  var row = el("div", "row"), lb = el("div", "lb", label), input, btn = el("button", "btn save", "Save");
+  if (sub) lb.appendChild(el("small", null, sub));
+  if (opts.choices) {
+    input = el("select");
+    opts.choices.forEach(function (c, i) { var o = el("option", null, c); o.value = String(i); input.appendChild(o); });
+    input.value = value == null ? "" : String(value);
+  } else {
+    input = el("textarea"); input.value = value == null ? "" : value;
+    input.rows = Math.min(8, Math.max(1, Math.ceil(input.value.length / 70) + (input.value.match(/\n/g) || []).length));
+  }
+  var orig = input.value; btn.type = "button"; btn.disabled = true;
+  input.oninput = input.onchange = function () { var d = input.value !== orig; btn.disabled = !d; row.classList.toggle("dirty", d); };
+  btn.onclick = async function () {
+    btn.disabled = true; btn.textContent = "Saving…";
+    var r = await save(input.value);
+    btn.textContent = "Save";
+    if (r.error) { say($("mainMsg"), label + ": " + r.error.message); btn.disabled = false; return; }
+    say($("mainMsg"), label + " saved and live.", "ok"); load(current.book_code);
+  };
+  row.appendChild(lb); row.appendChild(input); row.appendChild(btn);
+  return row;
+}
+function edit(target, f, page) { return function (v) { return sb.rpc("admin_edit_content", { p_code: current.book_code, p_target: target, p_field: f, p_value: v, p_page: page == null ? null : page }); }; }
+function section(title, sub) { var c = el("div", "card"); c.appendChild(el("h3", null, title)); if (sub) { var p = el("div", "empty", sub); p.style.padding = "0 0 8px"; p.style.fontSize = "13px"; c.appendChild(p); } $("book").appendChild(c); return c; }
+
+function render() {
+  var b = current; $("book").innerHTML = "";
+  var head = section("Book");
+  head.insertBefore(el("h2", null, b.book_code + (b.title ? " · " + b.title : "")), head.firstChild);
+  if (!b.title && !b.pages.length && !b.about && !b.quiz) { head.appendChild(el("div", "empty", "No book, About page or quiz uses that code.")); return; }
+  if (b.title != null) head.appendChild(field("Title", "Cover, About and quiz", b.title, edit("title", "title")));
+
+  if (b.pages.length) {
+    var pg = section("Pages", "Line breaks you type here show in the reader.");
+    b.pages.forEach(function (p) { pg.appendChild(field("Page " + p.page_number, null, p.text, edit("page", "text", p.page_number))); });
+  }
+
+  var a = b.about;
+  if (a) {
+    var ab = section("About this book");
+    [["about_text", "About"], ["read_to_find_out", "Read to find out"], ["focus_visible", "Focus (shown)"], ["focus_sound", "Focus sound"],
+     ["soundbite", "Soundbite"], ["sound_cue", "Sound cue"], ["about_ant_hook", "Ant hunt"], ["sound_alike_prompt", "Sound alikes"]]
+      .forEach(function (f) { if (f[0] in a) ab.appendChild(field(f[1], null, a[f[0]], edit("about", f[0]))); });
+  }
+
+  var q = b.quiz;
+  if (q) {
+    var qz = section("Quiz");
+    [1, 2, 3].forEach(function (n) {
+      var box = el("div", "q"), k = "q" + n + "_";
+      box.appendChild(field("Question " + n, null, q[k + "text"], edit("quiz", k + "text")));
+      ["a", "b", "c"].forEach(function (o) { box.appendChild(field("Option " + o.toUpperCase(), null, q[k + o], edit("quiz", k + o))); });
+      box.appendChild(field("Correct answer", null, q[k + "correct"], edit("quiz", k + "correct"), { choices: ["A", "B", "C"] }));
+      qz.appendChild(box);
+    });
+    [["write_prompt", "Write prompt"], ["write_answer", "Write answer"], ["retry_note", "Retry note"]]
+      .forEach(function (f) { if (f[0] in q) qz.appendChild(field(f[1], null, q[f[0]], edit("quiz", f[0]))); });
+  }
+
+  var h = section("Edit history");
+  if (!b.edits.length) { h.appendChild(el("div", "empty", "No edits yet.")); return; }
+  var t = el("table", "hist"); t.innerHTML = "<tr><th>When</th><th>Who</th><th>What</th><th>Change</th></tr>";
+  b.edits.forEach(function (e) {
+    var tr = el("tr");
+    tr.appendChild(el("td", null, new Date(e.edited_at).toLocaleString()));
+    tr.appendChild(el("td", null, e.edited_by || "—"));
+    tr.appendChild(el("td", null, e.target + (e.page_number != null ? " p" + e.page_number : "") + " · " + e.field));
+    var td = el("td"); td.appendChild(el("div", "old", e.old_value || "(blank)")); td.appendChild(el("div", "new", e.new_value || "(blank)"));
+    tr.appendChild(td); t.appendChild(tr);
+  });
+  h.appendChild(t);
+}
+boot();
+</script>
+</body>
+</html>

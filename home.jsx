@@ -853,7 +853,7 @@ function Footer({ onNavigate }) {
         <div className="footer-bottom">
           <div>© 2026 Haaraya Education.</div>
           <div style={{ display: "flex", gap: 24 }}>
-            <a href="#">Privacy</a>
+            <a href="Haaraya Privacy.html">Privacy</a>
             <a href="#">Terms</a>
             <a href="#">Child safety</a>
           </div>
