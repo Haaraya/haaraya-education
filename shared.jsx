@@ -328,7 +328,7 @@ function BookAboutTip({ code, title }) {
   );
 }
 
-function Book({ book, onClick, size = "md", locked = false, past = false }) {
+function Book({ book, onClick, size = "md", locked = false, past = false, teaser = null }) {
   const [tip, setTip] = React.useState(false);
   const tipProps = {
     onMouseEnter: () => setTip(true),
@@ -366,6 +366,7 @@ function Book({ book, onClick, size = "md", locked = false, past = false }) {
         <div className="bc-meta">
           <h4 className="bc-title">{book.title}</h4>
           <div className="bc-sub">{past ? "Finished" : "Level " + book.level}</div>
+          {teaser && <div className="bc-teaser">{teaser}</div>}
         </div>
         {tip && <BookAboutTip code={book.id} title={book.title} />}
       </div>
@@ -394,6 +395,7 @@ function Book({ book, onClick, size = "md", locked = false, past = false }) {
       <div>
         <h4>{book.title}</h4>
         <div className="by">{book.author}</div>
+        {teaser && <div className="bc-teaser">{teaser}</div>}
       </div>
       <div className="level-tag">L{book.level}</div>
     </div>
@@ -428,7 +430,8 @@ const NAV_GROUPS = {
 };
 
 function Nav({ current, onNavigate, session, navKeys, homeScreen, onSignIn, onSignOut, onWaitlist }) {
-  const items = (navKeys || ["home", "libraries", "passport"]).map(key => ({ key, label: NAV_LABELS[key] || key, group: NAV_GROUPS[key] || null }));
+  const mine = session && session.role !== "visitor";
+  const items = (navKeys || ["home", "libraries", "passport"]).map(key => ({ key, label: key === "passport" && mine ? "My Passport" : (NAV_LABELS[key] || key), group: NAV_GROUPS[key] || null }));
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [openGroup, setOpenGroup] = React.useState(null);
   const go = (key) => { setMenuOpen(false); setOpenGroup(null); onNavigate(key); };

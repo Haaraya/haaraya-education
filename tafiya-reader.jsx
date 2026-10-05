@@ -617,7 +617,7 @@ function TfrQuizSheet({ questions, write, retryNote, ant, alreadyPassed, onPass,
 }
 function TfrQuiz(props) { return props.layout === "sheet" ? <TfrQuizSheet {...props} /> : <TfrQuizCards {...props} />; }
 
-function TfrNextUp({ book, nextBook, onStartNext, onReread, onLibrary }) {
+function TfrNextUp({ book, nextBook, onStartNext, onReread, onLibrary, onMyBooks }) {
   const m = tfrText(book.level).match(/\d+/);
   const lvl = m ? m[0] : null;
   const stampSrc = lvl ? tfrSrc("assets/stamp-l" + lvl + ".png") : "";
@@ -675,9 +675,12 @@ function TfrNextUp({ book, nextBook, onStartNext, onReread, onLibrary }) {
           </div>
           <div className="nextup-actions">
             {ScribeUI ? <button className="nextup-scribe" type="button" onClick={() => setScribeOpen(true)}><span className="q" aria-hidden="true">&#x1F58B;</span> Write your Captain’s Log</button> : null}
-            <button className="quiz-btn" type="button" onClick={onStartNext}>Start “{tfrText(nextBook.title) || nextCode}” →</button>
+            {onMyBooks
+              ? <button className="quiz-btn" type="button" onClick={onMyBooks}>See my new stamp →</button>
+              : <button className="quiz-btn" type="button" onClick={onStartNext}>Start “{tfrText(nextBook.title) || nextCode}” →</button>}
+            {onMyBooks && <button className="quiz-btn ghost" type="button" onClick={onStartNext}>Start “{tfrText(nextBook.title) || nextCode}”</button>}
             <button className="quiz-btn ghost" type="button" onClick={onReread}>↺ Read it again</button>
-            <button className="quiz-btn ghost" type="button" onClick={onLibrary}>Back to library</button>
+            {!onMyBooks && <button className="quiz-btn ghost" type="button" onClick={onLibrary}>Back to library</button>}
           </div>
         </React.Fragment>
       ) : (
@@ -685,8 +688,9 @@ function TfrNextUp({ book, nextBook, onStartNext, onReread, onLibrary }) {
           <div className="nextup-meta" style={{ marginTop: "4cqh", fontSize: "3cqw" }}>You’ve reached the end of the journey for now. New books appear here as they’re published.</div>
           <div className="nextup-actions">
             {ScribeUI ? <button className="nextup-scribe" type="button" onClick={() => setScribeOpen(true)}><span className="q" aria-hidden="true">&#x1F58B;</span> Write your Captain’s Log</button> : null}
-            <button className="quiz-btn" type="button" onClick={onReread}>↺ Read it again</button>
-            <button className="quiz-btn ghost" type="button" onClick={onLibrary}>Back to library</button>
+            {onMyBooks && <button className="quiz-btn" type="button" onClick={onMyBooks}>See my new stamp →</button>}
+            <button className={"quiz-btn" + (onMyBooks ? " ghost" : "")} type="button" onClick={onReread}>↺ Read it again</button>
+            {!onMyBooks && <button className="quiz-btn ghost" type="button" onClick={onLibrary}>Back to library</button>}
           </div>
         </React.Fragment>
       )}
@@ -1338,6 +1342,8 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
                 onStartNext={() => nextBook && onNavigate("reader", { bookCode: nextBook.book_code || nextBook.code })}
                 onReread={() => { setQuizPassed(false); go(0); }}
                 onLibrary={() => onNavigate("library")}
+                onMyBooks={window.HaarayaSession && ["child", "parent", "admin"].indexOf(window.HaarayaSession.role()) >= 0
+                  ? () => onNavigate("child", { justEarned: b.book_code || b.code }) : null}
               />
             )}
           </article>

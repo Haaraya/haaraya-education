@@ -89,8 +89,8 @@ const ROLE_ACCESS = {
 // Which links appear in the nav for each role (a subset of access, in order).
 const ROLE_NAV = {
   visitor:      ["home", "libraries", "passport", "pricing"],
-  child:        ["home", "child", "passport", "libraries", "pricing"],
-  parent:       ["home", "parent", "child", "passport", "libraries", "pricing"],
+  child:        ["passport", "home", "child", "libraries", "pricing"],
+  parent:       ["passport", "home", "parent", "child", "libraries", "pricing"],
   teacher:      ["home", "teacher", "libraries", "pricing"],
   school_admin: ["home", "school", "libraries", "pricing"],
   admin:        ["home", "libraries", "passport", "child", "parent", "teacher", "school", "admin", "pricing"],
@@ -623,7 +623,7 @@ function App() {
           onNavigate={navigate}
           session={session}
           navKeys={ROLE_NAV[role] || ROLE_NAV.visitor}
-          homeScreen={ROLE_HOME[role] || "home"}
+          homeScreen={role === "child" ? "passport" : (ROLE_HOME[role] || "home")}
           onSignIn={() => setSignInOpen(true)}
           onSignOut={signOut}
           onWaitlist={() => { window.location.href = "Haaraya Registration.html"; }}
@@ -633,8 +633,8 @@ function App() {
       {!booted && <BootSplash />}
       {booted && screen === "home"     && <HomePage onNavigate={navigate} />}
       {booted && screen === "faq"      && <FaqScreen onNavigate={navigate} />}
-      {booted && screen === "passport" && <PassportScreen onNavigate={navigate} gotoLevel={params.levelId} highlightBookId={params.highlightBookId} />}
-      {booted && screen === "child"    && <ChildDashScreen onNavigate={navigate} />}
+      {booted && screen === "passport" && <PassportScreen onNavigate={navigate} gotoLevel={params.levelId} highlightBookId={params.highlightBookId} childId={params.childId} />}
+      {booted && screen === "child"    && <ChildDashScreen onNavigate={navigate} justEarned={params.justEarned} />}
       {booted && screen === "library"  && <LibraryScreen onNavigate={navigate} initialLevel={params.levelId} />}
       {booted && screen === "reader"   && <ReaderScreen bookCode={params.bookCode || params.bookId} onNavigate={navigate} quizLayout={tweaks.quizLayout} />}
       {booted && screen === "parent"   && <ParentDashScreen onNavigate={navigate} />}
