@@ -319,7 +319,8 @@ body[data-header-logo="education"] .nav-brand .nav-logo-education { display: inl
 }
 .nav-mobile-odyssey img { height: 40px; width: auto; }
 
-.nav-actions { display: flex; align-items: center; gap: 12px; }
+.nav-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.nav-actions .signin, .nav-actions .btn { white-space: nowrap; flex-shrink: 0; }
 .nav-actions .signin { font-weight: 800; font-size: 15px; padding: 8px 14px; border-radius: var(--r-pill); }
 .nav-actions .signin:hover { background: rgba(255,255,255,.1); }
 

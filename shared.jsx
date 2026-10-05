@@ -431,7 +431,8 @@ const NAV_GROUPS = {
 
 function Nav({ current, onNavigate, session, navKeys, homeScreen, onSignIn, onSignOut, onWaitlist }) {
   const mine = session && session.role !== "visitor";
-  const items = (navKeys || ["home", "libraries", "passport"]).map(key => ({ key, label: key === "passport" && mine ? "My Passport" : (NAV_LABELS[key] || key), group: NAV_GROUPS[key] || null }));
+  // Signed in, "child" is the passport-first page (passport on top, books below) — one tab, not two.
+  const items = (navKeys || ["home", "libraries", "passport"]).map(key => ({ key, label: mine && (key === "child" || key === "passport") ? "My Passport" : (NAV_LABELS[key] || key), group: NAV_GROUPS[key] || null }));
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [openGroup, setOpenGroup] = React.useState(null);
   const go = (key) => { setMenuOpen(false); setOpenGroup(null); onNavigate(key); };

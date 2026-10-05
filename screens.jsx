@@ -47,7 +47,7 @@ function StampBonus() {
   );
 }
 
-function PassportScreen({ onNavigate, gotoLevel, highlightBookId, childId }) {
+function PassportScreen({ onNavigate, gotoLevel, highlightBookId, childId, embedded }) {
   // The passport belongs to one of the signed-in parent's children. With more
   // than one, a switcher picks whose passport is open (children have no login).
   const [whoIdx, setWhoIdx] = useStateScreens(0);
@@ -177,8 +177,9 @@ function PassportScreen({ onNavigate, gotoLevel, highlightBookId, childId }) {
   const booksToNext  = Math.max(0, levelTotal - levelDone);
   const levelsComplete = Math.max(0, cur - 1);
 
+  const PpRoot = embedded ? "section" : "main";
   return (
-    <main className="ppx">
+    <PpRoot className={"ppx" + (embedded ? " ppx-embedded" : "")}>
       <header className="ppx-top wrap">
         <div className="ppx-header-main">
           <div className="ppx-top-title">
@@ -200,7 +201,7 @@ function PassportScreen({ onNavigate, gotoLevel, highlightBookId, childId }) {
               </div>
             )}
             <div className="ppx-actions">
-              <button className="ppx-btn ppx-btn-ghost" onClick={() => onNavigate("child")}>&larr; My Books</button>
+              {!embedded && <button className="ppx-btn ppx-btn-ghost" onClick={() => onNavigate("child")}>&larr; My Books</button>}
               <button className="ppx-btn ppx-btn-ghost" onClick={() => setEditOpen(true)}>Edit details</button>
               <button className="ppx-btn ppx-btn-solid" onClick={sharePassport}>{shareMsg || "Share passport"}</button>
             </div>
@@ -269,7 +270,7 @@ function PassportScreen({ onNavigate, gotoLevel, highlightBookId, childId }) {
           onDone={() => setChildTick(t => t + 1)}
         />
       )}
-    </main>
+    </PpRoot>
   );
 }
 
@@ -756,16 +757,16 @@ function ChildDashScreen({ onNavigate, justEarned }) {
 
   return (
     <main className="nd-page" data-screen-label="Child Dashboard">
-      <div className="nd">
+      <div className="nd nd-above-pp">
 
         <div className="nd-top">
-          <button type="button" className="nd-word nd-word-pp" onClick={() => onNavigate("passport", { levelId: currentLevel })} title="Open my passport" aria-label="Open my passport">
+          <button type="button" className="nd-word nd-word-pp" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} title="My passport" aria-label="My passport">
             <img className="nd-pp-icon" src={cover.img} alt="" />
             <img className="nd-logo" src="assets/logo-haaraya-literacy.png" alt="Haaraya Literacy" />
           </button>
           <nav className="nd-nav">
-            <a onClick={() => onNavigate("passport", { levelId: currentLevel })}>My Passport</a>
-            <a className="on">My Books</a>
+            <a onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>My Passport</a>
+            <a className="on" onClick={() => { const el = document.querySelector(".nd-under-pp"); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 12, behavior: "smooth" }); }}>My Books</a>
             <a onClick={() => onNavigate("library")}>Library</a>
             <a onClick={() => onNavigate("home")}>Home</a>
           </nav>
@@ -785,20 +786,13 @@ function ChildDashScreen({ onNavigate, justEarned }) {
           </div>
         </div>
 
-        <div className="nd-hero">
-          <MiniPassport
-            child={child} name={ME} level={currentLevel} levelName={levelName}
-            done={levelDone} total={levelTotal} toGo={toGo} doneCodes={doneCodes}
-            justEarned={justEarned} onNavigate={onNavigate}
-          />
-          <div className="nd-hero-side">
-            <div className="nd-welcome nd-welcome-sm">
-              <div className="eye">{justEarned ? "New stamp!" : "Good to see you"}</div>
-              <h1>{justEarned ? "Great reading, " + firstName + "!" : "Ready for your next stamp, " + firstName + "?"}</h1>
-              <p>{toGo > 0
-                ? (toGo + " more " + (toGo === 1 ? "book" : "books") + " and your Level " + currentLevel + " page is full.")
-                : "Your Level " + currentLevel + " page is full — on to the next!"}</p>
-            </div>
+      </div>
+
+      <PassportScreen embedded onNavigate={onNavigate} gotoLevel={justEarned ? currentLevel : undefined} />
+
+      <div className="nd nd-under-pp">
+        <div className="nd-grid">
+          <div className="nd-col">
             {feat && (
               <div className="nd-continue">
                 <div className={"cov" + (feat.thumb ? " cov--img" : "")}>
@@ -815,11 +809,6 @@ function ChildDashScreen({ onNavigate, justEarned }) {
                 <button className="nd-btn" onClick={() => onNavigate("reader", { bookCode: feat.id })}>Keep reading →</button>
               </div>
             )}
-          </div>
-        </div>
-
-        <div className="nd-grid">
-          <div className="nd-col">
 
             {/* The level journey — chosen by the programme, in teaching order. */}
             <div className="nd-panel">
@@ -890,16 +879,6 @@ function ChildDashScreen({ onNavigate, justEarned }) {
               </div>
             </div>
 
-            <div className="nd-panel">
-              <div className="nd-phead" style={{ marginBottom: 14 }}><h4>Recent stamps</h4><span className="side" onClick={() => onNavigate("passport", { levelId: currentLevel })}>{stampsEarned + " in my passport"}</span></div>
-              <div className="nd-stamps">
-                {recentStamps.map((st, i) => {
-                  const uiKey = st.strandUi || "tafiya";
-                  return <Stamp key={st.code || st.bookId || i} strand={uiKey} level={st.levelId} title={st.title} rotate={(i % 7) - 3} />;
-                })}
-                {recentStamps.length === 0 && <Stamp strand="locked" title="?" rotate={2} locked />}
-              </div>
-            </div>
           </div>
 
         </div>
@@ -913,63 +892,6 @@ function ChildDashScreen({ onNavigate, justEarned }) {
         />
       )}
     </main>
-  );
-}
-
-/* The passport itself, open on the current level, at the top of My Books.
-   Left page: who + level + progress. Right page: one stamp per book at this
-   level (earned first), then the Level stamp that a full page unlocks. */
-function MiniPassport({ child, name, level, levelName, done, total, toGo, doneCodes, justEarned, onNavigate }) {
-  const { data: levelBooks } = useApi(() => TafiyaBooks.getBooks({ levelId: level }), [level]);
-  const cover = PASSPORT_COVERS[child.passportColor] || PASSPORT_COVERS.green;
-  const lv = PASSPORT_LEVELS.find(l => l.n === level) || { color: "#2C5A32", band: "" };
-  const books = (levelBooks || []).slice().sort((a, b) => (doneCodes.has(b.code) ? 1 : 0) - (doneCodes.has(a.code) ? 1 : 0));
-  const SLOTS = 20;
-  const shown = books.slice(0, SLOTS);
-  const more = Math.max(0, books.length - SLOTS);
-  const pct = total ? Math.round((done / total) * 100) : 0;
-  const open = () => onNavigate("passport", { levelId: level, highlightBookId: justEarned || undefined });
-  return (
-    <div className="nd-pp" style={{ "--pp-cover": cover.swatch, "--pp-lvl": lv.color }} onClick={open} role="button" tabIndex={0}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }} aria-label={"Open " + name + "'s passport"}>
-      <div className="nd-pp-page nd-pp-left">
-        <div className="nd-pp-kicker">Reading Passport</div>
-        <div className="nd-pp-who">
-          <div className="nd-pp-photo">
-            {child.avatar && window.PassportAvatar
-              ? <PassportAvatar config={child.avatar} size={78} shape="passport" />
-              : <span>{(name || "?").slice(0, 1).toUpperCase()}</span>}
-          </div>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div className="nd-pp-name">{name}</div>
-            <div className="nd-pp-band">{"Level " + level + (levelName ? " \u00b7 " + levelName : "")}</div>
-          </div>
-        </div>
-        <div className="nd-pp-count"><b>{done}</b>{" of " + total + " stamps on this page"}</div>
-        <div className="nd-pp-bar"><span style={{ width: pct + "%" }} /></div>
-        <div className="nd-pp-open">Open my passport →</div>
-      </div>
-      <div className="nd-pp-page nd-pp-right">
-        <div className="nd-pp-stamps">
-          {shown.map(b => {
-            const got = doneCodes.has(b.code);
-            return (
-              <span key={b.code} className={"nd-pp-stamp" + (got ? " got" : "") + (justEarned && b.code === justEarned ? " is-new" : "")} title={b.title}>
-                <StampBook status={got ? "complete" : "notstarted"} />
-              </span>
-            );
-          })}
-          {more > 0 && <span className="nd-pp-more">{"+" + more}</span>}
-        </div>
-        <div className={"nd-pp-level" + (toGo === 0 && total ? " earned" : "")}>
-          <img src={"assets/stamp-l" + level + ".png"} alt="" />
-          <div>
-            <div className="t">{"Level " + level + " stamp"}</div>
-            <div className="s">{toGo === 0 && total ? "Earned!" : toGo + " more " + (toGo === 1 ? "book" : "books") + " to unlock"}</div>
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }
 

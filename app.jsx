@@ -89,8 +89,8 @@ const ROLE_ACCESS = {
 // Which links appear in the nav for each role (a subset of access, in order).
 const ROLE_NAV = {
   visitor:      ["home", "libraries", "passport", "pricing"],
-  child:        ["passport", "home", "child", "libraries", "pricing"],
-  parent:       ["passport", "home", "parent", "child", "libraries", "pricing"],
+  child:        ["child", "home", "libraries", "pricing"],
+  parent:       ["child", "home", "parent", "libraries", "pricing"],
   teacher:      ["home", "teacher", "libraries", "pricing"],
   school_admin: ["home", "school", "libraries", "pricing"],
   admin:        ["home", "libraries", "passport", "child", "parent", "teacher", "school", "admin", "pricing"],
@@ -623,7 +623,7 @@ function App() {
           onNavigate={navigate}
           session={session}
           navKeys={ROLE_NAV[role] || ROLE_NAV.visitor}
-          homeScreen={role === "child" ? "passport" : (ROLE_HOME[role] || "home")}
+          homeScreen={role === "child" ? "child" : (ROLE_HOME[role] || "home")}
           onSignIn={() => setSignInOpen(true)}
           onSignOut={signOut}
           onWaitlist={() => { window.location.href = "Haaraya Registration.html"; }}
