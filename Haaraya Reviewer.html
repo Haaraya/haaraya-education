@@ -155,7 +155,7 @@
       <h2 style="font-size:15px;margin:2px 0 8px">How to review a book</h2>
       <ol class="steps">
         <li>Click <b>Open the Library</b> below and pick any book to open the reader.</li>
-        <li>Turn on <span class="tag">✓ Review</span> in the top bar of the reader.</li>
+        <li>Click <span class="tag">✎ Review</span> in the top bar of the reader.</li>
         <li>On each page, compare the <b>picture</b> with the <b>words</b>. Mark <span class="tag">Text</span>, <span class="tag">Image</span>, <span class="tag">Page order</span> and <span class="tag">Layout</span> as <b>OK</b> or <b>Needs edit</b>.</li>
         <li>Pick an <b>Issue type</b> and set a <b>Status</b> (open / fixed / ignored) if needed.</li>
         <li>Type exactly what needs fixing in <b>Notes</b>. It saves on its own — you’ll see <b>Saved ✓</b>.</li>
@@ -202,6 +202,8 @@
           firstName: document.getElementById("su_first").value.trim(),
           lastName: document.getElementById("su_last").value.trim(),
           role: "reviewer",                         // ← testers become reviewers automatically
+          // Confirm link lands on the app; boot routes reviewers to the Library.
+          redirectTo: location.href.replace(/[^/]*$/, "") + "Haaraya%20Home.html",
         });
         if (data.session){ await render(); }
         else {

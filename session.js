@@ -57,6 +57,14 @@
       userId: 4, childId: null, schoolId: 1,
       color: "#00838F",
     },
+    // Page reviewers: Library + reader only (styling base; real sign-in only).
+    reviewer: {
+      role: "reviewer",
+      displayName: "Reviewer",
+      sub: "Book page review",
+      userId: null, childId: null, schoolId: null,
+      color: "#C77D00",
+    },
     // NOTE: no demo Haaraya-admin persona. Admin access is real-only:
     // it comes exclusively from a Supabase sign-in via signInReal (below).
   };
@@ -77,6 +85,7 @@
     teacher: "Teacher",
     school_admin: "School admin",
     admin: "Haaraya admin",
+    reviewer: "Reviewer",
   };
 
   // Sessions are restored from SUPABASE on boot (app.jsx reads the auth session
@@ -91,6 +100,7 @@
   const PROFILE_ROLE_TO_APP = {
     parent: "parent", teacher: "teacher",
     school_admin: "school_admin", haaraya_admin: "admin", admin: "admin", staff: "admin",
+    reviewer: "reviewer",
   };
 
   let current = load();

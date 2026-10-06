@@ -84,6 +84,7 @@ const ROLE_ACCESS = {
   teacher:      ["home", "faq", "teacher", "library", "reader", "passport", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals", "odyssey-log"],
   school_admin: ["home", "faq", "school", "library", "reader", "passport", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals", "odyssey-log"],
   admin:        ["home", "faq", "library", "passport", "child", "reader", "parent", "teacher", "school", "admin", "odyssey", "odyssey-library", "odyssey-reader", "odyssey-medals", "odyssey-log"],
+  reviewer:     ["home", "faq", "library", "reader", "odyssey-library", "odyssey-reader"],
 };
 
 // Which links appear in the nav for each role (a subset of access, in order).
@@ -94,12 +95,13 @@ const ROLE_NAV = {
   teacher:      ["home", "teacher", "libraries", "pricing"],
   school_admin: ["home", "school", "libraries", "pricing"],
   admin:        ["home", "libraries", "passport", "child", "parent", "teacher", "school", "admin", "pricing"],
+  reviewer:     ["libraries"],
 };
 
 // The landing screen for each role (post sign-in + redirect target).
 const ROLE_HOME = {
   visitor: "home", child: "child", parent: "parent",
-  teacher: "teacher", school_admin: "school", admin: "admin",
+  teacher: "teacher", school_admin: "school", admin: "admin", reviewer: "library",
 };
 
 const ROLE_ORDER = ["visitor", "child", "parent", "teacher", "school_admin", "admin"];
@@ -394,7 +396,7 @@ function App() {
           const hash = (window.location.hash || "").replace("#", "");
           const landed = window.HaarayaSession.role();
           const dest = ROLE_HOME[landed] || "home";
-          if (dest !== "home" && (!hash || hash === "home")) {
+          if (dest !== "home" && (!hash || hash === "home" || !validScreens.includes(hash))) {
             setScreen(dest);
             window.location.hash = dest;
           }
