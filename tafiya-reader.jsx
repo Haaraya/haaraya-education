@@ -1217,7 +1217,7 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
   else if (cur && cur.type === "page") reviewTarget = { key: "page-" + cur.page.page_number, page: cur.page.page_number, label: "Page " + cur.page.page_number };
   const reviewActive = reviewMode && reviewTarget && status === "ready";
 
-  if (gated) {
+  if (gated && !isReviewer) {
     const A = window.HaarayaAccess;
     return (
       <div className="tfr">
@@ -1273,6 +1273,12 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
               <span className="ico" aria-hidden="true">❖</span><span>Passport</span>
             </button>
             <TfrSaveButton code={code} book={b} />
+            {isReviewer && (
+              <button className={"btn " + (reviewMode ? "btn-nav" : "btn-ghost")} type="button"
+                aria-pressed={reviewMode} onClick={() => setReviewMode(m => !m)}>
+                <span className="ico" aria-hidden="true">✎</span><span>{reviewMode ? "Review on" : "Review"}</span>
+              </button>
+            )}
           </div>
           <div className="running">
             <span className="running-title">{tfrText(b.title) || "\u00a0"}</span>

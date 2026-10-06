@@ -34,7 +34,12 @@
     var res = await sb.auth.signUp({
       email: email,
       password: password,
-      options: { data: { full_name: fullName, first_name: firstName, last_name: lastName, role: role } },
+      options: {
+        data: { full_name: fullName, first_name: firstName, last_name: lastName, role: role },
+        // Send the confirm link back to the page they signed up on (e.g. Haaraya Reviewer.html),
+        // not Supabase's default Site URL (often localhost).
+        emailRedirectTo: opts.redirectTo || (location.origin + location.pathname),
+      },
     });
     if (res.error) throw res.error;
     clearProfile();
