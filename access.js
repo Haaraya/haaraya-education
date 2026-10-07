@@ -10,7 +10,7 @@
    Rules (see supabase/enrolment_migration.sql,
    public.subscription_is_active):
      visitor                  → free samples only
-     teacher/school_admin/admin → full (institutional / staff)
+     teacher/school_admin/admin/reviewer → full (institutional / staff)
      subscription 'active'    → full
      subscription 'trial'     → full while trial_ends_at is in the future
      expired/cancelled/none   → free samples only
@@ -33,7 +33,7 @@
 (function () {
   "use strict";
 
-  var STAFF = ["teacher", "school_admin", "admin"];
+  var STAFF = ["teacher", "school_admin", "admin", "reviewer"];
   var LAPSED = ["expired", "cancelled", "canceled", "past_due", "unpaid"];
 
   var state = { known: false, full: false, status: null, reason: "loading", trialEndsAt: null, daysLeft: null };
