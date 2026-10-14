@@ -407,7 +407,30 @@
 .tfr-rv-error { font-size: 12.5px; font-weight: 700; color: #E0653F; }
 
 /* ---------- Responsive ---------- */
+/* Tablets / narrow desktops: pills + brand on row 1, book meta on row 2 so the
+   centred title can never sit on top of the pills. */
+@media (max-width: 1180px) {
+  .tfr .topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "nav brand" "running running";
+    gap: 8px 14px;
+  }
+  .tfr .topbar-nav {
+    grid-area: nav; min-width: 0; flex-wrap: nowrap; overflow-x: auto;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .tfr .topbar-nav::-webkit-scrollbar { display: none; }
+  .tfr .topbar-nav > * { flex: 0 0 auto; white-space: nowrap; }
+  .tfr .brand { grid-area: brand; }
+  .tfr .running {
+    grid-area: running; text-align: left; flex-direction: row;
+    align-items: baseline; flex-wrap: wrap; gap: 4px 8px;
+  }
+}
 @media (max-width: 720px) {
+  .tfr .topbar { grid-template-columns: minmax(0, 1fr); grid-template-areas: "nav" "running"; }
+  .tfr .brand { display: none !important; }
+  .tfr .topbar-nav > * { min-height: 42px; font-size: 0.85rem; padding: 0 14px 0 10px; }
   /* Two rows: pills + brand on top, the running book meta underneath. The pill
      row scrolls horizontally rather than forcing the page wider than the
      screen. */
