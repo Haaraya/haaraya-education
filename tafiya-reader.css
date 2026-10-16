@@ -219,10 +219,13 @@
 }
 .tfr .story-text.is-single { text-align: center; line-height: 1.15; font-size: var(--story-fs-single, var(--story-fs, 5.1cqw)); }
 /* Bigger type for early readers. Image shrinks to make room (flex), never scrolls. */
-.tfr .story.lv-a { --story-fs: 8.5cqw; --story-fs-single: 13cqw; }
-.tfr .story.lv-b { --story-fs: 7cqw; --story-fs-single: 10cqw; }
-.tfr .story.lv-c { --story-fs: 6cqw; --story-fs-single: 8cqw; }
-.tfr .story.lv-d { --story-fs: 5.1cqw; --story-fs-single: 6.5cqw; }
+/* Kept below the cover title (9.5cqw) at every level. */
+.tfr .story.lv-a { --story-fs: 7cqw; --story-fs-single: 7.6cqw; }
+.tfr .story.lv-b { --story-fs: 6.4cqw; --story-fs-single: 7cqw; }
+.tfr .story.lv-c { --story-fs: 5.8cqw; --story-fs-single: 6.4cqw; }
+.tfr .story.lv-d { --story-fs: 5.1cqw; --story-fs-single: 5.8cqw; }
+.tfr .lib-short { display: none; }
+@media (max-width: 720px) { .tfr .lib-long { display: none; } .tfr .lib-short { display: inline; } }
 .tfr .story-text.is-empty { color: var(--tfr-ink-faint); font-style: italic; }
 .tfr .story.story-layout-overflow { outline: 2px solid #bf3333; outline-offset: -2px; }
 

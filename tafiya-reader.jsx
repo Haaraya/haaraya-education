@@ -150,7 +150,8 @@ function TfrPage({ page, local, level }) {
     window.addEventListener("resize", check);
     return () => { if (ro) ro.disconnect(); window.removeEventListener("resize", check); };
   }, [text]);
-  const textStyle = null;
+  // Same as before the layout test: text block matches the picture's edges.
+  const textStyle = bounds ? { width: bounds.w + "px", marginLeft: bounds.x + "px" } : null;
   return (
     <div className={"surface story " + lvlBand} ref={wrapRef}>
       <TfrImage className="story-img" path={page.image_path} local={local} label={"illustration · page " + page.page_number} />
@@ -921,7 +922,7 @@ function TfrSaveButton({ code, book }) {
       }}
     >
       <span className="ico" aria-hidden="true">{saved ? "✓" : "+"}</span>
-      <span>{saved ? "In my library" : "Add to my library"}</span>
+      <span className="lib-long">{saved ? "In my library" : "Add to my library"}</span><span className="lib-short">{saved ? "Saved" : "Save"}</span>
     </button>
   );
 }
