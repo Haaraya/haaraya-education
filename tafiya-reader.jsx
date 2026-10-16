@@ -127,47 +127,28 @@ function TfrPage({ page, local }) {
       window.removeEventListener("resize", sync);
     };
   }, [page]);
-  // The illustration is a CONSTANT size on every page (see .story-img), and so
-  // is the STORY TEXT: every page renders at the same base size (6cqw, set in
-  // .story-text) so the reading experience doesn't lurch between pages. The
-  // only exception is a passage long enough to overflow the fixed band — that
-  // one steps DOWN in fixed increments just far enough to fit. Short passages
-  // are never grown, so the common case is a single, standardized size.
+  // HAARAYA_BOTTOM_LAYOUT_V1: fixed font size, no per-page shrink.
   useEffectTfr(() => {
+    const wrap = wrapRef.current;
     const el = textRef.current;
-    if (!el) return;
-    const fit = () => {
-      el.style.fontSize = "";               // reset to the CSS base size
-      if (!text) { setSingle(false); return; }
-      const base = parseFloat(getComputedStyle(el).fontSize) || 16;
-      const lh = parseFloat(getComputedStyle(el).lineHeight) || base * 1.27;
-      // Centre only a genuinely tiny label (a single letter/word page, e.g.
-      // Soundables). Real story sentences stay left-aligned.
-      setSingle(el.scrollHeight <= lh * 1.6 && text.indexOf("\n") < 0 && text.length <= 24);
-      // 3px of slack: this <p> is a flex item, so its own box height is set by
-      // the layout and can sit a subpixel or two under its content height even
-      // when the text plainly fits. Without the slack that rounding artefact
-      // reads as an overflow the loop can never clear, and a perfectly short
-      // passage gets shrunk all the way to the floor.
-      const avail = el.clientHeight + 3;
-      if (el.scrollHeight <= avail) return;  // fits at the standard size → done
-      // Overflow only: step down in fixed 5% increments (deterministic, so
-      // passages of similar length land on the same size) until it fits. Bail
-      // out if a step stops buying height — nothing smaller will help either.
-      const min = base * 0.6;
-      let size = base, guard = 0, prev = el.scrollHeight;
-      while (size > min && el.scrollHeight > avail && guard++ < 40) {
-        size = Math.max(min, size - base * 0.05);
-        el.style.fontSize = size + "px";
-        if (el.scrollHeight >= prev) { el.style.fontSize = ""; break; }
-        prev = el.scrollHeight;
-      }
+    if (!wrap || !el) return;
+    const check = () => {
+      const lh = parseFloat(getComputedStyle(el).lineHeight) || 20;
+      setSingle(!!text && el.scrollHeight <= lh * 1.6 &&
+        !text.includes("\n") && text.length <= 24);
+      const cs = getComputedStyle(wrap);
+      const available = wrap.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      wrap.classList.toggle("story-layout-overflow",
+        el.scrollHeight + parseFloat(cs.rowGap || "0") > available + 2);
     };
-    fit();
-    window.addEventListener("resize", fit);
-    return () => window.removeEventListener("resize", fit);
-  }, [text, bounds]);
-  const textStyle = bounds ? { width: bounds.w + "px", marginLeft: bounds.x + "px" } : null;
+    check();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(check) : null;
+    if (ro) ro.observe(wrap);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(check);
+    window.addEventListener("resize", check);
+    return () => { if (ro) ro.disconnect(); window.removeEventListener("resize", check); };
+  }, [text]);
+  const textStyle = null;
   return (
     <div className="surface story" ref={wrapRef}>
       <TfrImage className="story-img" path={page.image_path} local={local} label={"illustration · page " + page.page_number} />

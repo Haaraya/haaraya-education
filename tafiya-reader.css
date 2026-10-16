@@ -173,29 +173,51 @@
 }
 
 /* ===== STORY PAGE ===== */
-.tfr .story { padding: 4cqh 8.5cqw; justify-content: flex-start; gap: 4cqh; overflow: hidden; }
-/* Constant illustration size on every page — it never grows or shrinks to
-   accommodate text, so it stays put from page to page. */
-.tfr .story-img {
-  position: relative; width: 100%; height: 58cqh; flex: 0 0 58cqh; min-height: 0;
-  display: flex; align-items: center; justify-content: center; overflow: hidden;
+/* HAARAYA_BOTTOM_LAYOUT_V1: approved P29/P48 layout test */
+.tfr .story {
+  padding: 5cqh 7cqw 6cqh;
+  justify-content: flex-end;
+  align-items: stretch;
+  gap: 2.5cqh;
+  overflow: hidden;
 }
-.tfr .story-img img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
-/* The text takes the fixed band below and auto-fits (font-size driven by JS in
-   TfrPage) so short and long passages both fill it without moving the image.
-   `pre-line` renders the editorial line breaks stored in display_text as real
-   breaks, while still letting a long editorial line wrap naturally on narrow
-   screens. Story text is LEFT aligned; the block itself is centred under the
-   illustration. */
+.tfr .story-img {
+  position: relative;
+  width: 100%;
+  height: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.tfr .story-img img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
 .tfr .story-text {
-  /* width + margin-left are set inline by TfrPage so the text block matches
-     the rendered illustration's left edge and width; these are the fallback. */
-  position: relative; width: 100%; flex: 1 1 0; min-height: 0; overflow: hidden;
-  font-weight: 700; font-size: 6cqw; line-height: 1.27; color: var(--tfr-ink);
-  white-space: pre-line; text-align: left; text-wrap: pretty;
+  position: relative;
+  width: 100%;
+  flex: 0 0 auto;
+  min-height: 0;
+  margin: 0;
+  overflow: visible;
+  font-weight: 700;
+  font-size: 5.1cqw;
+  line-height: 1.28;
+  color: var(--tfr-ink);
+  white-space: pre-line;
+  text-align: left;
+  text-wrap: pretty;
 }
 .tfr .story-text.is-single { text-align: center; line-height: 1.15; }
 .tfr .story-text.is-empty { color: var(--tfr-ink-faint); font-style: italic; }
+.tfr .story.story-layout-overflow { outline: 2px solid #bf3333; outline-offset: -2px; }
 
 /* Keep the reader's own typography (Andika) on titles — the host app's
    global `h1..h4` rule otherwise forces a serif display face here. */
