@@ -16,6 +16,30 @@ function WsMark({
     w: 3
   }));
 }
+/* Which worksheet is on screen, so a picture can find its drawing. */
+const WsCodeCtx = React.createContext(null);
+function wsPicId(code, label) {
+  return code && window.HLWS_PICS && (window.HLWS_PICS[code] || {})[label] || null;
+}
+function WsArt({
+  id,
+  code
+}) {
+  const [broken, setBroken] = React.useState(false);
+  if (!id || broken) return /*#__PURE__*/React.createElement("span", {
+    className: "ws-pic-art",
+    "aria-hidden": "true"
+  });
+  return /*#__PURE__*/React.createElement("span", {
+    className: "ws-pic-art has-img",
+    "aria-hidden": "true"
+  }, /*#__PURE__*/React.createElement("img", {
+    src: WSX.picUrl(code, id),
+    alt: "",
+    loading: "lazy",
+    onError: () => setBroken(true)
+  }));
+}
 function Pic({
   label,
   on,
@@ -25,18 +49,35 @@ function Pic({
   ro,
   small
 }) {
+  const code = React.useContext(WsCodeCtx);
   const tap = onClick && !ro;
   const El = tap ? "button" : "div";
   return /*#__PURE__*/React.createElement(El, {
     className: wsCls("ws-pic", on && "on", good && "good", bad && "bad", small && "sm"),
     onClick: tap ? onClick : undefined,
     "aria-pressed": tap ? !!on : undefined
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "ws-pic-art",
-    "aria-hidden": "true"
+  }, /*#__PURE__*/React.createElement(WsArt, {
+    id: wsPicId(code, label),
+    code: code
   }), /*#__PURE__*/React.createElement("span", {
     className: "ws-pic-l"
   }, label));
+}
+/* One drawing shown above a line, for questions where the child compares things in the same picture. */
+function WsRef({
+  id
+}) {
+  const code = React.useContext(WsCodeCtx);
+  const [broken, setBroken] = React.useState(false);
+  if (broken) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "ws-ref"
+  }, /*#__PURE__*/React.createElement("img", {
+    src: WSX.picUrl(code, id),
+    alt: "",
+    loading: "lazy",
+    onError: () => setBroken(true)
+  }));
 }
 function WordChip({
   label,
@@ -81,6 +122,10 @@ function ItemPick({
   }, /*#__PURE__*/React.createElement(BookTag, {
     i: li
   }), /*#__PURE__*/React.createElement("div", {
+    className: L.ref ? "ws-refline" : undefined
+  }, L.ref && /*#__PURE__*/React.createElement(WsRef, {
+    id: L.ref
+  }), /*#__PURE__*/React.createElement("div", {
     className: it.pic ? "ws-pics" : "ws-words"
   }, L.o.map((o, oi) => {
     const on = (val[li] || []).includes(oi);
@@ -94,7 +139,7 @@ function ItemPick({
       onClick: () => tap(li, oi),
       ro: ro
     });
-  })), fb && /*#__PURE__*/React.createElement(WsMark, {
+  }))), fb && /*#__PURE__*/React.createElement(WsMark, {
     u: fb.units[li]
   }))));
 }
@@ -848,7 +893,9 @@ function WorksheetSection({
     teacher: teacher
   });
   let qn = 0;
-  return WSX.secItems(w, k).map(it => {
+  return /*#__PURE__*/React.createElement(WsCodeCtx.Provider, {
+    value: w.code
+  }, WSX.secItems(w, k).map(it => {
     if (k === "ta" && it.t !== "text") qn++;
     return /*#__PURE__*/React.createElement(WsItem, {
       key: it.id,
@@ -861,7 +908,7 @@ function WorksheetSection({
       showKey: showKey,
       fb: showFb && it.t !== "text" ? WSX.check(it, rec.resp[it.id]) : null
     });
-  });
+  }));
 }
 function WorksheetPlayer({
   L,

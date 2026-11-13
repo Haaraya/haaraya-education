@@ -94,6 +94,7 @@ function simulate(w,rnd,skill){
  });
  return resp;
 }
+function picUrl(code,id){return SUPA+"/storage/v1/object/public/book-assets/worksheets/"+code+"/"+id+".webp";}
 function coverUrl(code){return SUPA+"/storage/v1/object/public/book-assets/books/"+code+"/"+code+"_FC.webp";}
 var pageCache={};
 function pages(code){
@@ -107,6 +108,6 @@ function pages(code){
   .catch(function(e){delete pageCache[code];throw e;});
  return pageCache[code];
 }
-window.HLWS={WS:WS,list:list,get:function(c){return WS[c];},SECS:SECS,RATINGS:RATINGS,HELP:HELP,BOOK_PAGES:BOOKS,check:check,suggest:suggest,secItems:secItems,simulate:simulate,coverUrl:coverUrl,pages:pages,norm:norm};
+window.HLWS={WS:WS,list:list,get:function(c){return WS[c];},SECS:SECS,RATINGS:RATINGS,HELP:HELP,BOOK_PAGES:BOOKS,check:check,suggest:suggest,secItems:secItems,simulate:simulate,coverUrl:coverUrl,picUrl:picUrl,pages:pages,norm:norm};
 window.HL_AUDIO=window.HL_AUDIO||{};
 })();

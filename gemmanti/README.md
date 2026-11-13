@@ -39,7 +39,7 @@ Commit both the `.jsx` source files and the rebuilt `learn/dist/` files.
 1. **Book sign-off.** Swap or finish the two showcase books that are not signed off in the master:
    - TF-03-02 *Chinasa at the Market* (`reaudit_fixed; scene_redo_pending`)
    - SN-07-01 *Queen Amina of Zazzau* (`draft`)
-2. **Worksheet pictures.** Add the worksheet line art. Picture tasks currently show placeholder boxes.
+2. **Worksheet pictures.** The line art for L1–L6 is wired in. It needs uploading to Supabase Storage at `book-assets/worksheets/<book code>/<image ID>.webp`; until then the striped placeholders show. Image IDs come from `HAARAYA_WORKSHEET_LINEART_SHOWCASE_v1.csv`, and `learn/ws-pics.js` says which picture label uses which image. Screen copies are 600 px greyscale WebP; the full-size originals are kept for print.
 3. **Sign-in and roles.** Use the website's sign-in, and show each person their real school, classes and children.
 4. **Saving to the database.** Add Supabase tables and access rules for worksheet records, then save to them.
 5. **Add-on check.** Show Gemmanti only to schools whose subscription includes it, and link it from the teacher and school dashboards.

@@ -6,11 +6,27 @@ function WsMark({ u }) {
   const t = u.ok === null ? "Teacher judgement" : u.ok ? "Right" : "Not yet";
   return <span className={"ws-mk " + (u.ok === null ? "open" : u.ok ? "ok" : "no")} title={t} aria-label={t}>{u.ok === null ? "?" : <Icon n={u.ok ? "check" : "x"} s={13} w={3} />}</span>;
 }
+/* Which worksheet is on screen, so a picture can find its drawing. */
+const WsCodeCtx = React.createContext(null);
+function wsPicId(code, label) { return code && window.HLWS_PICS && (window.HLWS_PICS[code] || {})[label] || null; }
+function WsArt({ id, code }) {
+  const [broken, setBroken] = React.useState(false);
+  if (!id || broken) return <span className="ws-pic-art" aria-hidden="true"></span>;
+  return <span className="ws-pic-art has-img" aria-hidden="true"><img src={WSX.picUrl(code, id)} alt="" loading="lazy" onError={() => setBroken(true)} /></span>;
+}
 function Pic({ label, on, good, bad, onClick, ro, small }) {
+  const code = React.useContext(WsCodeCtx);
   const tap = onClick && !ro;
   const El = tap ? "button" : "div";
   return <El className={wsCls("ws-pic", on && "on", good && "good", bad && "bad", small && "sm")} onClick={tap ? onClick : undefined} aria-pressed={tap ? !!on : undefined}>
-    <span className="ws-pic-art" aria-hidden="true"></span><span className="ws-pic-l">{label}</span></El>;
+    <WsArt id={wsPicId(code, label)} code={code} /><span className="ws-pic-l">{label}</span></El>;
+}
+/* One drawing shown above a line, for questions where the child compares things in the same picture. */
+function WsRef({ id }) {
+  const code = React.useContext(WsCodeCtx);
+  const [broken, setBroken] = React.useState(false);
+  if (broken) return null;
+  return <div className="ws-ref"><img src={WSX.picUrl(code, id)} alt="" loading="lazy" onError={() => setBroken(true)} /></div>;
 }
 function WordChip({ label, on, good, bad, onClick, ro }) {
   return <button className={wsCls("ws-word", on && "on", good && "good", bad && "bad")} onClick={ro ? undefined : onClick} disabled={ro && !on && !good} aria-pressed={!!on}>{label}</button>;
@@ -23,8 +39,9 @@ function ItemPick({ it, v, set, ro, fb }) {
   const P = it.pic ? Pic : WordChip;
   return <div className="ws-lines">{it.lines.map((L, li) => <div className="ws-line" key={li}>
     <BookTag i={li} />
+    <div className={L.ref ? "ws-refline" : undefined}>{L.ref && <WsRef id={L.ref} />}
     <div className={it.pic ? "ws-pics" : "ws-words"}>{L.o.map((o, oi) => { const on = (val[li] || []).includes(oi); const good = L.a.includes(oi);
-      return <P key={oi} label={o} on={on} good={fb && good} bad={fb && on && !good} onClick={() => tap(li, oi)} ro={ro} />; })}</div>
+      return <P key={oi} label={o} on={on} good={fb && good} bad={fb && on && !good} onClick={() => tap(li, oi)} ro={ro} />; })}</div></div>
     {fb && <WsMark u={fb.units[li]} />}
   </div>)}</div>;
 }
@@ -213,9 +230,9 @@ function wsAnswered(w, k, rec) {
 function WorksheetSection({ w, k, L, rec, ro, setResp, onReads, teacher, showFb, showKey }) {
   if (k === "ra") return <ReadAgain w={w} L={L} rec={rec} ro={ro} setResp={setResp} onReads={onReads} teacher={teacher} />;
   let qn = 0;
-  return WSX.secItems(w, k).map(it => { if (k === "ta" && it.t !== "text") qn++;
+  return <WsCodeCtx.Provider value={w.code}>{WSX.secItems(w, k).map(it => { if (k === "ta" && it.t !== "text") qn++;
     return <WsItem key={it.id} it={it} n={k === "ta" && it.t !== "text" ? qn : null} v={rec.resp[it.id]} set={x => setResp(it.id, x)} ro={ro} teacher={teacher} showKey={showKey}
-      fb={showFb && it.t !== "text" ? WSX.check(it, rec.resp[it.id]) : null} />; });
+      fb={showFb && it.t !== "text" ? WSX.check(it, rec.resp[it.id]) : null} />; })}</WsCodeCtx.Provider>;
 }
 
 function WorksheetPlayer({ L, code }) {

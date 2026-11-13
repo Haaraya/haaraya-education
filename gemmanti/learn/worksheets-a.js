@@ -144,8 +144,8 @@ Object.assign(window.HL_WS, {
  wf:[
   {t:"match", h:"Vocabulary", q:"Tortoise was clever. He used a tool to solve a problem. Match each problem to its clever tool.", left:["treat in a tree","ball under a bed","mango up high","bucket in a well"], right:["vine and stick","rope","broom","long pole"], picL:1, picR:1, a:[0,2,3,1],
    key:"Ball under a bed: broom. Mango up high: long pole. Bucket in a well: rope.", at:"one correct answer"},
-  {t:"pick", h:"Vocabulary", q:"Tortoise was the least of them all: the smallest. Tap the least in each line.", pic:1, single:1,
-   lines:[{o:["Goat","Dog","Tortoise"],a:[2]},{o:["cup, full","cup, half","cup, a drop"],a:[2]},{o:["big pile","three nuts","small pile"],a:[1]}],
+  {t:"pick", h:"Vocabulary", q:"Tortoise was the least of them all: the smallest. Tap the least in each line.", single:1,
+   lines:[{o:["Goat","Dog","Tortoise"],a:[2],ref:"WS-TFT-05-01-08"},{o:["cup, full","cup, half","cup, a drop"],a:[2],ref:"WS-TFT-05-01-09"},{o:["big pile","three nuts","small pile"],a:[1],ref:"WS-TFT-05-01-10"}],
    key:"Line 1: Tortoise. Line 2: the cup with a drop. Line 3: three nuts.", at:"one correct answer"}
  ],
  ra:{page:"Page 3", lines:["\u201CI will get it!\u201D said Goat.","He ran at the tree. Bang!"], purpose:"Make the second reading smoother. Let Goat sound sure of himself, then crash on Bang!", reads:2},
