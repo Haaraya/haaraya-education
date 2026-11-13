@@ -274,8 +274,18 @@
     odyssey:     function () { return fetchTable("odyssey_books", {}); },
   };
 
+  // Clears demo activity (reading, stamps, Odyssey, Gemmanti worksheets) for
+  // demo accounts only. The database refuses anyone but a Haaraya admin.
+  async function resetDemo() {
+    var c = sb(); if (!c) throw new Error("Supabase is not loaded.");
+    var r = await c.rpc("admin_reset_demo_activity");
+    if (r.error) throw new Error(r.error.message || String(r.error));
+    return r.data || {};
+  }
+
   window.HaarayaAdminDB = {
     preload: preload,
+    resetDemo: resetDemo,
     overview: overview,
     catalogue: catalogue,
     get: get,

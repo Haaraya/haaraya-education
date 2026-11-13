@@ -94,7 +94,7 @@ const ROLE_NAV = {
   parent:       ["child", "home", "parent", "libraries", "pricing"],
   teacher:      ["home", "teacher", "libraries", "pricing"],
   school_admin: ["home", "school", "libraries", "pricing"],
-  admin:        ["home", "libraries", "passport", "child", "parent", "teacher", "school", "admin", "pricing"],
+  admin:        ["home", "libraries", "admin"],
   reviewer:     ["libraries"],
 };
 
