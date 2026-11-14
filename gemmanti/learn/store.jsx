@@ -123,6 +123,11 @@ function HLProvider({ children, initial }) {
         .then(() => toast(on ? "Scores are on for this class" : "Scores are off for this class"))
         .catch(e => { console.warn(e); flip(!on); toast("Couldn’t change it. Try again."); });
     },
+    setFamilyEmail: async (lid, email) => {
+      const v = await HLLive.setFamilyEmail(lid, email);
+      up(s => { if (s.learners[lid]) s.learners[lid].familyEmail = v; });
+      return v;
+    },
     toggleCollection: (orgId, colId) => up(s => { const a = s.orgCollections[orgId]; const i = a.indexOf(colId); i >= 0 ? a.splice(i, 1) : a.push(colId); }),
     toggleUser: id => up(s => { const u = s.adminUsers.find(u => u.id === id); u.active = !u.active; }),
     setUserRole: (id, role) => up(s => { s.adminUsers.find(u => u.id === id).role = role; }),

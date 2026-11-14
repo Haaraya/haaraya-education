@@ -146,6 +146,11 @@
     var members = await classMembers(classes.map(function (c) { return c.id; }));
     var classOf = {}; members.forEach(function (m) { if (!classOf[m.child_id]) classOf[m.child_id] = m.classroom_id; });
     s.learners = await buildPeople(Object.keys(classOf), classOf, true);
+    var kidIds = Object.keys(s.learners);
+    if (kidIds.length) {
+      var con = await sb().from("school_pupil_contacts").select("child_id,family_email").in("child_id", kidIds);
+      if (!con.error) con.data.forEach(function (c) { if (s.learners[c.child_id]) s.learners[c.child_id].familyEmail = c.family_email || ""; });
+    }
 
     s.classes = classes.map(function (c) {
       return { id: c.id, name: c.name, schoolId: c.school_id, teacherId: c.teacher_user_id, teacherName: tName[c.teacher_user_id] || "No teacher yet",
@@ -219,7 +224,24 @@
     return r.data[0].show_scores;
   }
 
+  async function setFamilyEmail(childId, email) {
+    var v = String(email || "").trim() || null;
+    var r = await sb().from("school_pupil_contacts").upsert({ child_id: childId, family_email: v }, { onConflict: "child_id" });
+    if (r.error) throw r.error;
+    return v || "";
+  }
+
+  // Emails each family its child's report. The server checks who may send and
+  // reads the ratings itself; the catalogue only supplies worksheet titles.
+  async function emailReports(classId, childIds) {
+    var cat = {};
+    (window.HLWS ? HLWS.list() : []).forEach(function (w) { cat[w.code] = { title: w.title, level: w.level, strand: w.strand }; });
+    var r = await sb().functions.invoke("gemmanti-report-email", { body: { class_id: classId, child_ids: childIds, catalogue: cat } });
+    if (r.error) throw r.error;
+    return r.data || {};
+  }
+
   async function signOut() { try { await window.HaarayaAuth.signOut(); } catch (e) {} }
 
-  window.HLLive = { demo: DEMO, load: load, saveWork: saveWork, saveReview: saveReview, setGemmanti: setGemmanti, setShowScores: setShowScores, signOut: signOut };
+  window.HLLive = { demo: DEMO, load: load, saveWork: saveWork, saveReview: saveReview, setGemmanti: setGemmanti, setShowScores: setShowScores, setFamilyEmail: setFamilyEmail, emailReports: emailReports, signOut: signOut };
 })();

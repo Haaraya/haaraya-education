@@ -76,12 +76,15 @@ function AddPupilModal({ schoolId, classrooms, onClose, onDone }) {
   const [classroom, setClassroom] = useStateEnrol("");
   const [level, setLevel] = useStateEnrol(1);
   const [mode, setMode] = useStateEnrol("automatic");
+  const [email, setEmail] = useStateEnrol("");
   const [busy, setBusy] = useStateEnrol(false);
   const [msg, setMsg] = useStateEnrol("");
   const levels = (window.HaarayaSeed && HaarayaSeed.levels) || [];
 
   const submit = async () => {
     if (!first.trim()) { setMsg("A first name is needed."); return; }
+    const famEmail = email.trim();
+    if (famEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(famEmail)) { setMsg("That family email doesn’t look right."); return; }
     setBusy(true); setMsg("");
     const res = await window.HaarayaEnrol.enrolPupil({
       schoolId: schoolId,
@@ -91,8 +94,23 @@ function AddPupilModal({ schoolId, classrooms, onClose, onDone }) {
         currentLevelId: Number(level) || 1, readingMode: mode,
       },
     });
+    // One family email per school pupil, for emailed reports. Saved after the
+    // pupil exists; a failure here never undoes the enrolment.
+    let emailFailed = false;
+    if (res && res.ok && famEmail && res.child && res.child.id) {
+      try {
+        const r = await window.HaarayaSupabase.from("school_pupil_contacts")
+          .upsert({ child_id: res.child.id, family_email: famEmail }, { onConflict: "child_id" });
+        if (r.error) emailFailed = true;
+      } catch (e) { emailFailed = true; }
+    }
     setBusy(false);
     if (res && res.ok) {
+      if (emailFailed) {
+        setMsg("Pupil added, but the family email couldn’t be saved. Add it later from the pupil list.");
+        onDone && onDone();
+        return;
+      }
       if (res.warnings && res.warnings.length) {
         setMsg("Pupil added, but not seated in the class: " + (res.warnings[0].detail || res.warnings[0].reason));
         onDone && onDone();
@@ -137,6 +155,12 @@ function AddPupilModal({ schoolId, classrooms, onClose, onDone }) {
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
+            </div>
+          </div>
+          <div className="addkid-row">
+            <div className="assign-col" style={{ gridColumn: "1 / -1" }}>
+              <div className="assign-lbl">Family email <span className="opt">optional</span></div>
+              <input className="assign-search" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="For sending this pupil’s reports home" />
             </div>
           </div>
           <div className="addkid-row">

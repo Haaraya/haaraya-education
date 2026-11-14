@@ -257,7 +257,7 @@ function LivePupils({
     className: "tbl-wrap"
   }, /*#__PURE__*/React.createElement("table", {
     className: "tbl"
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Pupil"), /*#__PURE__*/React.createElement("th", {
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Pupil"), /*#__PURE__*/React.createElement("th", null, "Family email"), /*#__PURE__*/React.createElement("th", {
     className: "c"
   }, "Working"), /*#__PURE__*/React.createElement("th", {
     className: "c"
@@ -271,7 +271,9 @@ function LivePupils({
   }, /*#__PURE__*/React.createElement(Avatar, {
     name: l.name,
     size: "sm"
-  }), l.name)), /*#__PURE__*/React.createElement("td", {
+  }), l.name)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(FamilyEmail, {
+    L: l
+  })), /*#__PURE__*/React.createElement("td", {
     className: "c"
   }, count(l, "in_progress")), /*#__PURE__*/React.createElement("td", {
     className: "c"
@@ -285,7 +287,71 @@ function LivePupils({
   }, "Open as pupil")))))))));
 }
 
-/* ---------- reports for families: print or save as PDF ---------- */
+/* One family email per school pupil, used to send reports. */
+function FamilyEmail({
+  L
+}) {
+  const {
+    setFamilyEmail,
+    toast
+  } = useHL();
+  const [edit, setEdit] = React.useState(false);
+  const [v, setV] = React.useState(L.familyEmail || "");
+  const [busy, setBusy] = React.useState(false);
+  const save = async () => {
+    const t = v.trim();
+    if (t && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(t)) {
+      toast("That email address doesn’t look right.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await setFamilyEmail(L.id, t);
+      setEdit(false);
+      toast(t ? "Family email saved" : "Family email removed");
+    } catch (e) {
+      console.warn(e);
+      toast("Couldn’t save. Try again.");
+    }
+    setBusy(false);
+  };
+  if (!edit) return /*#__PURE__*/React.createElement("button", {
+    className: "fam-email linkish",
+    onClick: () => {
+      setV(L.familyEmail || "");
+      setEdit(true);
+    }
+  }, L.familyEmail ? L.familyEmail : /*#__PURE__*/React.createElement("span", {
+    className: "ws-hint"
+  }, "Add email"));
+  return /*#__PURE__*/React.createElement("form", {
+    className: "fam-edit",
+    onSubmit: e => {
+      e.preventDefault();
+      save();
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "hl-input",
+    type: "email",
+    value: v,
+    onChange: e => setV(e.target.value),
+    placeholder: "family@example.com",
+    "aria-label": `Family email for ${L.name}`,
+    autoFocus: true,
+    disabled: busy
+  }), /*#__PURE__*/React.createElement("button", {
+    className: "hl-btn sm",
+    type: "submit",
+    disabled: busy
+  }, "Save"), /*#__PURE__*/React.createElement("button", {
+    className: "hl-btn ghost sm",
+    type: "button",
+    onClick: () => setEdit(false),
+    disabled: busy
+  }, "Cancel"));
+}
+
+/* ---------- reports for families: print, save as PDF, or email ---------- */
 const REP_SECS = [["wf", "Word Focus"], ["ra", "Read It Again"], ["ta", "Think About It"], ["sw", "Show What You Know"]];
 function LiveReports({
   cls,
@@ -295,17 +361,70 @@ function LiveReports({
   const list = learners.slice().sort((a, b) => a.name.localeCompare(b.name));
   const [who, setWho] = React.useState("all");
   const shown = who === "all" ? list : list.filter(l => l.id === who);
+  const [mail, setMail] = React.useState(null); // null | "confirm" | "sending" | {result}
+  const recorded = l => Object.values(l.worksheets || {}).some(r => r.status === "reviewed");
+  const ready = shown.filter(recorded);
+  const withEmail = ready.filter(l => l.familyEmail),
+    without = ready.filter(l => !l.familyEmail);
+  const nothing = shown.filter(l => !recorded(l));
+  const first = n => n.split(" ")[0];
+  const send = async () => {
+    setMail("sending");
+    try {
+      setMail({
+        result: await HLLive.emailReports(cls.id, withEmail.map(l => l.id))
+      });
+    } catch (e) {
+      console.warn("Email reports failed", e);
+      setMail({
+        error: true
+      });
+    }
+  };
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "ph-h no-print"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Reports"), /*#__PURE__*/React.createElement("p", null, cls.name, " \xB7 for families. Teacher\u2019s notes are never included.")), /*#__PURE__*/React.createElement("div", {
     className: "acts"
   }, /*#__PURE__*/React.createElement("button", {
+    className: "hl-btn ghost",
+    onClick: () => setMail("confirm"),
+    disabled: !shown.length
+  }, /*#__PURE__*/React.createElement(Icon, {
+    n: "send",
+    s: 16
+  }), "Email to ", shown.length === 1 ? "family" : "families"), /*#__PURE__*/React.createElement("button", {
     className: "hl-btn",
     onClick: () => window.print()
   }, /*#__PURE__*/React.createElement(Icon, {
     n: "dl",
     s: 16
-  }), "Print or save as PDF"))), /*#__PURE__*/React.createElement("div", {
+  }), "Print or save as PDF"))), mail && /*#__PURE__*/React.createElement("div", {
+    className: "card mail-panel no-print"
+  }, mail === "confirm" && /*#__PURE__*/React.createElement(React.Fragment, null, withEmail.length ? /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", null, "Send ", withEmail.length === 1 ? `${first(withEmail[0].name)}’s report to their family` : `${withEmail.length} reports, one to each family`, "?"), cls.showScores ? " Scores are included." : " Scores are not included.") : /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", null, ready.length ? "No family emails for these pupils yet." : "No worksheets recorded yet."), ready.length ? " Add them on the Pupils page." : " Reports go out once a worksheet has been recorded."), without.length > 0 && withEmail.length > 0 && /*#__PURE__*/React.createElement("p", {
+    className: "ws-hint"
+  }, "No family email for ", without.map(l => first(l.name)).join(", "), ". Add it on the Pupils page."), nothing.length > 0 && ready.length > 0 && /*#__PURE__*/React.createElement("p", {
+    className: "ws-hint"
+  }, "Nothing recorded yet for ", nothing.map(l => first(l.name)).join(", "), ", so no report for them."), /*#__PURE__*/React.createElement("div", {
+    className: "live-acts"
+  }, withEmail.length > 0 && /*#__PURE__*/React.createElement("button", {
+    className: "hl-btn",
+    onClick: send
+  }, "Send"), /*#__PURE__*/React.createElement("button", {
+    className: "hl-btn ghost",
+    onClick: () => setMail(null)
+  }, withEmail.length ? "Cancel" : "Close"))), mail === "sending" && /*#__PURE__*/React.createElement("p", null, "Sending\u2026"), mail && mail.result && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", null, mail.result.sent ? `Sent to ${mail.result.sent} ${mail.result.sent === 1 ? "family" : "families"}.` : "Nothing was sent.")), mail.result.failed && mail.result.failed.length > 0 && /*#__PURE__*/React.createElement("p", {
+    className: "ws-hint"
+  }, "Couldn\u2019t send for ", mail.result.failed.map(first).join(", "), ". Check the address and try again."), /*#__PURE__*/React.createElement("div", {
+    className: "live-acts"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "hl-btn ghost",
+    onClick: () => setMail(null)
+  }, "Done"))), mail && mail.error && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", null, "Couldn\u2019t send the reports."), " Check your connection and try again."), /*#__PURE__*/React.createElement("div", {
+    className: "live-acts"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "hl-btn ghost",
+    onClick: () => setMail(null)
+  }, "Close")))), /*#__PURE__*/React.createElement("div", {
     className: "filters no-print"
   }, /*#__PURE__*/React.createElement("select", {
     className: "hl-select",

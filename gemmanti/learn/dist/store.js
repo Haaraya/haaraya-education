@@ -345,6 +345,13 @@ function HLProvider({
         toast("Couldn’t change it. Try again.");
       });
     },
+    setFamilyEmail: async (lid, email) => {
+      const v = await HLLive.setFamilyEmail(lid, email);
+      up(s => {
+        if (s.learners[lid]) s.learners[lid].familyEmail = v;
+      });
+      return v;
+    },
     toggleCollection: (orgId, colId) => up(s => {
       const a = s.orgCollections[orgId];
       const i = a.indexOf(colId);

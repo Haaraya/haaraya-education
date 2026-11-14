@@ -105,24 +105,81 @@ function LivePupils({ cls, learners, openPupil, openRecords }) {
     <div className="ph-h"><div><h1>Pupils</h1><p>{cls.name} · {list.length} pupil{list.length === 1 ? "" : "s"}</p></div></div>
     {!list.length ? <div className="empty">No pupils in this class yet. Add them on your Haaraya school page.</div> :
     <div className="card" style={{ padding: 0 }}><div className="tbl-wrap"><table className="tbl">
-      <thead><tr><th>Pupil</th><th className="c">Working</th><th className="c">To record</th><th className="c">Recorded</th><th></th></tr></thead>
+      <thead><tr><th>Pupil</th><th>Family email</th><th className="c">Working</th><th className="c">To record</th><th className="c">Recorded</th><th></th></tr></thead>
       <tbody>{list.map(l => <tr key={l.id}>
         <td><button className="who linkish" onClick={() => openRecords(l.id)}><Avatar name={l.name} size="sm" />{l.name}</button></td>
+        <td><FamilyEmail L={l} /></td>
         <td className="c">{count(l, "in_progress")}</td><td className="c">{count(l, "handed_in")}</td><td className="c">{count(l, "reviewed")}</td>
         <td className="c"><button className="hl-btn sm" onClick={() => openPupil(l.id)}>Open as pupil</button></td></tr>)}</tbody>
     </table></div></div>}
   </>;
 }
 
-/* ---------- reports for families: print or save as PDF ---------- */
+/* One family email per school pupil, used to send reports. */
+function FamilyEmail({ L }) {
+  const { setFamilyEmail, toast } = useHL();
+  const [edit, setEdit] = React.useState(false);
+  const [v, setV] = React.useState(L.familyEmail || "");
+  const [busy, setBusy] = React.useState(false);
+  const save = async () => {
+    const t = v.trim();
+    if (t && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(t)) { toast("That email address doesn’t look right."); return; }
+    setBusy(true);
+    try { await setFamilyEmail(L.id, t); setEdit(false); toast(t ? "Family email saved" : "Family email removed"); }
+    catch (e) { console.warn(e); toast("Couldn’t save. Try again."); }
+    setBusy(false);
+  };
+  if (!edit) return <button className="fam-email linkish" onClick={() => { setV(L.familyEmail || ""); setEdit(true); }}>
+    {L.familyEmail ? L.familyEmail : <span className="ws-hint">Add email</span>}</button>;
+  return <form className="fam-edit" onSubmit={e => { e.preventDefault(); save(); }}>
+    <input className="hl-input" type="email" value={v} onChange={e => setV(e.target.value)} placeholder="family@example.com" aria-label={`Family email for ${L.name}`} autoFocus disabled={busy} />
+    <button className="hl-btn sm" type="submit" disabled={busy}>Save</button>
+    <button className="hl-btn ghost sm" type="button" onClick={() => setEdit(false)} disabled={busy}>Cancel</button>
+  </form>;
+}
+
+/* ---------- reports for families: print, save as PDF, or email ---------- */
 const REP_SECS = [["wf", "Word Focus"], ["ra", "Read It Again"], ["ta", "Think About It"], ["sw", "Show What You Know"]];
 function LiveReports({ cls, school, learners }) {
   const list = learners.slice().sort((a, b) => a.name.localeCompare(b.name));
   const [who, setWho] = React.useState("all");
   const shown = who === "all" ? list : list.filter(l => l.id === who);
+  const [mail, setMail] = React.useState(null); // null | "confirm" | "sending" | {result}
+  const recorded = l => Object.values(l.worksheets || {}).some(r => r.status === "reviewed");
+  const ready = shown.filter(recorded);
+  const withEmail = ready.filter(l => l.familyEmail), without = ready.filter(l => !l.familyEmail);
+  const nothing = shown.filter(l => !recorded(l));
+  const first = n => n.split(" ")[0];
+  const send = async () => {
+    setMail("sending");
+    try { setMail({ result: await HLLive.emailReports(cls.id, withEmail.map(l => l.id)) }); }
+    catch (e) { console.warn("Email reports failed", e); setMail({ error: true }); }
+  };
   return <>
     <div className="ph-h no-print"><div><h1>Reports</h1><p>{cls.name} · for families. Teacher’s notes are never included.</p></div>
-      <div className="acts"><button className="hl-btn" onClick={() => window.print()}><Icon n="dl" s={16} />Print or save as PDF</button></div></div>
+      <div className="acts">
+        <button className="hl-btn ghost" onClick={() => setMail("confirm")} disabled={!shown.length}><Icon n="send" s={16} />Email to {shown.length === 1 ? "family" : "families"}</button>
+        <button className="hl-btn" onClick={() => window.print()}><Icon n="dl" s={16} />Print or save as PDF</button></div></div>
+    {mail && <div className="card mail-panel no-print">
+      {mail === "confirm" && <>
+        {withEmail.length
+          ? <p><b>Send {withEmail.length === 1 ? `${first(withEmail[0].name)}’s report to their family` : `${withEmail.length} reports, one to each family`}?</b>{cls.showScores ? " Scores are included." : " Scores are not included."}</p>
+          : <p><b>{ready.length ? "No family emails for these pupils yet." : "No worksheets recorded yet."}</b>{ready.length ? " Add them on the Pupils page." : " Reports go out once a worksheet has been recorded."}</p>}
+        {without.length > 0 && withEmail.length > 0 && <p className="ws-hint">No family email for {without.map(l => first(l.name)).join(", ")}. Add it on the Pupils page.</p>}
+        {nothing.length > 0 && ready.length > 0 && <p className="ws-hint">Nothing recorded yet for {nothing.map(l => first(l.name)).join(", ")}, so no report for them.</p>}
+        <div className="live-acts">{withEmail.length > 0 && <button className="hl-btn" onClick={send}>Send</button>}<button className="hl-btn ghost" onClick={() => setMail(null)}>{withEmail.length ? "Cancel" : "Close"}</button></div>
+      </>}
+      {mail === "sending" && <p>Sending…</p>}
+      {mail && mail.result && <>
+        <p><b>{mail.result.sent ? `Sent to ${mail.result.sent} ${mail.result.sent === 1 ? "family" : "families"}.` : "Nothing was sent."}</b></p>
+        {mail.result.failed && mail.result.failed.length > 0 && <p className="ws-hint">Couldn’t send for {mail.result.failed.map(first).join(", ")}. Check the address and try again.</p>}
+        <div className="live-acts"><button className="hl-btn ghost" onClick={() => setMail(null)}>Done</button></div>
+      </>}
+      {mail && mail.error && <>
+        <p><b>Couldn’t send the reports.</b> Check your connection and try again.</p>
+        <div className="live-acts"><button className="hl-btn ghost" onClick={() => setMail(null)}>Close</button></div>
+      </>}
+    </div>}
     <div className="filters no-print">
       <select className="hl-select" value={who} onChange={e => setWho(e.target.value)} aria-label="Report for">
         <option value="all">Whole class ({list.length})</option>

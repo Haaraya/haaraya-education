@@ -716,3 +716,8 @@ a.hl-brand{text-decoration:none;color:inherit}
   .rep-page:last-child{break-after:auto;page-break-after:auto}
   body{background:#fff}
 }
+.fam-email{font-size:14px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.fam-edit{display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-width:0}
+.fam-edit .hl-input{min-width:0;width:220px;max-width:100%;padding:6px 10px;font-size:14px}
+.mail-panel{margin-bottom:16px;display:grid;gap:10px}
+.mail-panel p{margin:0;font-size:15px;line-height:1.5}
