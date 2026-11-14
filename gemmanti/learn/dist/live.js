@@ -1,4 +1,4 @@
-/* Gemmanti — live screens: sign-in gate, staff, parent, pupil and Haaraya admin.
+/* Gemmanti — live screens: sign-in gate, teacher and school admin, reports, pupil and Haaraya admin.
    They reuse the worksheet screens; anything without real data behind it yet
    (lessons, journeys, reports, requests) is left out. */
 const LIVE_HOME = "../Haaraya%20Home.html";
@@ -6,7 +6,6 @@ const LIVE_LOGIN = "../Haaraya%20Login.html?next=" + encodeURIComponent("gemmant
 const LIVE_ROLE_NAME = {
   teacher: "Teacher",
   school: "School admin",
-  parent: "Parent",
   admin: "Haaraya admin"
 };
 
@@ -40,14 +39,27 @@ function LiveGate({
   let title, body, actions;
   if (r.signedOut || r.noProfile) {
     title = "Sign in to Gemmanti";
-    body = "Use your Haaraya account. Teachers, school admins and parents can sign in here.";
+    body = "Use your Haaraya school account. Teachers and school admins can sign in here.";
     actions = /*#__PURE__*/React.createElement("a", {
       className: "hl-btn big",
       href: LIVE_LOGIN
     }, "Sign in");
+  } else if (r.unsupported && r.parentAccount) {
+    title = "Gemmanti is for schools";
+    body = "Your family’s reading and progress are on your Haaraya dashboard.";
+    actions = /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("a", {
+      className: "hl-btn",
+      href: LIVE_HOME
+    }, "Go to Haaraya"), /*#__PURE__*/React.createElement("button", {
+      className: "hl-btn ghost",
+      onClick: async () => {
+        await HLLive.signOut();
+        location.reload();
+      }
+    }, "Sign out"));
   } else if (r.unsupported) {
-    title = "Gemmanti is for schools and families";
-    body = "This account can’t use Gemmanti. Sign in as a teacher, school admin or parent.";
+    title = "Gemmanti is for schools";
+    body = "This account can’t use Gemmanti. Sign in with a teacher or school admin account.";
     actions = /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("a", {
       className: "hl-btn",
       href: LIVE_HOME
@@ -130,9 +142,6 @@ function LiveApp() {
     onExit: () => setPupil(null)
   });
   if (state.role === "admin") return /*#__PURE__*/React.createElement(LiveAdmin, null);
-  if (state.role === "parent") return /*#__PURE__*/React.createElement(LiveParent, {
-    openPupil: setPupil
-  });
   return /*#__PURE__*/React.createElement(LiveStaff, {
     openPupil: setPupil
   });
@@ -160,7 +169,8 @@ function LiveStaff({
   openPupil
 }) {
   const {
-    state
+    state,
+    setClassScores
   } = useHL();
   const [classId, setClassId] = React.useState(state.classes[0] && state.classes[0].id);
   const [drawer, setDrawer] = React.useState(null);
@@ -177,7 +187,7 @@ function LiveStaff({
   const school = state.schools.find(s => s.id === cls.schoolId);
   const toRecord = learners.filter(l => Object.values(l.worksheets || {}).some(r => r.status === "handed_in")).length;
   const v = state.route.view;
-  const nav = [["worksheets", "Worksheets", "sheet", toRecord], ["pupils", "Pupils", "users"]];
+  const nav = [["worksheets", "Worksheets", "sheet", toRecord], ["pupils", "Pupils", "users"], ["reports", "Reports", "dl"]];
   const ctx = /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("b", null, state.me.name), /*#__PURE__*/React.createElement("span", null, school ? school.name : "")), state.classes.length > 1 ? /*#__PURE__*/React.createElement("select", {
     value: cls.id,
     onChange: e => setClassId(e.target.value),
@@ -187,13 +197,26 @@ function LiveStaff({
     value: c.id
   }, c.name))) : /*#__PURE__*/React.createElement("div", {
     className: "live-cls"
-  }, cls.name));
+  }, cls.name), state.role === "teacher" && cls.teacherId === state.me.id && /*#__PURE__*/React.createElement("label", {
+    className: "live-scores"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "live-switch" + (cls.showScores ? " on" : ""),
+    role: "switch",
+    "aria-checked": cls.showScores,
+    onClick: () => setClassScores(cls.id, !cls.showScores)
+  }, /*#__PURE__*/React.createElement("i", null)), /*#__PURE__*/React.createElement("span", null, "Show scores")));
   return /*#__PURE__*/React.createElement(AdultShell, {
     nav: nav,
     ctx: ctx
-  }, v !== "pupils" && /*#__PURE__*/React.createElement(TWorksheets, {
+  }, v !== "pupils" && v !== "reports" && /*#__PURE__*/React.createElement(TWorksheets, {
     key: cls.id,
     cls: cls,
+    learners: learners,
+    showScores: cls.showScores
+  }), v === "reports" && /*#__PURE__*/React.createElement(LiveReports, {
+    key: cls.id,
+    cls: cls,
+    school: school,
     learners: learners
   }), v === "pupils" && /*#__PURE__*/React.createElement(LivePupils, {
     cls: cls,
@@ -262,62 +285,89 @@ function LivePupils({
   }, "Open as pupil")))))))));
 }
 
-/* ---------- parent ---------- */
-function LiveParent({
-  openPupil
+/* ---------- reports for families: print or save as PDF ---------- */
+const REP_SECS = [["wf", "Word Focus"], ["ra", "Read It Again"], ["ta", "Think About It"], ["sw", "Show What You Know"]];
+function LiveReports({
+  cls,
+  school,
+  learners
 }) {
-  const {
-    state
-  } = useHL();
-  const kids = Object.values(state.learners).sort((a, b) => a.name.localeCompare(b.name));
-  const [cid, setCid] = React.useState(kids[0] && kids[0].id);
-  if (!kids.length) return /*#__PURE__*/React.createElement(LiveEmpty, {
-    title: "Gemmanti isn\u2019t available for your children yet",
-    body: "Gemmanti comes through your child\u2019s school. When their school adds it, you\u2019ll see their worksheets here."
-  });
-  const L = state.learners[cid] || kids[0];
-  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(TopNav, {
-    items: null
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: "var(--cream)",
-      minHeight: "calc(100vh - 64px)"
-    }
-  }, /*#__PURE__*/React.createElement("main", {
-    className: "main",
-    style: {
-      margin: "0 auto"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "ph-h"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, state.me.name), /*#__PURE__*/React.createElement("p", null, "Your children\u2019s worksheets"))), kids.length > 1 && /*#__PURE__*/React.createElement("div", {
-    className: "child-pick",
-    style: {
-      marginBottom: 18
-    }
-  }, kids.map(c => /*#__PURE__*/React.createElement("button", {
-    key: c.id,
-    className: L.id === c.id ? "on" : "",
-    onClick: () => setCid(c.id)
-  }, /*#__PURE__*/React.createElement(Avatar, {
-    name: c.name
-  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("b", null, c.name))))), /*#__PURE__*/React.createElement("div", {
-    className: "card"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "card-h"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, L.name.split(" ")[0], "\u2019s worksheets"), /*#__PURE__*/React.createElement("p", null, "What the teacher saw, section by section. Haaraya does not turn these into scores.")), /*#__PURE__*/React.createElement("button", {
+  const list = learners.slice().sort((a, b) => a.name.localeCompare(b.name));
+  const [who, setWho] = React.useState("all");
+  const shown = who === "all" ? list : list.filter(l => l.id === who);
+  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "ph-h no-print"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Reports"), /*#__PURE__*/React.createElement("p", null, cls.name, " \xB7 for families. Teacher\u2019s notes are never included.")), /*#__PURE__*/React.createElement("div", {
+    className: "acts"
+  }, /*#__PURE__*/React.createElement("button", {
     className: "hl-btn",
-    onClick: () => openPupil(L.id)
+    onClick: () => window.print()
   }, /*#__PURE__*/React.createElement(Icon, {
-    n: "sheet",
+    n: "dl",
     s: 16
-  }), "Do a worksheet")), /*#__PURE__*/React.createElement(WsRecordList, {
-    L: L,
-    family: true
-  })))));
+  }), "Print or save as PDF"))), /*#__PURE__*/React.createElement("div", {
+    className: "filters no-print"
+  }, /*#__PURE__*/React.createElement("select", {
+    className: "hl-select",
+    value: who,
+    onChange: e => setWho(e.target.value),
+    "aria-label": "Report for"
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "all"
+  }, "Whole class (", list.length, ")"), list.map(l => /*#__PURE__*/React.createElement("option", {
+    key: l.id,
+    value: l.id
+  }, l.name)))), !list.length && /*#__PURE__*/React.createElement("div", {
+    className: "empty"
+  }, "No pupils in this class yet."), /*#__PURE__*/React.createElement("div", {
+    className: "rep-stack"
+  }, shown.map(l => /*#__PURE__*/React.createElement(LiveReport, {
+    key: l.id,
+    L: l,
+    cls: cls,
+    school: school
+  }))));
+}
+function LiveReport({
+  L,
+  cls,
+  school
+}) {
+  const recs = Object.entries(L.worksheets || {}).filter(([c, r]) => HLWS.get(c) && r.status === "reviewed").sort(([a], [b]) => HLWS.get(a).level - HLWS.get(b).level || a.localeCompare(b));
+  const today = new Date().toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+  return /*#__PURE__*/React.createElement("article", {
+    className: "rep-page"
+  }, /*#__PURE__*/React.createElement("header", {
+    className: "rep-h"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "rep-eyebrow"
+  }, "Haaraya Literacy \xB7 Worksheet report"), /*#__PURE__*/React.createElement("h2", null, L.name), /*#__PURE__*/React.createElement("p", null, [cls.name, school && school.name].filter(Boolean).join(" · "))), /*#__PURE__*/React.createElement("div", {
+    className: "rep-date"
+  }, today)), recs.length ? /*#__PURE__*/React.createElement("table", {
+    className: "rep-tbl"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Worksheet"), REP_SECS.map(([k, n]) => /*#__PURE__*/React.createElement("th", {
+    key: k
+  }, n)), /*#__PURE__*/React.createElement("th", null, "Help"), cls.showScores && /*#__PURE__*/React.createElement("th", null, "Score"))), /*#__PURE__*/React.createElement("tbody", null, recs.map(([c, r]) => {
+    const w = HLWS.get(c);
+    return /*#__PURE__*/React.createElement("tr", {
+      key: c
+    }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("b", null, w.title), /*#__PURE__*/React.createElement("span", null, "Level ", w.level, " \xB7 ", w.strand)), REP_SECS.map(([k]) => /*#__PURE__*/React.createElement("td", {
+      key: k
+    }, r.ratings && r.ratings[k] ? HLWS.RATINGS[r.ratings[k]] : "—")), /*#__PURE__*/React.createElement("td", null, r.help ? HLWS.HELP[r.help] : "—"), cls.showScores && /*#__PURE__*/React.createElement("td", {
+      className: "num"
+    }, hlScoreText(hlWsScore(r))));
+  }))) : /*#__PURE__*/React.createElement("p", {
+    className: "rep-none"
+  }, "No worksheets recorded yet."), /*#__PURE__*/React.createElement("footer", {
+    className: "rep-f"
+  }, /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", null, "What the words mean."), " Not Yet: cannot do it yet. Developing: partly right, or not yet reliable. Secure: does it accurately. Beyond: uses it in something new. Not observed: the teacher did not see enough of this part to judge."), /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", null, "Help"), " shows the most help your child needed: Modelled (the teacher showed how), Prompted (a hint), or Independent (no help).", cls.showScores ? " The score counts Not Yet as 0, Developing as 1, and Secure or Beyond as 2 for each part rated. ★ marks work beyond the book." : "")));
 }
 
-/* ---------- pupil (on a parent's or teacher's device) ---------- */
+/* ---------- pupil (on a teacher's device) ---------- */
 function LivePupil({
   L,
   onExit
@@ -339,7 +389,7 @@ function LivePupil({
   }), /*#__PURE__*/React.createElement("button", {
     className: "hl-btn ghost sm",
     onClick: () => {
-      go(state.role === "parent" ? "home" : "worksheets");
+      go("worksheets");
       onExit();
     }
   }, /*#__PURE__*/React.createElement(Icon, {

@@ -32,13 +32,15 @@ Commit both the `.jsx` source files and the rebuilt `learn/dist/` files.
 
 ## What the live version does
 
-Needs `supabase/gemmanti_worksheets.sql` run in Supabase. Data loading and saving is in `learn/live.js`; the live screens are in `learn/live.jsx`.
+Needs `supabase/gemmanti_worksheets.sql` and then `supabase/gemmanti_worksheets_v2.sql` run in Supabase.
 
-- **Teacher:** their classes and pupils; worksheet review with ratings, help level and a staff-only note; "Open as pupil" so a child can do a worksheet on the teacher's device.
-- **School admin:** the same, for every class in the school.
-- **Parent:** their children's worksheets and ratings (never the teacher's notes); "Do a worksheet" for a child at home.
+Gemmanti is for school accounts only. Parent (family) accounts are a separate product and never use it; families of school pupils get reports from the teacher. Data loading and saving is in `learn/live.js`; the live screens are in `learn/live.jsx`.
+
+- **Teacher:** their classes and pupils; worksheet review with ratings, help level and a staff-only note; "Open as pupil" so a child can do a worksheet on the teacher's device; a **Show scores** switch per class (on by default); **Reports** for one pupil or the whole class, to print or save as PDF for families. Reports never include teacher notes.
+- **School admin:** the same, for every class in the school (the score switch belongs to the class teacher).
+- **Scores:** worked out from the section ratings: Not Yet 0, Developing 1, Secure 2, Beyond 2 with a star. Not observed, absent and blank sections are left out. Help is not part of the score.
 - **Haaraya admin:** every school, with a switch that turns Gemmanti on or off on its subscription.
-- **Who sees Gemmanti:** only schools whose subscription lists the `gemmanti` add-on. Parents see only children at those schools.
+- **Who sees Gemmanti:** only staff at schools whose subscription lists the `gemmanti` add-on.
 - **Saved:** answers and read-aloud ticks (`worksheet_responses`), ratings and help (`worksheet_reviews`), teacher notes (`worksheet_teacher_notes`). Voice recordings are not stored.
 - **Not in the live version yet:** lessons, journeys, assignments, reports and content requests. They need database tables first; they still appear in the `?demo` version.
 
@@ -51,6 +53,7 @@ The 12 showcase books, one per level for L1–L12, have worksheets. The book cod
    - SN-07-01 *Queen Amina of Zazzau* (`draft`)
 2. **Worksheet pictures.** The line art for L1–L6 is wired in. It needs uploading to Supabase Storage at `book-assets/worksheets/<book code>/<image ID>.webp`; until then the striped placeholders show. Image IDs come from `HAARAYA_WORKSHEET_LINEART_SHOWCASE_v1.csv`, and `learn/ws-pics.js` says which picture label uses which image. Screen copies are 600 px greyscale WebP; the full-size originals are kept for print.
 3. **Sign-in, real data and saving.** Done in the first live version; test it with the demo logins.
-4. **Link it in.** Add a Gemmanti link to the website's teacher, school and parent dashboards for schools with the add-on.
-5. **Lessons, assignments and reports.** Need their own tables before they can be live.
+4. **Emailed reports and a family screen.** Emailed reports need each pupil's family email stored with the school record. A small screen for families of school pupils (reports, progress, signing a read-at-home task) comes after assignments.
+5. **Link it in.** Add a Gemmanti link to the website's teacher, school and parent dashboards for schools with the add-on.
+6. **Lessons and assignments.** Need their own tables before they can be live.
 6. **Base-plan changes on the website.** In the base plan, teachers see progress only, and assigning books moves into Gemmanti. Update the School plan wording on the home page to match.

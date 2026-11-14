@@ -41,7 +41,8 @@ function WsStatus({
 function TWorksheets({
   cls,
   learners,
-  openAssign
+  openAssign,
+  showScores
 }) {
   const {
     state
@@ -142,7 +143,9 @@ function TWorksheets({
   }, s.n.split(" ").map(x => x[0]).join(""))), /*#__PURE__*/React.createElement("th", {
     className: "c",
     title: "Overall help"
-  }, "Help"), /*#__PURE__*/React.createElement("th", null))), /*#__PURE__*/React.createElement("tbody", null, rows.map(([l, r]) => /*#__PURE__*/React.createElement("tr", {
+  }, "Help"), showScores && /*#__PURE__*/React.createElement("th", {
+    className: "c"
+  }, "Score"), /*#__PURE__*/React.createElement("th", null))), /*#__PURE__*/React.createElement("tbody", null, rows.map(([l, r]) => /*#__PURE__*/React.createElement("tr", {
     key: l.id,
     className: r.status === "handed_in" ? "live" : ""
   }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("button", {
@@ -162,13 +165,15 @@ function TWorksheets({
     className: "c"
   }, /*#__PURE__*/React.createElement(HelpChip, {
     h: r.help
-  })), /*#__PURE__*/React.createElement("td", {
+  })), showScores && /*#__PURE__*/React.createElement("td", {
+    className: "c num"
+  }, hlScoreText(hlWsScore(r))), /*#__PURE__*/React.createElement("td", {
     className: "c"
   }, /*#__PURE__*/React.createElement("button", {
     className: "hl-btn sm " + (r.status === "handed_in" ? "" : "ghost"),
     onClick: () => setOpen(l.id)
   }, r.status === "handed_in" ? "Record" : r.status === "reviewed" ? "Open" : "Record")))), !rows.length && /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", {
-    colSpan: 8
+    colSpan: showScores ? 9 : 8
   }, /*#__PURE__*/React.createElement("div", {
     className: "empty",
     style: {

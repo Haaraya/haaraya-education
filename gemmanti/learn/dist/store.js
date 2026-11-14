@@ -333,6 +333,18 @@ function HLProvider({
       });
       toast(`${name} enrolled`);
     },
+    setClassScores: (classId, on) => {
+      const flip = v => up(s => {
+        const c = s.classes.find(c => c.id === classId);
+        if (c) c.showScores = v;
+      });
+      flip(on);
+      if (latest.current.live && window.HLLive) HLLive.setShowScores(classId, on).then(() => toast(on ? "Scores are on for this class" : "Scores are off for this class")).catch(e => {
+        console.warn(e);
+        flip(!on);
+        toast("Couldn’t change it. Try again.");
+      });
+    },
     toggleCollection: (orgId, colId) => up(s => {
       const a = s.orgCollections[orgId];
       const i = a.indexOf(colId);
@@ -361,6 +373,38 @@ function HLProvider({
   }, children);
 }
 const useHL = () => React.useContext(HLStore);
+
+/* Worksheet score from the section ratings: Not Yet 0, Developing 1, Secure 2,
+   Beyond 2 plus a star. Not observed (–), absent (A) and blank sections are left
+   out, so a child is never marked down for something nobody saw. Help is not
+   part of the score. Returns null when nothing has been rated. */
+const HL_POINTS = {
+  NY: 0,
+  D: 1,
+  S: 2,
+  B: 2
+};
+function hlWsScore(rec) {
+  const r = rec && rec.ratings || {};
+  let pts = 0,
+    max = 0,
+    star = false;
+  Object.keys(r).forEach(k => {
+    const v = r[k];
+    if (v in HL_POINTS) {
+      pts += HL_POINTS[v];
+      max += 2;
+      if (v === "B") star = true;
+    }
+  });
+  return max ? {
+    pts,
+    max,
+    pct: Math.round(pts / max * 100),
+    star
+  } : null;
+}
+const hlScoreText = sc => sc ? `${sc.pts}/${sc.max} · ${sc.pct}%${sc.star ? " ★" : ""}` : "—";
 
 /* Derived selectors */
 const hlBook = id => D.BOOKS.find(b => b.id === id);
@@ -416,6 +460,8 @@ function hlAssignStatus(L, a) {
   return "in_progress";
 }
 Object.assign(window, {
+  hlWsScore,
+  hlScoreText,
   HLProvider,
   useHL,
   hlBook,

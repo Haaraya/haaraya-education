@@ -11,7 +11,8 @@
   var DEMO = /[?&]demo\b/.test(location.search);
   window.HL_LIVE_ON = !DEMO;
 
-  var ROLE = { teacher: "teacher", school_admin: "school", parent: "parent", haaraya_admin: "admin" };
+  // School accounts only. Parent accounts are a separate product and never use Gemmanti.
+  var ROLE = { teacher: "teacher", school_admin: "school", haaraya_admin: "admin" };
   var HELP_TO_DB = { M: "modelled", P: "prompted", I: "independent" };
   var HELP_FROM_DB = { modelled: "M", prompted: "P", independent: "I" };
 
@@ -114,7 +115,7 @@
 
   function baseState(me, role) {
     return {
-      v: 3, live: true, role: role, personaId: null, route: { view: role === "admin" ? "schools" : role === "parent" ? "home" : "worksheets" },
+      v: 3, live: true, role: role, personaId: null, route: { view: role === "admin" ? "schools" : "worksheets" },
       me: me, learners: {}, assignments: [], events: [], requests: [], teachers: [], classes: [], schools: [],
       orgCollections: {}, adminUsers: [], toast: null
     };
@@ -124,13 +125,13 @@
     var s = baseState(me, role);
     var schools, classes;
     if (role === "teacher") {
-      classes = rows(await sb().from("classrooms").select("id,name,school_id,teacher_user_id").eq("teacher_user_id", me.id).order("name"), "classes");
+      classes = rows(await sb().from("classrooms").select("id,name,school_id,teacher_user_id,show_scores").eq("teacher_user_id", me.id).order("name"), "classes");
       var sIds = uniq(classes.map(function (c) { return c.school_id; }));
       schools = sIds.length ? rows(await sb().from("schools").select("id,name,type").in("id", sIds), "schools") : [];
     } else {
       schools = rows(await sb().from("schools").select("id,name,type").eq("admin_user_id", me.id), "schools");
       var ids = schools.map(function (x) { return x.id; });
-      classes = ids.length ? rows(await sb().from("classrooms").select("id,name,school_id,teacher_user_id").in("school_id", ids).order("name"), "classes") : [];
+      classes = ids.length ? rows(await sb().from("classrooms").select("id,name,school_id,teacher_user_id,show_scores").in("school_id", ids).order("name"), "classes") : [];
     }
     var on = await gemmantiSchools(schools.map(function (x) { return x.id; }));
     s.schools = schools.map(function (x) { return { id: x.id, name: x.name, type: x.type, gemmanti: !!on[x.id] }; });
@@ -148,19 +149,10 @@
 
     s.classes = classes.map(function (c) {
       return { id: c.id, name: c.name, schoolId: c.school_id, teacherId: c.teacher_user_id, teacherName: tName[c.teacher_user_id] || "No teacher yet",
-        expected: null, size: members.filter(function (m) { return m.classroom_id === c.id; }).length };
+        expected: null, size: members.filter(function (m) { return m.classroom_id === c.id; }).length,
+        showScores: c.show_scores !== false };
     });
     s.teachers = tIds.map(function (id) { return { id: id, name: tName[id] || "Teacher", classes: s.classes.filter(function (c) { return c.teacherId === id; }).map(function (c) { return c.id; }) }; });
-    return s;
-  }
-
-  async function loadParent(me) {
-    var s = baseState(me, "parent");
-    var kids = rows(await sb().from("children").select("id,school_id").eq("parent_user_id", me.id), "children");
-    var on = await gemmantiSchools(kids.map(function (k) { return k.school_id; }));
-    var ids = kids.filter(function (k) { return k.school_id && on[k.school_id]; }).map(function (k) { return k.id; });
-    s.learners = await buildPeople(ids, {}, false);
-    s.schools = uniq(kids.map(function (k) { return k.school_id; })).map(function (id) { return { id: id, gemmanti: !!on[id] }; });
     return s;
   }
 
@@ -183,10 +175,9 @@
     if (!who.profile) return who;
     var p = who.profile;
     var me = { id: p.id, name: p.full_name || [p.first_name, p.last_name].filter(Boolean).join(" ") || p.email || "You", role: p.role };
-    if (!who.role) return { unsupported: true, me: me };
+    if (!who.role) return { unsupported: true, parentAccount: p.role === "parent", me: me };
     var state;
-    if (who.role === "parent") state = await loadParent(me);
-    else if (who.role === "admin") state = await loadAdmin(me);
+    if (who.role === "admin") state = await loadAdmin(me);
     else state = await loadStaff(me, who.role);
     return { state: state };
   }
@@ -221,7 +212,14 @@
     return r.data[0].addons;
   }
 
+  async function setShowScores(classId, on) {
+    var r = await sb().from("classrooms").update({ show_scores: !!on }).eq("id", classId).select("id,show_scores");
+    if (r.error) throw r.error;
+    if (!r.data || !r.data.length) throw new Error("not allowed");
+    return r.data[0].show_scores;
+  }
+
   async function signOut() { try { await window.HaarayaAuth.signOut(); } catch (e) {} }
 
-  window.HLLive = { demo: DEMO, load: load, saveWork: saveWork, saveReview: saveReview, setGemmanti: setGemmanti, signOut: signOut };
+  window.HLLive = { demo: DEMO, load: load, saveWork: saveWork, saveReview: saveReview, setGemmanti: setGemmanti, setShowScores: setShowScores, signOut: signOut };
 })();

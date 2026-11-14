@@ -686,3 +686,33 @@ a.hl-brand{text-decoration:none;color:inherit}
 @media (prefers-reduced-motion:reduce){.live-switch i{transition:none}}
 .hl-role-menu a.item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border-radius:10px;font-size:14px;font-weight:700}
 .hl-role-menu a.item:hover{background:var(--sand)}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.live-scores{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;margin-top:10px;cursor:pointer}
+
+/* Family reports */
+.rep-stack{display:grid;gap:18px}
+.rep-page{background:#fff;border:1px solid var(--line);border-radius:10px;padding:24px 26px}
+.rep-h{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;border-bottom:2px solid var(--forest);padding-bottom:12px;margin-bottom:16px;flex-wrap:wrap}
+.rep-eyebrow{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--forest-dk)}
+.rep-h h2{font-size:24px;margin:4px 0 2px}
+.rep-h p{color:var(--ink-mid);font-size:14px;margin:0}
+.rep-date{font-size:13px;color:var(--ink-mid)}
+.rep-tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+.rep-tbl th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);border-bottom:1px solid var(--line);padding:6px 8px}
+.rep-tbl td{border-bottom:1px solid var(--line);padding:8px;vertical-align:top}
+.rep-tbl td b{display:block}
+.rep-tbl td span{font-size:12px;color:var(--ink-soft)}
+.rep-none{color:var(--ink-soft);font-size:14px}
+.rep-f{margin-top:16px;font-size:12px;color:var(--ink-mid);line-height:1.5;display:grid;gap:6px}
+.rep-f p{margin:0}
+.rep-page{overflow-x:auto}
+@page{size:A4;margin:16mm}
+@media print{
+  .hl-top,.side,.no-print,.hl-toast,.mobile-tabs{display:none!important}
+  .adult{display:block!important;background:#fff!important;min-height:0}
+  .main{padding:0!important;max-width:none!important}
+  .rep-stack{display:block}
+  .rep-page{border:0;border-radius:0;padding:0;break-after:page;page-break-after:always}
+  .rep-page:last-child{break-after:auto;page-break-after:auto}
+  body{background:#fff}
+}

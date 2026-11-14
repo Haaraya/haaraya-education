@@ -9,7 +9,7 @@ function HelpChip({ h }) { return h ? <span className="rate help" title={WT.HELP
 const WS_STATUS = { not_started: ["not_started", "Not started"], in_progress: ["in_progress", "Working on it"], handed_in: ["handed", "Handed in"], reviewed: ["complete", "Recorded"] };
 function WsStatus({ s }) { const [c, l] = WS_STATUS[s] || WS_STATUS.not_started; return <span className={"hl-status " + c}>{l}</span>; }
 
-function TWorksheets({ cls, learners, openAssign }) {
+function TWorksheets({ cls, learners, openAssign, showScores }) {
   const { state } = useHL();
   const asg = state.assignments.filter(a => a.classId === cls.id && a.type === "worksheet");
   const [code, setCode] = React.useState(asg[0] ? asg[0].ref : WT.list()[0].code);
@@ -33,14 +33,14 @@ function TWorksheets({ cls, learners, openAssign }) {
       <div className="ws-sum-b"><div className="th"><Cover book={hlBook(code)} /></div><div><div className="eyebrow">Level {w.level} · {w.strand} · {w.code}</div><h3>{w.title}</h3><p>{w.blurb}</p>{a ? <p className="meta">Due {new Date(a.due).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} · {a.to === "all" ? "whole class" : a.to.length + " learners"}</p> : !window.HL_LIVE_ON && <p className="meta">Not assigned to this class</p>}</div></div>
       <div className="ws-dist">{WT.SECS.map(s => <div key={s.k}><span>{s.n}</span><div className="ws-dist-r">{dist(s.k).map(([r, n]) => <span key={r} className={"ws-dist-c r-" + r} title={`${WT.RATINGS[r]}: ${n}`}><b>{r}</b>{n}</span>)}</div></div>)}</div>
     </div>
-    <div className="card" style={{ padding: 0 }}><div className="tbl-wrap"><table className="tbl ws-grid"><thead><tr><th>Learner</th><th>Status</th>{WT.SECS.map(s => <th key={s.k} className="c" title={s.n}>{s.n.split(" ").map(x => x[0]).join("")}</th>)}<th className="c" title="Overall help">Help</th><th></th></tr></thead>
+    <div className="card" style={{ padding: 0 }}><div className="tbl-wrap"><table className="tbl ws-grid"><thead><tr><th>Learner</th><th>Status</th>{WT.SECS.map(s => <th key={s.k} className="c" title={s.n}>{s.n.split(" ").map(x => x[0]).join("")}</th>)}<th className="c" title="Overall help">Help</th>{showScores && <th className="c">Score</th>}<th></th></tr></thead>
       <tbody>{rows.map(([l, r]) => <tr key={l.id} className={r.status === "handed_in" ? "live" : ""}>
         <td><button className="who linkish" onClick={() => setOpen(l.id)}><Avatar name={l.name} size="sm" />{l.name}</button></td>
         <td><WsStatus s={r.status} /></td>
         {WT.SECS.map(s => <td key={s.k} className="c"><RateChip r={r.ratings && r.ratings[s.k]} /></td>)}
-        <td className="c"><HelpChip h={r.help} /></td>
+        <td className="c"><HelpChip h={r.help} /></td>{showScores && <td className="c num">{hlScoreText(hlWsScore(r))}</td>}
         <td className="c"><button className={"hl-btn sm " + (r.status === "handed_in" ? "" : "ghost")} onClick={() => setOpen(l.id)}>{r.status === "handed_in" ? "Record" : r.status === "reviewed" ? "Open" : "Record"}</button></td></tr>)}
-        {!rows.length && <tr><td colSpan={8}><div className="empty" style={{ border: 0 }}>No learners here.</div></td></tr>}</tbody></table></div>
+        {!rows.length && <tr><td colSpan={showScores ? 9 : 8}><div className="empty" style={{ border: 0 }}>No learners here.</div></td></tr>}</tbody></table></div>
       <p className="ws-legend">WF Word Focus · RIA Read It Again · TAI Think About It · SWYK Show What You Know · NY Not Yet · D Developing · S Secure · B Beyond · – not observed · A absent · blank not yet recorded · Help: M Modelled, P Prompted, I Independent</p></div>
     {open && <WsReview L={state.learners[open]} code={code} onClose={() => setOpen(null)} />}
     {guide && <WsGuide w={w} onClose={() => setGuide(false)} />}

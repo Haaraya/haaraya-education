@@ -1,9 +1,9 @@
-/* Gemmanti — live screens: sign-in gate, staff, parent, pupil and Haaraya admin.
+/* Gemmanti — live screens: sign-in gate, teacher and school admin, reports, pupil and Haaraya admin.
    They reuse the worksheet screens; anything without real data behind it yet
    (lessons, journeys, reports, requests) is left out. */
 const LIVE_HOME = "../Haaraya%20Home.html";
 const LIVE_LOGIN = "../Haaraya%20Login.html?next=" + encodeURIComponent("gemmanti/Gemmanti.html");
-const LIVE_ROLE_NAME = { teacher: "Teacher", school: "School admin", parent: "Parent", admin: "Haaraya admin" };
+const LIVE_ROLE_NAME = { teacher: "Teacher", school: "School admin", admin: "Haaraya admin" };
 
 /* ---------- before anything loads ---------- */
 function LiveFrame({ children }) {
@@ -21,11 +21,15 @@ function LiveGate({ busy, res, retry }) {
   let title, body, actions;
   if (r.signedOut || r.noProfile) {
     title = "Sign in to Gemmanti";
-    body = "Use your Haaraya account. Teachers, school admins and parents can sign in here.";
+    body = "Use your Haaraya school account. Teachers and school admins can sign in here.";
     actions = <a className="hl-btn big" href={LIVE_LOGIN}>Sign in</a>;
+  } else if (r.unsupported && r.parentAccount) {
+    title = "Gemmanti is for schools";
+    body = "Your family’s reading and progress are on your Haaraya dashboard.";
+    actions = <><a className="hl-btn" href={LIVE_HOME}>Go to Haaraya</a><button className="hl-btn ghost" onClick={async () => { await HLLive.signOut(); location.reload(); }}>Sign out</button></>;
   } else if (r.unsupported) {
-    title = "Gemmanti is for schools and families";
-    body = "This account can’t use Gemmanti. Sign in as a teacher, school admin or parent.";
+    title = "Gemmanti is for schools";
+    body = "This account can’t use Gemmanti. Sign in with a teacher or school admin account.";
     actions = <><a className="hl-btn" href={LIVE_HOME}>Back to Haaraya</a><button className="hl-btn ghost" onClick={async () => { await HLLive.signOut(); location.reload(); }}>Sign out</button></>;
   } else {
     title = "Gemmanti couldn’t load";
@@ -56,7 +60,6 @@ function LiveApp() {
   const [pupil, setPupil] = React.useState(null);
   if (pupil && state.learners[pupil]) return <LivePupil L={state.learners[pupil]} onExit={() => setPupil(null)} />;
   if (state.role === "admin") return <LiveAdmin />;
-  if (state.role === "parent") return <LiveParent openPupil={setPupil} />;
   return <LiveStaff openPupil={setPupil} />;
 }
 
@@ -66,7 +69,7 @@ function LiveEmpty({ title, body }) {
 
 /* ---------- teacher and school admin ---------- */
 function LiveStaff({ openPupil }) {
-  const { state } = useHL();
+  const { state, setClassScores } = useHL();
   const [classId, setClassId] = React.useState(state.classes[0] && state.classes[0].id);
   const [drawer, setDrawer] = React.useState(null);
   if (!state.schools.some(s => s.gemmanti)) return <LiveEmpty title="Gemmanti isn’t part of your school’s plan yet" body="Ask your school to add Gemmanti, or contact Haaraya." />;
@@ -76,13 +79,17 @@ function LiveStaff({ openPupil }) {
   const school = state.schools.find(s => s.id === cls.schoolId);
   const toRecord = learners.filter(l => Object.values(l.worksheets || {}).some(r => r.status === "handed_in")).length;
   const v = state.route.view;
-  const nav = [["worksheets", "Worksheets", "sheet", toRecord], ["pupils", "Pupils", "users"]];
+  const nav = [["worksheets", "Worksheets", "sheet", toRecord], ["pupils", "Pupils", "users"], ["reports", "Reports", "dl"]];
   const ctx = <><div><b>{state.me.name}</b><span>{school ? school.name : ""}</span></div>
     {state.classes.length > 1
       ? <select value={cls.id} onChange={e => setClassId(e.target.value)} aria-label="Class">{state.classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
-      : <div className="live-cls">{cls.name}</div>}</>;
+      : <div className="live-cls">{cls.name}</div>}
+    {state.role === "teacher" && cls.teacherId === state.me.id && <label className="live-scores">
+      <button className={"live-switch" + (cls.showScores ? " on" : "")} role="switch" aria-checked={cls.showScores} onClick={() => setClassScores(cls.id, !cls.showScores)}><i></i></button>
+      <span>Show scores</span></label>}</>;
   return <AdultShell nav={nav} ctx={ctx}>
-    {v !== "pupils" && <TWorksheets key={cls.id} cls={cls} learners={learners} />}
+    {v !== "pupils" && v !== "reports" && <TWorksheets key={cls.id} cls={cls} learners={learners} showScores={cls.showScores} />}
+    {v === "reports" && <LiveReports key={cls.id} cls={cls} school={school} learners={learners} />}
     {v === "pupils" && <LivePupils cls={cls} learners={learners} openPupil={openPupil} openRecords={setDrawer} />}
     {drawer && state.learners[drawer] && <Drawer onClose={() => setDrawer(null)}><div className="live-drawer">
       <div className="ws-rev-h"><Avatar name={state.learners[drawer].name} size="lg" /><div><h2>{state.learners[drawer].name}</h2><p>{cls.name}</p></div></div>
@@ -107,28 +114,52 @@ function LivePupils({ cls, learners, openPupil, openRecords }) {
   </>;
 }
 
-/* ---------- parent ---------- */
-function LiveParent({ openPupil }) {
-  const { state } = useHL();
-  const kids = Object.values(state.learners).sort((a, b) => a.name.localeCompare(b.name));
-  const [cid, setCid] = React.useState(kids[0] && kids[0].id);
-  if (!kids.length) return <LiveEmpty title="Gemmanti isn’t available for your children yet" body="Gemmanti comes through your child’s school. When their school adds it, you’ll see their worksheets here." />;
-  const L = state.learners[cid] || kids[0];
+/* ---------- reports for families: print or save as PDF ---------- */
+const REP_SECS = [["wf", "Word Focus"], ["ra", "Read It Again"], ["ta", "Think About It"], ["sw", "Show What You Know"]];
+function LiveReports({ cls, school, learners }) {
+  const list = learners.slice().sort((a, b) => a.name.localeCompare(b.name));
+  const [who, setWho] = React.useState("all");
+  const shown = who === "all" ? list : list.filter(l => l.id === who);
   return <>
-    <TopNav items={null} />
-    <div style={{ background: "var(--cream)", minHeight: "calc(100vh - 64px)" }}><main className="main" style={{ margin: "0 auto" }}>
-      <div className="ph-h"><div><h1>{state.me.name}</h1><p>Your children’s worksheets</p></div></div>
-      {kids.length > 1 && <div className="child-pick" style={{ marginBottom: 18 }}>{kids.map(c => <button key={c.id} className={L.id === c.id ? "on" : ""} onClick={() => setCid(c.id)}><Avatar name={c.name} /><div><b>{c.name}</b></div></button>)}</div>}
-      <div className="card">
-        <div className="card-h"><div><h3>{L.name.split(" ")[0]}’s worksheets</h3><p>What the teacher saw, section by section. Haaraya does not turn these into scores.</p></div>
-          <button className="hl-btn" onClick={() => openPupil(L.id)}><Icon n="sheet" s={16} />Do a worksheet</button></div>
-        <WsRecordList L={L} family />
-      </div>
-    </main></div>
+    <div className="ph-h no-print"><div><h1>Reports</h1><p>{cls.name} · for families. Teacher’s notes are never included.</p></div>
+      <div className="acts"><button className="hl-btn" onClick={() => window.print()}><Icon n="dl" s={16} />Print or save as PDF</button></div></div>
+    <div className="filters no-print">
+      <select className="hl-select" value={who} onChange={e => setWho(e.target.value)} aria-label="Report for">
+        <option value="all">Whole class ({list.length})</option>
+        {list.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+      </select>
+    </div>
+    {!list.length && <div className="empty">No pupils in this class yet.</div>}
+    <div className="rep-stack">{shown.map(l => <LiveReport key={l.id} L={l} cls={cls} school={school} />)}</div>
   </>;
 }
+function LiveReport({ L, cls, school }) {
+  const recs = Object.entries(L.worksheets || {}).filter(([c, r]) => HLWS.get(c) && r.status === "reviewed")
+    .sort(([a], [b]) => HLWS.get(a).level - HLWS.get(b).level || a.localeCompare(b));
+  const today = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  return <article className="rep-page">
+    <header className="rep-h">
+      <div><div className="rep-eyebrow">Haaraya Literacy · Worksheet report</div><h2>{L.name}</h2>
+        <p>{[cls.name, school && school.name].filter(Boolean).join(" · ")}</p></div>
+      <div className="rep-date">{today}</div>
+    </header>
+    {recs.length ? <table className="rep-tbl">
+      <thead><tr><th>Worksheet</th>{REP_SECS.map(([k, n]) => <th key={k}>{n}</th>)}<th>Help</th>{cls.showScores && <th>Score</th>}</tr></thead>
+      <tbody>{recs.map(([c, r]) => { const w = HLWS.get(c); return <tr key={c}>
+        <td><b>{w.title}</b><span>Level {w.level} · {w.strand}</span></td>
+        {REP_SECS.map(([k]) => <td key={k}>{r.ratings && r.ratings[k] ? HLWS.RATINGS[r.ratings[k]] : "—"}</td>)}
+        <td>{r.help ? HLWS.HELP[r.help] : "—"}</td>
+        {cls.showScores && <td className="num">{hlScoreText(hlWsScore(r))}</td>}
+      </tr>; })}</tbody>
+    </table> : <p className="rep-none">No worksheets recorded yet.</p>}
+    <footer className="rep-f">
+      <p><b>What the words mean.</b> Not Yet: cannot do it yet. Developing: partly right, or not yet reliable. Secure: does it accurately. Beyond: uses it in something new. Not observed: the teacher did not see enough of this part to judge.</p>
+      <p><b>Help</b> shows the most help your child needed: Modelled (the teacher showed how), Prompted (a hint), or Independent (no help).{cls.showScores ? " The score counts Not Yet as 0, Developing as 1, and Secure or Beyond as 2 for each part rated. ★ marks work beyond the book." : ""}</p>
+    </footer>
+  </article>;
+}
 
-/* ---------- pupil (on a parent's or teacher's device) ---------- */
+/* ---------- pupil (on a teacher's device) ---------- */
 function LivePupil({ L, onExit }) {
   const { state, go } = useHL();
   const v = state.route.view;
@@ -136,7 +167,7 @@ function LivePupil({ L, onExit }) {
     <header className="hl-top">
       <span className="hl-brand"><img src="assets/haaraya-emblem.png" alt="" /><b>Gemmanti</b></span>
       <div className="hl-spacer"></div>
-      <button className="hl-btn ghost sm" onClick={() => { go(state.role === "parent" ? "home" : "worksheets"); onExit(); }}><Icon n="back" s={16} />Finish</button>
+      <button className="hl-btn ghost sm" onClick={() => { go("worksheets"); onExit(); }}><Icon n="back" s={16} />Finish</button>
     </header>
     <main className="kid">
       {v === "worksheet" && state.route.code ? <WorksheetPlayer key={state.route.code} L={L} code={state.route.code} /> : <LiveShelf L={L} />}
