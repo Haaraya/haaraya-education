@@ -9,7 +9,7 @@ const LIVE_ROLE_NAME = { teacher: "Teacher", school: "School admin", admin: "Haa
 function LiveFrame({ children }) {
   return <>
     <header className="hl-top">
-      <a className="hl-brand" href={LIVE_HOME}><img src="assets/haaraya-emblem.png" alt="" /><b>Gemmanti</b></a>
+      <a className="hl-brand" href={LIVE_HOME}><img className="hl-logo" src="assets/logo-gemmanti.png" alt="Gemmanti" /></a>
       <div className="hl-spacer"></div>
     </header>
     <main className="live-gate">{children}</main>
@@ -222,7 +222,7 @@ function LivePupil({ L, onExit }) {
   const v = state.route.view;
   return <>
     <header className="hl-top">
-      <span className="hl-brand"><img src="assets/haaraya-emblem.png" alt="" /><b>Gemmanti</b></span>
+      <span className="hl-brand"><img className="hl-logo" src="assets/logo-gemmanti.png" alt="Gemmanti" /></span>
       <div className="hl-spacer"></div>
       <button className="hl-btn ghost sm" onClick={() => { go("worksheets"); onExit(); }}><Icon n="back" s={16} />Finish</button>
     </header>
@@ -263,7 +263,7 @@ function LiveAdmin() {
   const on = schools.filter(s => s.gemmanti).length;
   return <>
     <TopNav items={null} />
-    <div style={{ background: "var(--cream)", minHeight: "calc(100vh - 64px)" }}><main className="main" style={{ margin: "0 auto" }}>
+    <div style={{ background: "var(--cream)", minHeight: "calc(100vh - var(--top-h))" }}><main className="main" style={{ margin: "0 auto" }}>
       <div className="ph-h"><div><h1>Schools</h1><p>{on} of {schools.length} have Gemmanti</p></div></div>
       <div className="filters"><input className="hl-input" value={q} onChange={e => setQ(e.target.value)} placeholder="Search schools" aria-label="Search schools" /></div>
       <div className="card" style={{ padding: 0 }}><div className="tbl-wrap"><table className="tbl">

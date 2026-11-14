@@ -21,7 +21,7 @@ function TWorksheets({ cls, learners, openAssign, showScores }) {
   const rows = recs.filter(([, r]) => f === "all" || r.status === f);
   const dist = k => RATE_ORDER.map(r => [r, recs.filter(([, x]) => x.ratings && x.ratings[k] === r).length]);
   return <>
-    <div className="ph-h"><div><h1>Worksheets</h1><p>{cls.name} · ratings follow the Haaraya teacher guide: no scores, no percentages</p></div>
+    <div className="ph-h"><div><h1>Worksheets</h1><p>{cls.name} · ratings follow the Haaraya teacher guide</p></div>
       <div className="acts"><button className="hl-btn ghost" onClick={() => setGuide(true)}><Icon n="book" s={16} />Teacher guide</button>{openAssign && <button className="hl-btn" onClick={() => openAssign({ type: "worksheet" })}><Icon n="plus" s={16} />Assign a worksheet</button>}</div></div>
     <div className="filters">
       <select className="hl-select" value={code} onChange={e => setCode(e.target.value)} aria-label="Worksheet">

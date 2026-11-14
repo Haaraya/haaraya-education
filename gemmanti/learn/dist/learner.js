@@ -968,11 +968,13 @@ function TopNav({
     className: "hl-top"
   }, /*#__PURE__*/React.createElement("button", {
     className: "hl-brand",
-    onClick: () => items && go(items[0][0])
+    onClick: () => items && go(items[0][0]),
+    "aria-label": "Gemmanti home"
   }, /*#__PURE__*/React.createElement("img", {
-    src: "assets/haaraya-emblem.png",
-    alt: ""
-  }), /*#__PURE__*/React.createElement("b", null, "Gemmanti")), /*#__PURE__*/React.createElement("nav", {
+    className: "hl-logo",
+    src: "assets/logo-gemmanti.png",
+    alt: "Gemmanti"
+  })), /*#__PURE__*/React.createElement("nav", {
     className: "hl-topnav"
   }, items && items.map(([v, l, i]) => /*#__PURE__*/React.createElement("button", {
     key: v,

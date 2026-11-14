@@ -61,7 +61,7 @@ function TWorksheets({
   const dist = k => RATE_ORDER.map(r => [r, recs.filter(([, x]) => x.ratings && x.ratings[k] === r).length]);
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "ph-h"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Worksheets"), /*#__PURE__*/React.createElement("p", null, cls.name, " \xB7 ratings follow the Haaraya teacher guide: no scores, no percentages")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Worksheets"), /*#__PURE__*/React.createElement("p", null, cls.name, " \xB7 ratings follow the Haaraya teacher guide")), /*#__PURE__*/React.createElement("div", {
     className: "acts"
   }, /*#__PURE__*/React.createElement("button", {
     className: "hl-btn ghost",

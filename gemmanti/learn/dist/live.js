@@ -19,9 +19,10 @@ function LiveFrame({
     className: "hl-brand",
     href: LIVE_HOME
   }, /*#__PURE__*/React.createElement("img", {
-    src: "assets/haaraya-emblem.png",
-    alt: ""
-  }), /*#__PURE__*/React.createElement("b", null, "Gemmanti")), /*#__PURE__*/React.createElement("div", {
+    className: "hl-logo",
+    src: "assets/logo-gemmanti.png",
+    alt: "Gemmanti"
+  })), /*#__PURE__*/React.createElement("div", {
     className: "hl-spacer"
   })), /*#__PURE__*/React.createElement("main", {
     className: "live-gate"
@@ -501,9 +502,10 @@ function LivePupil({
   }, /*#__PURE__*/React.createElement("span", {
     className: "hl-brand"
   }, /*#__PURE__*/React.createElement("img", {
-    src: "assets/haaraya-emblem.png",
-    alt: ""
-  }), /*#__PURE__*/React.createElement("b", null, "Gemmanti")), /*#__PURE__*/React.createElement("div", {
+    className: "hl-logo",
+    src: "assets/logo-gemmanti.png",
+    alt: "Gemmanti"
+  })), /*#__PURE__*/React.createElement("div", {
     className: "hl-spacer"
   }), /*#__PURE__*/React.createElement("button", {
     className: "hl-btn ghost sm",
@@ -590,7 +592,7 @@ function LiveAdmin() {
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       background: "var(--cream)",
-      minHeight: "calc(100vh - 64px)"
+      minHeight: "calc(100vh - var(--top-h))"
     }
   }, /*#__PURE__*/React.createElement("main", {
     className: "main",

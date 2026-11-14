@@ -32,7 +32,7 @@ function ParentApp() {
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       background: "var(--cream)",
-      minHeight: "calc(100vh - 64px)"
+      minHeight: "calc(100vh - var(--top-h))"
     }
   }, /*#__PURE__*/React.createElement("main", {
     className: "main",

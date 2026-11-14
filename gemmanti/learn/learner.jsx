@@ -304,7 +304,7 @@ function LearnerApp() {
 function TopNav({ items, on }) {
   const { go } = useHL();
   return <header className="hl-top">
-    <button className="hl-brand" onClick={() => items && go(items[0][0])}><img src="assets/haaraya-emblem.png" alt="" /><b>Gemmanti</b></button>
+    <button className="hl-brand" onClick={() => items && go(items[0][0])} aria-label="Gemmanti home"><img className="hl-logo" src="assets/logo-gemmanti.png" alt="Gemmanti" /></button>
     <nav className="hl-topnav">{items && items.map(([v, l, i]) => <button key={v} className={on === v ? "on" : ""} onClick={() => go(v)}><Icon n={i} />{l}</button>)}</nav>
     {!items && <div className="hl-spacer"></div>}
     <RoleSwitcher />

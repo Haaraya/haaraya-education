@@ -19,7 +19,7 @@ function ParentApp() {
   const reading = Object.entries(L.reading).filter(([, r]) => !r.done);
   return <>
     <TopNav items={null} />
-    <div style={{ background: "var(--cream)", minHeight: "calc(100vh - 64px)" }}><main className="main" style={{ margin: "0 auto" }}>
+    <div style={{ background: "var(--cream)", minHeight: "calc(100vh - var(--top-h))" }}><main className="main" style={{ margin: "0 auto" }}>
       <div className="ph-h"><div><h1>{AD.PARENT.name}</h1><p>Your children's reading at a glance</p></div></div>
       <div className="child-pick" style={{ marginBottom: 18 }}>{AD.PARENT.children.map(id => { const c = state.learners[id]; return <button key={id} className={cid === id ? "on" : ""} onClick={() => setCid(id)}><Avatar name={c.name} /><div>{c.name}<span>Level {c.level} · {state.classes.find(x => x.id === c.classId).name}</span></div></button>; })}</div>
       <div className="kpis">

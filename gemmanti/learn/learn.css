@@ -7,7 +7,7 @@ button{font-family:inherit;cursor:pointer;color:inherit}
 input,select,textarea{font-family:inherit;font-size:15px;color:var(--ink)}
 h1,h2,h3,h4{margin:0;text-wrap:balance}
 p{margin:0;text-wrap:pretty}
-.hl-top{position:sticky;top:0;z-index:40;background:#fff;border-bottom:1px solid var(--line);height:64px;display:flex;align-items:center;gap:20px;padding:0 24px}
+.hl-top{position:sticky;top:0;z-index:40;background:var(--forest);box-shadow:0 2px 0 var(--deep);height:var(--top-h);display:flex;align-items:center;gap:20px;padding:0 24px}
 .hl-brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:19px;letter-spacing:-.01em;white-space:nowrap;background:none;border:0;padding:0}
 .hl-brand img{width:32px;height:32px;object-fit:contain}
 .hl-brand span{color:var(--forest-dk)}
@@ -63,7 +63,7 @@ p{margin:0;text-wrap:pretty}
 .hl-cover .prog i{display:block;height:100%;background:var(--yellow)}
 .hl-cover .done{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:var(--forest-dk);color:#fff;display:grid;place-items:center;border:2px solid #fff}
 /* learner */
-.kid{background:#fff;min-height:calc(100vh - 64px)}
+.kid{background:#fff;min-height:calc(100vh - var(--top-h))}
 .kid-wrap{max-width:1200px;margin:0 auto;padding:28px 24px 96px}
 .kid h1{font-family:var(--read);font-size:34px;line-height:1.15;font-weight:700}
 .kid h2{font-family:var(--read);font-size:24px;font-weight:700}
@@ -253,8 +253,8 @@ p{margin:0;text-wrap:pretty}
 .qreview .ok{background:var(--g-lt);color:var(--deep)}
 .qreview .no{background:var(--warn-bg);color:var(--warn)}
 /* adult */
-.adult{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:calc(100vh - 64px);background:var(--cream)}
-.side{border-right:1px solid var(--line);background:#fff;padding:18px 12px;position:sticky;top:64px;height:calc(100vh - 64px);overflow:auto}
+.adult{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:calc(100vh - var(--top-h));background:var(--cream)}
+.side{border-right:1px solid var(--line);background:#fff;padding:18px 12px;position:sticky;top:var(--top-h);height:calc(100vh - var(--top-h));overflow:auto}
 .side .ctx{padding:6px 10px 16px;border-bottom:1px solid var(--line);margin-bottom:12px}
 .side .ctx b{display:block;font-size:14px}
 .side .ctx>div{min-width:0;flex:1 1 200px}.side .ctx span{display:block;font-size:12px;color:var(--ink-soft);font-weight:700}
@@ -660,7 +660,7 @@ button.ws-pic{cursor:pointer;min-height:44px}
 @media (max-width:720px){.ws-pic:has(.has-img),.ws-pic.sm:has(.has-img){width:calc(50% - 5px)}}
 
 /* ---------- Live app ---------- */
-.live-gate{min-height:calc(100vh - 64px);background:var(--cream);display:flex;align-items:flex-start;justify-content:center;padding-block:56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.live-gate{min-height:calc(100vh - var(--top-h));background:var(--cream);display:flex;align-items:flex-start;justify-content:center;padding-block:56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .live-wait{color:var(--ink-soft);font-size:16px;margin-top:40px}
 .live-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:32px;max-width:480px;width:100%}
 .live-card h1{font-size:24px;line-height:1.25;margin:0 0 10px;text-wrap:balance}
@@ -721,3 +721,34 @@ a.hl-brand{text-decoration:none;color:inherit}
 .fam-edit .hl-input{min-width:0;width:220px;max-width:100%;padding:6px 10px;font-size:14px}
 .mail-panel{margin-bottom:16px;display:grid;gap:10px}
 .mail-panel p{margin:0;font-size:15px;line-height:1.5}
+
+/* ---------- Header: matches the Haaraya site bar; the Gemmanti wordmark sits on the green ---------- */
+:root{--top-h:84px}
+@media (max-width:980px){:root{--top-h:72px}}
+@media (max-width:560px){:root{--top-h:64px}}
+.hl-brand{cursor:pointer;border-radius:12px;padding:4px 8px;transition:opacity .15s ease}
+.hl-brand:hover{opacity:.85}
+.hl-brand .hl-logo{height:56px;width:auto;display:block;object-fit:contain;filter:brightness(0) invert(1)}
+@media (max-width:980px){.hl-brand .hl-logo{height:44px}}
+@media (max-width:560px){.hl-brand .hl-logo{height:38px}}
+.hl-top .hl-topnav button{color:rgba(255,255,255,.9)}
+.hl-top .hl-topnav button:hover{background:rgba(255,255,255,.12);color:#fff}
+.hl-top .hl-topnav button.on{background:rgba(255,255,255,.2);color:#fff}
+.hl-top .hl-btn.ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.55)}
+.hl-top .hl-btn.ghost:hover{background:rgba(255,255,255,.12)}
+.hl-top .hl-role>button{border-color:transparent}
+
+/* ---------- Floating Haaraya Education seal, as on the Haaraya site ---------- */
+.publisher-mark{pointer-events:none;position:fixed;bottom:calc(24px + env(safe-area-inset-bottom,0px));right:calc(24px + env(safe-area-inset-right,0px));z-index:90;display:flex;align-items:center;gap:14px;flex-direction:row-reverse;cursor:pointer;background:none;border:0;padding:0;font:inherit}
+.publisher-mark-seal{pointer-events:auto;flex-shrink:0;width:130px;display:block}
+.publisher-mark-seal img{width:100%;height:auto;display:block;filter:drop-shadow(0 1px 1px rgba(20,42,20,.45)) drop-shadow(0 2px 6px rgba(20,42,20,.30));transition:transform .2s ease}
+.publisher-mark:hover .publisher-mark-seal img,.publisher-mark.expanded .publisher-mark-seal img{transform:rotate(-3deg) scale(1.04)}
+.publisher-mark-caption{background:var(--cream);border:1.5px solid var(--line-2);border-radius:14px;padding:12px 18px;display:flex;flex-direction:column;line-height:1.2;box-shadow:0 8px 20px rgba(20,42,20,.15);white-space:nowrap;opacity:0;transform:translateX(12px);pointer-events:none;transition:opacity .2s ease,transform .2s ease;text-align:left}
+.publisher-mark:hover .publisher-mark-caption,.publisher-mark.expanded .publisher-mark-caption{opacity:1;transform:translateX(0);pointer-events:auto}
+.publisher-mark-caption .by{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.22em;color:var(--ink-soft)}
+.publisher-mark-caption .org{font-size:19px;font-weight:800;color:var(--forest);margin-top:2px}
+.publisher-mark-caption .tag{font-style:italic;font-size:12px;color:var(--ink-mid);margin-top:4px}
+.publisher-mark:focus-visible{outline:3px solid var(--forest);outline-offset:4px;border-radius:12px}
+@media (max-width:640px){.publisher-mark{bottom:calc(12px + env(safe-area-inset-bottom,0px));right:calc(12px + env(safe-area-inset-right,0px))}.publisher-mark-seal{width:88px}.publisher-mark-caption{display:none}}
+@media (prefers-reduced-motion:reduce){.publisher-mark-seal img,.publisher-mark-caption{transition:none}}
+@media print{.publisher-mark{display:none!important}}

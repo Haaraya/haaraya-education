@@ -2,15 +2,33 @@
 function HLApp() {
   const { state } = useHL();
   const r = state.role;
-  if (state.live) return <><LiveApp /><Toast /></>;
+  if (state.live) return <><LiveApp /><HLMark /><Toast /></>;
   return <>
     {r === "learner" && <LearnerApp key={state.personaId} />}
     {r === "parent" && <ParentApp />}
     {r === "teacher" && <TeacherApp />}
     {r === "school" && <SchoolApp />}
     {r === "admin" && <AdminApp />}
+    <HLMark />
     <Toast />
   </>;
+}
+
+/* The floating Haaraya Education seal from the Haaraya site. Hidden while a
+   pupil is working, so it never covers an answer. */
+function PublisherMark() {
+  const [open, setOpen] = React.useState(false);
+  return <button type="button" className={"publisher-mark" + (open ? " expanded" : "")}
+    onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} onClick={() => setOpen(o => !o)}
+    aria-label="Published by Haaraya Education">
+    <span className="publisher-mark-seal"><img src="../assets/logo-haaraya-education-white.png" alt="" /></span>
+    <span className="publisher-mark-caption"><span className="by">Published by</span><span className="org">Haaraya Education</span><span className="tag">Ignite minds. Illuminate futures.</span></span>
+  </button>;
+}
+function HLMark() {
+  const { state } = useHL();
+  const working = state.route && (state.route.view === "worksheet" || state.route.view === "lesson" || state.route.view === "reader");
+  return working ? null : <PublisherMark />;
 }
 
 function LiveBoot() {
@@ -23,7 +41,7 @@ function LiveBoot() {
   }, [n]);
   if (!res) return <LiveGate busy />;
   if (res.state) return <HLProvider initial={res.state}><HLApp /></HLProvider>;
-  return <LiveGate res={res} retry={() => { setRes(null); setN(n + 1); }} />;
+  return <><LiveGate res={res} retry={() => { setRes(null); setN(n + 1); }} /><PublisherMark /></>;
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(
