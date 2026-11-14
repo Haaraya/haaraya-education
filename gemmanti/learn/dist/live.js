@@ -384,7 +384,7 @@ function LiveReports({
   };
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "ph-h no-print"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Reports"), /*#__PURE__*/React.createElement("p", null, cls.name, " \xB7 for families. Teacher\u2019s notes are never included.")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Reports"), /*#__PURE__*/React.createElement("p", null, cls.name)), /*#__PURE__*/React.createElement("div", {
     className: "acts"
   }, /*#__PURE__*/React.createElement("button", {
     className: "hl-btn ghost",

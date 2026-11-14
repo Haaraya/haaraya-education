@@ -95,7 +95,7 @@ function WsReview({ L, code, onClose }) {
     </section>
     <section className="ws-rev-s">
       {window.HL_LIVE_ON
-        ? <div className="ws-rev-sh"><h3>Teacher’s note</h3><span className="ws-crit">For staff only. Children and families don’t see it. Describe the work, never the child.</span></div>
+        ? <div className="ws-rev-sh"><h3>Teacher’s note</h3><span className="ws-crit">Staff only. Describe the work, never the child.</span></div>
         : <div className="ws-rev-sh"><h3>A note for {L.name.split(" ")[0]}</h3><span className="ws-crit">Shown to the child and their family. Describe the work, never the child.</span></div>}
       <textarea className="hl-input" rows={3} value={note} onChange={e => setNote(e.target.value)} placeholder={window.HL_LIVE_ON ? "e.g. Sorted every sun and rain word. Needed a prompt to let her voice drop when it goes dark." : "e.g. You sorted every sun and rain word. Next time, let your voice drop when it goes dark."}></textarea>
     </section>
@@ -115,7 +115,7 @@ function WsGuide({ w, onClose }) {
       <div className="tbl-wrap"><table className="tbl"><thead><tr><th>Section</th><th>Not Yet</th><th>Developing</th><th>Secure</th><th>Beyond</th></tr></thead><tbody>{WT.SECS.map(s => <tr key={s.k}><td><b>{s.n}</b></td>{w.r[s.k].map((d, i) => <td key={i}>{d}</td>)}<td>{s.k === "sw" ? "Through the Challenge: " + w.r.b : "Not possible"}</td></tr>)}</tbody></table></div>
       <h4>Linking to the lesson</h4>
       <div className="tbl-wrap"><table className="tbl"><thead><tr><th>Section</th><th>Lesson success criterion</th><th>If a child struggles</th></tr></thead><tbody>{WT.SECS.map(s => <tr key={s.k}><td><b>{s.n}</b></td><td>{w.g.crit[s.k]}</td><td>{w.g.next[s.k]}</td></tr>)}</tbody></table></div>
-      <div className="note" style={{ marginTop: 14 }}>Judge accuracy, fluency and help separately. Hesitation lowers only the Read It Again rating. Never combine the ratings into a score or percentage. Never tell a child a decodable word: What sounds do you see? Blend them.</div>
+      <div className="note" style={{ marginTop: 14 }}>Judge accuracy, fluency and help separately. Hesitation lowers only the Read It Again rating. Never tell a child a decodable word: What sounds do you see? Blend them.</div>
     </div>
   </Modal>;
 }

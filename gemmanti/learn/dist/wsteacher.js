@@ -367,7 +367,7 @@ function WsReview({
     className: "ws-rev-sh"
   }, /*#__PURE__*/React.createElement("h3", null, "Teacher\u2019s note"), /*#__PURE__*/React.createElement("span", {
     className: "ws-crit"
-  }, "For staff only. Children and families don\u2019t see it. Describe the work, never the child.")) : /*#__PURE__*/React.createElement("div", {
+  }, "Staff only. Describe the work, never the child.")) : /*#__PURE__*/React.createElement("div", {
     className: "ws-rev-sh"
   }, /*#__PURE__*/React.createElement("h3", null, "A note for ", L.name.split(" ")[0]), /*#__PURE__*/React.createElement("span", {
     className: "ws-crit"
@@ -447,7 +447,7 @@ function WsGuide({
     style: {
       marginTop: 14
     }
-  }, "Judge accuracy, fluency and help separately. Hesitation lowers only the Read It Again rating. Never combine the ratings into a score or percentage. Never tell a child a decodable word: What sounds do you see? Blend them.")));
+  }, "Judge accuracy, fluency and help separately. Hesitation lowers only the Read It Again rating. Never tell a child a decodable word: What sounds do you see? Blend them.")));
 }
 
 /* Compact list of a learner's worksheet records (teacher drawer, parent view). */

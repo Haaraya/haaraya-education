@@ -156,7 +156,7 @@ function LiveReports({ cls, school, learners }) {
     catch (e) { console.warn("Email reports failed", e); setMail({ error: true }); }
   };
   return <>
-    <div className="ph-h no-print"><div><h1>Reports</h1><p>{cls.name} · for families. Teacher’s notes are never included.</p></div>
+    <div className="ph-h no-print"><div><h1>Reports</h1><p>{cls.name}</p></div>
       <div className="acts">
         <button className="hl-btn ghost" onClick={() => setMail("confirm")} disabled={!shown.length}><Icon n="send" s={16} />Email to {shown.length === 1 ? "family" : "families"}</button>
         <button className="hl-btn" onClick={() => window.print()}><Icon n="dl" s={16} />Print or save as PDF</button></div></div>
