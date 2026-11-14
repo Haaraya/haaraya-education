@@ -623,7 +623,7 @@ function DemoResetCard() {
   const run = async () => {
     setStep("working");
     try { setOut(await HaarayaAdminDB.resetDemo()); setStep("done"); }
-    catch (e) { setOut(String(e.message || e)); setStep("error"); }
+    catch (e) { console.warn("Demo reset failed:", e); setOut(null); setStep("error"); }
   };
   const cleared = out && typeof out === "object"
     ? Object.keys(DEMO_RESET_LABELS).filter(k => out[k] != null).map(k => `${out[k]} ${DEMO_RESET_LABELS[k]}`)
@@ -633,28 +633,27 @@ function DemoResetCard() {
     <div className="adash-card" style={{ marginBottom: 16 }}>
       <h5>Demo data</h5>
       <p style={{ fontSize: 14, color: "var(--ink-mid)", margin: "0 0 10px", lineHeight: 1.5 }}>
-        Clears everything visitors did in the demo accounts: reading, stamps, Odyssey logs, and Gemmanti worksheets, ratings and notes.
-        The demo school, class, children and logins stay as they are. Real accounts are never touched.
+        Clear what visitors did in the demo accounts. The demo school, class and children stay.
       </p>
       {step === "idle" && <button className="btn btn-ghost-dark btn-sm" onClick={() => setStep("confirm")}>Reset demo data</button>}
       {step === "confirm" && (
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <span style={{ fontSize: 14, fontWeight: 700 }}>Clear all demo activity now? This can’t be undone.</span>
+          <span style={{ fontSize: 14, fontWeight: 700 }}>Clear all demo activity? This can’t be undone.</span>
           <button className="btn btn-sm" style={{ background: "#B71C1C", color: "#fff" }} onClick={run}>Yes, clear it</button>
           <button className="btn btn-ghost-dark btn-sm" onClick={() => setStep("idle")}>Cancel</button>
         </div>
       )}
-      {step === "working" && <div style={{ fontSize: 14, color: "var(--ink-soft)" }}>Clearing demo activity…</div>}
+      {step === "working" && <div style={{ fontSize: 14, color: "var(--ink-soft)" }}>Clearing…</div>}
       {step === "done" && (
         <div style={{ fontSize: 14 }}>
-          <strong style={{ color: "#1A6E1A" }}>{total ? `Cleared ${total} demo record${total === 1 ? "" : "s"}.` : "Nothing to clear. Demo data was already clean."}</strong>
+          <strong style={{ color: "#1A6E1A" }}>{total ? `Cleared ${total} demo record${total === 1 ? "" : "s"}.` : "Demo data is already clear."}</strong>
           {total > 0 && <div style={{ color: "var(--ink-mid)", marginTop: 4 }}>{cleared.filter(s => !s.startsWith("0 ")).join(" · ")}</div>}
           <button className="btn btn-ghost-dark btn-sm" style={{ marginTop: 10 }} onClick={() => setStep("idle")}>Done</button>
         </div>
       )}
       {step === "error" && (
         <div style={{ fontSize: 14, color: "#B71C1C" }}>
-          Couldn’t reset: {out}. {/admin_reset_demo_activity/.test(String(out)) ? "Run supabase/demo_reset_v2.sql in Supabase first." : ""}
+          Couldn’t clear demo data.
           <div><button className="btn btn-ghost-dark btn-sm" style={{ marginTop: 10 }} onClick={() => setStep("idle")}>Try again</button></div>
         </div>
       )}
