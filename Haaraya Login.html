@@ -208,7 +208,17 @@
     function enterApp(){
       if (handedOff) return;
       handedOff = true;
-      setTimeout(function(){ window.location.href = "Haaraya Home.html"; }, 900);
+      setTimeout(function(){ window.location.href = safeNext() || "Haaraya Home.html"; }, 900);
+    }
+
+    // ?next=gemmanti/Gemmanti.html sends a person back where they came from.
+    // Only a page on this site is accepted: no other website, no "..", no scripts.
+    function safeNext(){
+      try {
+        var n = new URLSearchParams(location.search).get("next") || "";
+        if (/^[A-Za-z0-9][A-Za-z0-9 _\-\/]*\.html(#[A-Za-z0-9\-]*)?$/.test(n) && n.indexOf("..") < 0 && n.indexOf("//") < 0) return n;
+      } catch (e) {}
+      return null;
     }
 
     function friendlyAuthError(err){

@@ -658,3 +658,31 @@ button.ws-pic{cursor:pointer;min-height:44px}
 .ws-pic.sm:has(.has-img){width:128px}
 .ws-pic-art.has-img{aspect-ratio:1/1}
 @media (max-width:720px){.ws-pic:has(.has-img),.ws-pic.sm:has(.has-img){width:calc(50% - 5px)}}
+
+/* ---------- Live app ---------- */
+.live-gate{min-height:calc(100vh - 64px);background:var(--cream);display:flex;align-items:flex-start;justify-content:center;padding-block:56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.live-wait{color:var(--ink-soft);font-size:16px;margin-top:40px}
+.live-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:32px;max-width:480px;width:100%}
+.live-card h1{font-size:24px;line-height:1.25;margin:0 0 10px;text-wrap:balance}
+.live-card p{color:var(--ink-mid);font-size:16px;line-height:1.5;margin:0 0 20px}
+.live-acts{display:flex;gap:10px;flex-wrap:wrap}
+a.hl-btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+a.hl-brand{text-decoration:none;color:inherit}
+.live-cls{font-weight:800;font-size:14px;padding:8px 0}
+.live-drawer{padding:24px;display:grid;gap:18px}
+.kid-h{margin-bottom:22px}
+.kid-h p{color:var(--ink-mid);font-size:17px;margin-top:6px}
+.live-shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:18px}
+.live-book{display:flex;flex-direction:column;gap:8px;text-align:left;background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;min-width:0}
+.live-book b{font-family:var(--read);font-size:17px;line-height:1.25}
+.live-book span{font-size:13px;color:var(--ink-soft)}
+.live-book:focus-visible{outline:3px solid var(--forest);outline-offset:4px;border-radius:12px}
+.hl-role-menu a.item{text-decoration:none;color:inherit}
+.live-switch{position:relative;width:44px;height:26px;border-radius:99px;border:0;background:var(--line-2);cursor:pointer;padding:0;flex:none}
+.live-switch i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s}
+.live-switch.on{background:var(--forest)}
+.live-switch.on i{left:21px}
+.live-switch:disabled{opacity:.5;cursor:wait}
+@media (prefers-reduced-motion:reduce){.live-switch i{transition:none}}
+.hl-role-menu a.item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border-radius:10px;font-size:14px;font-weight:700}
+.hl-role-menu a.item:hover{background:var(--sand)}

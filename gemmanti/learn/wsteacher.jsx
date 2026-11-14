@@ -22,7 +22,7 @@ function TWorksheets({ cls, learners, openAssign }) {
   const dist = k => RATE_ORDER.map(r => [r, recs.filter(([, x]) => x.ratings && x.ratings[k] === r).length]);
   return <>
     <div className="ph-h"><div><h1>Worksheets</h1><p>{cls.name} · ratings follow the Haaraya teacher guide: no scores, no percentages</p></div>
-      <div className="acts"><button className="hl-btn ghost" onClick={() => setGuide(true)}><Icon n="book" s={16} />Teacher guide</button><button className="hl-btn" onClick={() => openAssign({ type: "worksheet" })}><Icon n="plus" s={16} />Assign a worksheet</button></div></div>
+      <div className="acts"><button className="hl-btn ghost" onClick={() => setGuide(true)}><Icon n="book" s={16} />Teacher guide</button>{openAssign && <button className="hl-btn" onClick={() => openAssign({ type: "worksheet" })}><Icon n="plus" s={16} />Assign a worksheet</button>}</div></div>
     <div className="filters">
       <select className="hl-select" value={code} onChange={e => setCode(e.target.value)} aria-label="Worksheet">
         {asg.length > 0 && <optgroup label="Assigned to this class">{asg.map(x => <option key={x.id} value={x.ref}>{WT.get(x.ref).title} · L{WT.get(x.ref).level}</option>)}</optgroup>}
@@ -30,7 +30,7 @@ function TWorksheets({ cls, learners, openAssign }) {
       <div className="seg">{[["all", "All", tgt.length], ["handed_in", "To record", cnt("handed_in")], ["reviewed", "Recorded", cnt("reviewed")], ["in_progress", "Working", cnt("in_progress")], ["not_started", "Not started", tgt.length - cnt("handed_in") - cnt("reviewed") - cnt("in_progress")]].map(([k, l, n]) => <button key={k} className={f === k ? "on" : ""} onClick={() => setF(k)}>{l} · {n}</button>)}</div>
     </div>
     <div className="card ws-sum">
-      <div className="ws-sum-b"><div className="th"><Cover book={hlBook(code)} /></div><div><div className="eyebrow">Level {w.level} · {w.strand} · {w.code}</div><h3>{w.title}</h3><p>{w.blurb}</p>{a ? <p className="meta">Due {new Date(a.due).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} · {a.to === "all" ? "whole class" : a.to.length + " learners"}</p> : <p className="meta">Not assigned to this class</p>}</div></div>
+      <div className="ws-sum-b"><div className="th"><Cover book={hlBook(code)} /></div><div><div className="eyebrow">Level {w.level} · {w.strand} · {w.code}</div><h3>{w.title}</h3><p>{w.blurb}</p>{a ? <p className="meta">Due {new Date(a.due).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} · {a.to === "all" ? "whole class" : a.to.length + " learners"}</p> : !window.HL_LIVE_ON && <p className="meta">Not assigned to this class</p>}</div></div>
       <div className="ws-dist">{WT.SECS.map(s => <div key={s.k}><span>{s.n}</span><div className="ws-dist-r">{dist(s.k).map(([r, n]) => <span key={r} className={"ws-dist-c r-" + r} title={`${WT.RATINGS[r]}: ${n}`}><b>{r}</b>{n}</span>)}</div></div>)}</div>
     </div>
     <div className="card" style={{ padding: 0 }}><div className="tbl-wrap"><table className="tbl ws-grid"><thead><tr><th>Learner</th><th>Status</th>{WT.SECS.map(s => <th key={s.k} className="c" title={s.n}>{s.n.split(" ").map(x => x[0]).join("")}</th>)}<th className="c" title="Overall help">Help</th><th></th></tr></thead>
@@ -94,8 +94,10 @@ function WsReview({ L, code, onClose }) {
       {w.level <= 2 && <p className="ws-hint" style={{ marginTop: 8 }}>At this level, Independent means you gave the spoken instruction and the child responded without further help.</p>}
     </section>
     <section className="ws-rev-s">
-      <div className="ws-rev-sh"><h3>A note for {L.name.split(" ")[0]}</h3><span className="ws-crit">Shown to the child and their family. Describe the work, never the child.</span></div>
-      <textarea className="hl-input" rows={3} value={note} onChange={e => setNote(e.target.value)} placeholder="e.g. You sorted every sun and rain word. Next time, let your voice drop when it goes dark."></textarea>
+      {window.HL_LIVE_ON
+        ? <div className="ws-rev-sh"><h3>Teacher’s note</h3><span className="ws-crit">For staff only. Children and families don’t see it. Describe the work, never the child.</span></div>
+        : <div className="ws-rev-sh"><h3>A note for {L.name.split(" ")[0]}</h3><span className="ws-crit">Shown to the child and their family. Describe the work, never the child.</span></div>}
+      <textarea className="hl-input" rows={3} value={note} onChange={e => setNote(e.target.value)} placeholder={window.HL_LIVE_ON ? "e.g. Sorted every sun and rain word. Needed a prompt to let her voice drop when it goes dark." : "e.g. You sorted every sun and rain word. Next time, let your voice drop when it goes dark."}></textarea>
     </section>
     <div className="ws-rev-f"><button className="hl-btn ghost" onClick={onClose}>Cancel</button><button className="hl-btn" onClick={() => { const clean = {}; Object.keys(rt).forEach(k => { if (rt[k]) clean[k] = rt[k]; }); wsReview(L.id, code, { ratings: clean, help, note }); onClose(); }}><Icon n="check" s={16} />Save record</button></div>
   </div></Drawer>;
@@ -126,7 +128,7 @@ function WsRecordList({ L, family }) {
     return <div key={c} className="ws-recrow">
       <div><b>{w.title}</b><span>L{w.level} · <WsStatus s={r.status} /></span></div>
       <div className="ws-recchips">{WT.SECS.map(s => <span key={s.k} title={s.n} className="ws-recchip">{family ? <><small>{s.n}</small><b>{r.ratings && r.ratings[s.k] ? WT.RATINGS[r.ratings[s.k]] : "—"}</b></> : <><small>{s.n.split(" ").map(x => x[0]).join("")}</small><RateChip r={r.ratings && r.ratings[s.k]} sm /></>}</span>)}</div>
-      {family && r.note && <p className="ws-famnote">“{r.note}”</p>}
+      {family && r.note && !window.HL_LIVE_ON && <p className="ws-famnote">“{r.note}”</p>}
     </div>; })}</div>;
 }
 Object.assign(window, { TWorksheets, WsReview, WsGuide, RateChip, WsRecordList, WsStatus });

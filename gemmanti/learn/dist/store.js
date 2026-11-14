@@ -33,11 +33,15 @@ function hlLoad() {
 }
 const HLStore = React.createContext(null);
 const nowLabel = () => "Just now";
+const hlToday = () => new Date().toISOString().slice(0, 10);
 function HLProvider({
-  children
+  children,
+  initial
 }) {
-  const [state, setState] = React.useState(hlLoad);
+  const [state, setState] = React.useState(() => initial || hlLoad());
+  /* Demo keeps its state in this browser; live state lives in the database. */
   React.useEffect(() => {
+    if (state.live) return;
     const {
       toast,
       ...rest
@@ -46,6 +50,30 @@ function HLProvider({
       localStorage.setItem(HL_KEY, JSON.stringify(rest));
     } catch (e) {}
   }, [state]);
+  /* Live saving: queue a save, then read the record from the latest state when it runs. */
+  const latest = React.useRef(state);
+  latest.current = state;
+  const queue = React.useRef({});
+  const save = (kind, lid, code, handIn) => {
+    if (!latest.current.live || !window.HLLive) return;
+    const k = kind + "|" + lid + "|" + code;
+    const q = queue.current[k] || (queue.current[k] = {});
+    if (handIn) q.handIn = true;
+    clearTimeout(q.t);
+    q.t = setTimeout(() => {
+      delete queue.current[k];
+      const L = latest.current.learners[lid];
+      const rec = L && L.worksheets && L.worksheets[code];
+      if (!rec) return;
+      const p = kind === "review" ? HLLive.saveReview(lid, code, rec) : HLLive.saveWork(lid, code, rec, !!q.handIn);
+      p.then(() => {
+        if (kind === "review") toast("Record saved");else if (q.handIn) toast("Handed in");
+      }).catch(e => {
+        console.warn("Gemmanti save failed", e);
+        toast("Couldn’t save. Check your connection and try again.");
+      });
+    }, kind === "work" && !handIn ? 800 : 60);
+  };
   const up = fn => setState(s => {
     const n = JSON.parse(JSON.stringify(s));
     fn(n);
@@ -166,12 +194,12 @@ function HLProvider({
         status: "in_progress",
         resp: {},
         reads: [],
-        at: "2026-11-09"
+        at: hlToday()
       });
       if (r.status === "not_started") r.status = "in_progress";
       r.resp[id] = val;
       L.lastActive = 0;
-    }),
+    }) || save("work", lid, code),
     wsReads: (lid, code, reads) => up(s => {
       const L = s.learners[lid];
       L.worksheets = L.worksheets || {};
@@ -179,18 +207,18 @@ function HLProvider({
         status: "in_progress",
         resp: {},
         reads: [],
-        at: "2026-11-09"
+        at: hlToday()
       });
       r.reads = reads;
-    }),
+    }) || save("work", lid, code),
     wsHandIn: (lid, code) => {
       up(s => {
         const L = s.learners[lid];
         const r = L.worksheets[code];
         if (!r) return;
         r.status = "handed_in";
-        r.handedAt = "2026-11-09";
-        L.weekly[L.weekly.length - 1] += 1;
+        r.handedAt = hlToday();
+        if (L.weekly.length) L.weekly[L.weekly.length - 1] += 1;
         s.events.unshift({
           at: nowLabel(),
           who: first(L.name),
@@ -199,6 +227,7 @@ function HLProvider({
           live: true
         });
       });
+      save("work", lid, code, true);
     },
     wsReview: (lid, code, rec) => {
       up(s => {
@@ -211,11 +240,11 @@ function HLProvider({
         });
         Object.assign(r, rec, {
           status: "reviewed",
-          reviewedAt: "2026-11-09",
+          reviewedAt: hlToday(),
           seen: false
         });
       });
-      toast("Record saved");
+      if (latest.current.live) save("review", lid, code);else toast("Record saved");
     },
     wsSeen: (lid, code) => up(s => {
       const r = s.learners[lid].worksheets[code];

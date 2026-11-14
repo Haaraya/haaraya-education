@@ -2,18 +2,21 @@
 
 Gemmanti is the Haaraya LMS (learning management system), sold to schools and community groups as a paid add-on. It covers worksheets with teacher ratings, teacher guides, assignments, lessons and learning journeys, reading recordings, the class register, report cards and reports.
 
-**Status: demo only. Do not merge to `main` yet.** Everything on `main` is published on the live website.
+**Status: first live version, on the `gemmanti` branch only. Do not merge to `main` yet.** Everything on `main` is published on the live website.
 
-## Open the demo
+## Open it
 
 Serve the repository and open `gemmanti/Gemmanti.html`:
 
 ```bash
-python3 -m http.server 8000
+python3 -m http.server 8000      # Windows: py -m http.server 8000
 # then visit http://localhost:8000/gemmanti/Gemmanti.html
 ```
 
-Book covers and pages load from the Haaraya Supabase library, so an internet connection is needed.
+- **Live (default):** uses the Haaraya website's sign-in and database. A person signed in on the Haaraya site is signed in here too. Signed out, it shows a Sign in button that goes to `Haaraya Login.html` and comes back.
+- **Invented demo:** add `?demo` to the address (`Gemmanti.html?demo`) to see the original design with made-up schools and people, saved in the browser only.
+
+An internet connection is needed: books, pictures and data come from Supabase.
 
 ## Edit and build
 
@@ -27,12 +30,19 @@ npm run build
 
 Commit both the `.jsx` source files and the rebuilt `learn/dist/` files.
 
-## What is real and what is demo
+## What the live version does
 
-- **Real:** the 12 showcase books, one per level for L1–L12, with their worksheets. The book codes match `HAARAYA_ALL_LEVELS_MASTER_v1_3`.
-- **Demo:** all people, schools, classes and scores. They are invented.
-- **Saving:** progress, answers, ratings and notes are saved in the browser on that device only. Nothing is written to Supabase.
-- **Sign-in:** there is none yet. A menu in the top bar switches between roles.
+Needs `supabase/gemmanti_worksheets.sql` run in Supabase. Data loading and saving is in `learn/live.js`; the live screens are in `learn/live.jsx`.
+
+- **Teacher:** their classes and pupils; worksheet review with ratings, help level and a staff-only note; "Open as pupil" so a child can do a worksheet on the teacher's device.
+- **School admin:** the same, for every class in the school.
+- **Parent:** their children's worksheets and ratings (never the teacher's notes); "Do a worksheet" for a child at home.
+- **Haaraya admin:** every school, with a switch that turns Gemmanti on or off on its subscription.
+- **Who sees Gemmanti:** only schools whose subscription lists the `gemmanti` add-on. Parents see only children at those schools.
+- **Saved:** answers and read-aloud ticks (`worksheet_responses`), ratings and help (`worksheet_reviews`), teacher notes (`worksheet_teacher_notes`). Voice recordings are not stored.
+- **Not in the live version yet:** lessons, journeys, assignments, reports and content requests. They need database tables first; they still appear in the `?demo` version.
+
+The 12 showcase books, one per level for L1–L12, have worksheets. The book codes match `HAARAYA_ALL_LEVELS_MASTER_v1_3`.
 
 ## Before going live
 
@@ -40,7 +50,7 @@ Commit both the `.jsx` source files and the rebuilt `learn/dist/` files.
    - TF-03-02 *Chinasa at the Market* (`reaudit_fixed; scene_redo_pending`)
    - SN-07-01 *Queen Amina of Zazzau* (`draft`)
 2. **Worksheet pictures.** The line art for L1–L6 is wired in. It needs uploading to Supabase Storage at `book-assets/worksheets/<book code>/<image ID>.webp`; until then the striped placeholders show. Image IDs come from `HAARAYA_WORKSHEET_LINEART_SHOWCASE_v1.csv`, and `learn/ws-pics.js` says which picture label uses which image. Screen copies are 600 px greyscale WebP; the full-size originals are kept for print.
-3. **Sign-in and roles.** Use the website's sign-in, and show each person their real school, classes and children.
-4. **Saving to the database.** Add Supabase tables and access rules for worksheet records, then save to them.
-5. **Add-on check.** Show Gemmanti only to schools whose subscription includes it, and link it from the teacher and school dashboards.
+3. **Sign-in, real data and saving.** Done in the first live version; test it with the demo logins.
+4. **Link it in.** Add a Gemmanti link to the website's teacher, school and parent dashboards for schools with the add-on.
+5. **Lessons, assignments and reports.** Need their own tables before they can be live.
 6. **Base-plan changes on the website.** In the base plan, teachers see progress only, and assigning books moves into Gemmanti. Update the School plan wording on the home page to match.

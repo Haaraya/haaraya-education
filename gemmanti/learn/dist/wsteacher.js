@@ -68,7 +68,7 @@ function TWorksheets({
   }, /*#__PURE__*/React.createElement(Icon, {
     n: "book",
     s: 16
-  }), "Teacher guide"), /*#__PURE__*/React.createElement("button", {
+  }), "Teacher guide"), openAssign && /*#__PURE__*/React.createElement("button", {
     className: "hl-btn",
     onClick: () => openAssign({
       type: "worksheet"
@@ -114,7 +114,7 @@ function TWorksheets({
   }, "Due ", new Date(a.due).toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short"
-  }), " \xB7 ", a.to === "all" ? "whole class" : a.to.length + " learners") : /*#__PURE__*/React.createElement("p", {
+  }), " \xB7 ", a.to === "all" ? "whole class" : a.to.length + " learners") : !window.HL_LIVE_ON && /*#__PURE__*/React.createElement("p", {
     className: "meta"
   }, "Not assigned to this class"))), /*#__PURE__*/React.createElement("div", {
     className: "ws-dist"
@@ -358,7 +358,11 @@ function WsReview({
     }
   }, "At this level, Independent means you gave the spoken instruction and the child responded without further help.")), /*#__PURE__*/React.createElement("section", {
     className: "ws-rev-s"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, window.HL_LIVE_ON ? /*#__PURE__*/React.createElement("div", {
+    className: "ws-rev-sh"
+  }, /*#__PURE__*/React.createElement("h3", null, "Teacher\u2019s note"), /*#__PURE__*/React.createElement("span", {
+    className: "ws-crit"
+  }, "For staff only. Children and families don\u2019t see it. Describe the work, never the child.")) : /*#__PURE__*/React.createElement("div", {
     className: "ws-rev-sh"
   }, /*#__PURE__*/React.createElement("h3", null, "A note for ", L.name.split(" ")[0]), /*#__PURE__*/React.createElement("span", {
     className: "ws-crit"
@@ -367,7 +371,7 @@ function WsReview({
     rows: 3,
     value: note,
     onChange: e => setNote(e.target.value),
-    placeholder: "e.g. You sorted every sun and rain word. Next time, let your voice drop when it goes dark."
+    placeholder: window.HL_LIVE_ON ? "e.g. Sorted every sun and rain word. Needed a prompt to let her voice drop when it goes dark." : "e.g. You sorted every sun and rain word. Next time, let your voice drop when it goes dark."
   })), /*#__PURE__*/React.createElement("div", {
     className: "ws-rev-f"
   }, /*#__PURE__*/React.createElement("button", {
@@ -472,7 +476,7 @@ function WsRecordList({
     }, family ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("small", null, s.n), /*#__PURE__*/React.createElement("b", null, r.ratings && r.ratings[s.k] ? WT.RATINGS[r.ratings[s.k]] : "—")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("small", null, s.n.split(" ").map(x => x[0]).join("")), /*#__PURE__*/React.createElement(RateChip, {
       r: r.ratings && r.ratings[s.k],
       sm: true
-    }))))), family && r.note && /*#__PURE__*/React.createElement("p", {
+    }))))), family && r.note && !window.HL_LIVE_ON && /*#__PURE__*/React.createElement("p", {
       className: "ws-famnote"
     }, "\u201C", r.note, "\u201D"));
   }));

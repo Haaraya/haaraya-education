@@ -968,7 +968,7 @@ function TopNav({
     className: "hl-top"
   }, /*#__PURE__*/React.createElement("button", {
     className: "hl-brand",
-    onClick: () => go(items[0][0])
+    onClick: () => items && go(items[0][0])
   }, /*#__PURE__*/React.createElement("img", {
     src: "assets/haaraya-emblem.png",
     alt: ""

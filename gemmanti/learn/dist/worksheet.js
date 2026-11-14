@@ -967,7 +967,7 @@ function WorksheetPlayer({
   }, /*#__PURE__*/React.createElement("img", {
     src: `assets/stamp-l${Math.min(12, w.level)}.png`,
     alt: ""
-  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", null, rec.status === "reviewed" ? `${teacherName} has looked at your worksheet` : `Well done, ${first}! Your worksheet is with ${teacherName}.`), rec.status === "reviewed" && rec.note ? /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", null, rec.status === "reviewed" ? `${teacherName} has looked at your worksheet` : `Well done, ${first}! Your worksheet is with ${teacherName}.`), rec.status === "reviewed" && rec.note && !window.HL_LIVE_ON ? /*#__PURE__*/React.createElement("div", {
     className: "ws-note"
   }, /*#__PURE__*/React.createElement("span", {
     className: "eyebrow"

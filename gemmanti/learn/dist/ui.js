@@ -361,6 +361,13 @@ const PERSONAS = [{
 }];
 function RoleSwitcher() {
   const {
+    state
+  } = useHL();
+  if (state.live) return /*#__PURE__*/React.createElement(LiveAccount, null);
+  return /*#__PURE__*/React.createElement(DemoRoleSwitcher, null);
+}
+function DemoRoleSwitcher() {
+  const {
     state,
     setRole,
     reset

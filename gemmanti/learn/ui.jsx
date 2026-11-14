@@ -112,6 +112,11 @@ const PERSONAS = [
   { role: "admin", label: "Haaraya Admin", sub: "Platform administration", group: "Haaraya administrator" }
 ];
 function RoleSwitcher() {
+  const { state } = useHL();
+  if (state.live) return <LiveAccount />;
+  return <DemoRoleSwitcher />;
+}
+function DemoRoleSwitcher() {
   const { state, setRole, reset } = useHL();
   const [open, setOpen] = React.useState(false);
   const ref = React.useRef();
