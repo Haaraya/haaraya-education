@@ -32,11 +32,11 @@ Commit both the `.jsx` source files and the rebuilt `learn/dist/` files.
 
 ## What the live version does
 
-Needs, in Supabase: `supabase/gemmanti_worksheets.sql`, then `supabase/gemmanti_worksheets_v2.sql`, then `supabase/gemmanti_family_reports.sql`; and the Edge Function `supabase/functions/gemmanti-report-email` deployed (it uses the same SMTP secrets as `weekly-parent-email`).
+Needs, in Supabase: `supabase/gemmanti_worksheets.sql`, then `supabase/gemmanti_worksheets_v2.sql`, then `supabase/gemmanti_family_reports.sql`, then `supabase/gemmanti_library_switch.sql`; and the Edge Function `supabase/functions/gemmanti-report-email` deployed (it uses the same SMTP secrets as `weekly-parent-email`).
 
 Gemmanti is for school accounts only. Parent (family) accounts are a separate product and never use it; families of school pupils get reports from the teacher. Data loading and saving is in `learn/live.js`; the live screens are in `learn/live.jsx`.
 
-- **Teacher:** their classes and pupils; worksheet review with ratings, help level and a staff-only note; "Open as pupil" so a child can do a worksheet on the teacher's device; a **Show scores** switch per class (on by default); **Reports** for one pupil or the whole class, to print or save as PDF for families. Reports never include teacher notes.
+- **Teacher:** their classes and pupils; worksheet review with ratings, help level and a staff-only note; "Open as pupil" so a child can do a worksheet on the teacher's device; a **Show scores** switch per class (on by default); a **Library for pupils** switch per class (off by default) that lets a pupil open Haaraya books from a worksheet and come back to it; **Reports** for one pupil or the whole class, to print or save as PDF for families. Reports never include teacher notes.
 - **Family email:** one per pupil, entered on the website's Enrol a pupil form or on Gemmanti's Pupils page. **Email to families** on Reports sends each family its child's report; pupils with nothing recorded yet are skipped.
 - **School admin:** the same, for every class in the school (the score switch belongs to the class teacher).
 - **Scores:** worked out from the section ratings: Not Yet 0, Developing 1, Secure 2, Beyond 2 with a star. Not observed, absent and blank sections are left out. Help is not part of the score.

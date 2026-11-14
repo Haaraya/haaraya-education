@@ -68,11 +68,7 @@ function Cover({
     style: book.img ? null : {
       background: book.l >= 13 ? "#3F2E05" : st.color
     }
-  }, inner || /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("small", null, book.l >= 13 ? "Odyssey" : book.s, " \xB7 L", book.l), /*#__PURE__*/React.createElement("b", null, book.t), /*#__PURE__*/React.createElement("small", {
-    style: {
-      opacity: .7
-    }
-  }, "Cover art")), progress != null && !done && progress > 0 && /*#__PURE__*/React.createElement("div", {
+  }, inner || /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("small", null, book.l >= 13 ? "Odyssey" : book.s, " \xB7 L", book.l), /*#__PURE__*/React.createElement("b", null, book.t)), progress != null && !done && progress > 0 && /*#__PURE__*/React.createElement("div", {
     className: "prog"
   }, /*#__PURE__*/React.createElement("i", {
     style: {

@@ -121,17 +121,25 @@
     };
   }
 
+  /* show_library arrives with gemmanti_library_switch.sql; until that has run,
+     load classes without it so nothing else breaks. */
+  async function classRows(q) {
+    var r = await q("id,name,school_id,teacher_user_id,show_scores,show_library");
+    if (r.error && /show_library/.test(r.error.message || "")) r = await q("id,name,school_id,teacher_user_id,show_scores");
+    return rows(r, "classes");
+  }
+
   async function loadStaff(me, role) {
     var s = baseState(me, role);
     var schools, classes;
     if (role === "teacher") {
-      classes = rows(await sb().from("classrooms").select("id,name,school_id,teacher_user_id,show_scores").eq("teacher_user_id", me.id).order("name"), "classes");
+      classes = await classRows(function (cols) { return sb().from("classrooms").select(cols).eq("teacher_user_id", me.id).order("name"); });
       var sIds = uniq(classes.map(function (c) { return c.school_id; }));
       schools = sIds.length ? rows(await sb().from("schools").select("id,name,type").in("id", sIds), "schools") : [];
     } else {
       schools = rows(await sb().from("schools").select("id,name,type").eq("admin_user_id", me.id), "schools");
       var ids = schools.map(function (x) { return x.id; });
-      classes = ids.length ? rows(await sb().from("classrooms").select("id,name,school_id,teacher_user_id,show_scores").in("school_id", ids).order("name"), "classes") : [];
+      classes = ids.length ? await classRows(function (cols) { return sb().from("classrooms").select(cols).in("school_id", ids).order("name"); }) : [];
     }
     var on = await gemmantiSchools(schools.map(function (x) { return x.id; }));
     s.schools = schools.map(function (x) { return { id: x.id, name: x.name, type: x.type, gemmanti: !!on[x.id] }; });
@@ -155,7 +163,7 @@
     s.classes = classes.map(function (c) {
       return { id: c.id, name: c.name, schoolId: c.school_id, teacherId: c.teacher_user_id, teacherName: tName[c.teacher_user_id] || "No teacher yet",
         expected: null, size: members.filter(function (m) { return m.classroom_id === c.id; }).length,
-        showScores: c.show_scores !== false };
+        showScores: c.show_scores !== false, showLibrary: c.show_library === true };
     });
     s.teachers = tIds.map(function (id) { return { id: id, name: tName[id] || "Teacher", classes: s.classes.filter(function (c) { return c.teacherId === id; }).map(function (c) { return c.id; }) }; });
     return s;
@@ -224,6 +232,37 @@
     return r.data[0].show_scores;
   }
 
+  async function setShowLibrary(classId, on) {
+    var r = await sb().from("classrooms").update({ show_library: !!on }).eq("id", classId).select("id,show_library");
+    if (r.error) throw r.error;
+    if (!r.data || !r.data.length) throw new Error("not allowed");
+    return r.data[0].show_library;
+  }
+
+  /* The Haaraya book catalogue, for the pupils' library. Loaded once. */
+  var SUPA = "https://laihhrkxnxzohaiiisou.supabase.co";
+  function coverOf(p) {
+    if (!p) return "";
+    var raw = String(p).trim();
+    if (/^(https?:|data:)/.test(raw)) return raw;
+    if (/^(assets\/|thumbnails\/)/.test(raw)) return "../" + raw;
+    if (raw.indexOf("/storage/v1/object/public/") === 0) return SUPA + raw;
+    raw = raw.replace(/^\/+/, "").replace(/^book-assets\//, "").replace(/\.png$/i, ".webp");
+    return SUPA + "/storage/v1/object/public/book-assets/" + encodeURI(raw);
+  }
+  var bookList = null;
+  function books() {
+    if (bookList) return bookList;
+    bookList = sb().from("books").select("book_code,title,level,strand,cover_image_path").range(0, 4999).then(function (r) {
+      if (r.error) throw r.error;
+      return (r.data || []).filter(function (b) { return b.book_code; }).map(function (b) {
+        var m = String(b.level || "").match(/\d+/);
+        return { id: b.book_code, t: b.title || b.book_code, l: m ? +m[0] : 0, s: b.strand || "", img: coverOf(b.cover_image_path) };
+      }).sort(function (a, b) { return a.l - b.l || a.t.localeCompare(b.t); });
+    }).catch(function (e) { bookList = null; throw e; });
+    return bookList;
+  }
+
   async function setFamilyEmail(childId, email) {
     var v = String(email || "").trim() || null;
     var r = await sb().from("school_pupil_contacts").upsert({ child_id: childId, family_email: v }, { onConflict: "child_id" });
@@ -243,5 +282,5 @@
 
   async function signOut() { try { await window.HaarayaAuth.signOut(); } catch (e) {} }
 
-  window.HLLive = { demo: DEMO, load: load, saveWork: saveWork, saveReview: saveReview, setGemmanti: setGemmanti, setShowScores: setShowScores, setFamilyEmail: setFamilyEmail, emailReports: emailReports, signOut: signOut };
+  window.HLLive = { demo: DEMO, load: load, saveWork: saveWork, saveReview: saveReview, setGemmanti: setGemmanti, setShowScores: setShowScores, setShowLibrary: setShowLibrary, books: books, setFamilyEmail: setFamilyEmail, emailReports: emailReports, signOut: signOut };
 })();

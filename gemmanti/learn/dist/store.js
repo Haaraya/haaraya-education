@@ -333,6 +333,18 @@ function HLProvider({
       });
       toast(`${name} enrolled`);
     },
+    setClassLibrary: (classId, on) => {
+      const flip = v => up(s => {
+        const c = s.classes.find(c => c.id === classId);
+        if (c) c.showLibrary = v;
+      });
+      flip(on);
+      if (latest.current.live && window.HLLive) HLLive.setShowLibrary(classId, on).then(() => toast(on ? "Pupils can open the library" : "The library is closed for this class")).catch(e => {
+        console.warn(e);
+        flip(!on);
+        toast("Couldn’t change it. Try again.");
+      });
+    },
     setClassScores: (classId, on) => {
       const flip = v => up(s => {
         const c = s.classes.find(c => c.id === classId);

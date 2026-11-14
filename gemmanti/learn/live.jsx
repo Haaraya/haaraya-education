@@ -69,7 +69,7 @@ function LiveEmpty({ title, body }) {
 
 /* ---------- teacher and school admin ---------- */
 function LiveStaff({ openPupil }) {
-  const { state, setClassScores } = useHL();
+  const { state, setClassScores, setClassLibrary } = useHL();
   const [classId, setClassId] = React.useState(state.classes[0] && state.classes[0].id);
   const [drawer, setDrawer] = React.useState(null);
   if (!state.schools.some(s => s.gemmanti)) return <LiveEmpty title="Gemmanti isn’t part of your school’s plan yet" body="Ask your school to add Gemmanti, or contact Haaraya." />;
@@ -86,7 +86,10 @@ function LiveStaff({ openPupil }) {
       : <div className="live-cls">{cls.name}</div>}
     {state.role === "teacher" && cls.teacherId === state.me.id && <label className="live-scores">
       <button className={"live-switch" + (cls.showScores ? " on" : "")} role="switch" aria-checked={cls.showScores} onClick={() => setClassScores(cls.id, !cls.showScores)}><i></i></button>
-      <span>Show scores</span></label>}</>;
+      <span>Show scores</span></label>}
+    {state.role === "teacher" && cls.teacherId === state.me.id && <label className="live-scores">
+      <button className={"live-switch" + (cls.showLibrary ? " on" : "")} role="switch" aria-checked={!!cls.showLibrary} onClick={() => setClassLibrary(cls.id, !cls.showLibrary)}><i></i></button>
+      <span>Library for pupils</span></label>}</>;
   return <AdultShell nav={nav} ctx={ctx}>
     {v !== "pupils" && v !== "reports" && <TWorksheets key={cls.id} cls={cls} learners={learners} showScores={cls.showScores} />}
     {v === "reports" && <LiveReports key={cls.id} cls={cls} school={school} learners={learners} />}
@@ -219,17 +222,80 @@ function LiveReport({ L, cls, school }) {
 /* ---------- pupil (on a teacher's device) ---------- */
 function LivePupil({ L, onExit }) {
   const { state, go } = useHL();
-  const v = state.route.view;
+  const r = state.route; const v = r.view;
+  const cls = state.classes.find(c => c.id === L.classId);
+  const lib = !!(cls && cls.showLibrary);
+  const inWs = v === "worksheet" && r.code;
   return <>
     <header className="hl-top">
       <span className="hl-brand"><img className="hl-logo" src="assets/logo-gemmanti.png" alt="Gemmanti" /></span>
       <div className="hl-spacer"></div>
+      {lib && v !== "library" && <button className="hl-btn ghost sm live-libbtn" onClick={() => go("library", { from: inWs ? r.code : null })}><Icon n="book" s={16} />Library</button>}
       <button className="hl-btn ghost sm" onClick={() => { go("worksheets"); onExit(); }}><Icon n="back" s={16} />Finish</button>
     </header>
     <main className="kid">
-      {v === "worksheet" && state.route.code ? <WorksheetPlayer key={state.route.code} L={L} code={state.route.code} /> : <LiveShelf L={L} />}
+      {inWs ? <WorksheetPlayer key={r.code} L={L} code={r.code} />
+        : v === "library" && lib ? <LiveLibrary L={L} from={r.from} />
+        : <LiveShelf L={L} />}
     </main>
+    {v === "library" && lib && r.read && <LiveReader code={r.read} title={r.title} close={() => go("library", { from: r.from })}
+      toWorksheet={HLWS.get(r.from || r.read) ? () => go("worksheet", { code: r.from || r.read }) : null} back={!!r.from} />}
   </>;
+}
+
+/* The Haaraya library, opened from a worksheet when the teacher allows it. */
+function LiveLibrary({ L, from }) {
+  const { go } = useHL();
+  const [list, setList] = React.useState(null);
+  const [err, setErr] = React.useState(false);
+  const [lvl, setLvl] = React.useState(() => { const w = from && HLWS.get(from); return (w && w.level) || L.level || 0; });
+  const [q, setQ] = React.useState("");
+  React.useEffect(() => { HLLive.books().then(setList).catch(() => setErr(true)); }, []);
+  const levels = list ? Array.from(new Set(list.map(b => b.l).filter(Boolean))).sort((a, b) => a - b) : [];
+  const shown = (list || []).filter(b => (!lvl || b.l === lvl) && (!q || b.t.toLowerCase().includes(q.toLowerCase())));
+  const back = from && HLWS.get(from);
+  return <div className="kid-wrap">
+    {back && <button className="back" onClick={() => go("worksheet", { code: from })}><Icon n="back" />Back to my worksheet</button>}
+    <h1>Library</h1>
+    {err ? <div className="empty">The library couldn’t load. Check the connection and try again.</div>
+      : !list ? <div className="empty">Loading books…</div>
+      : <>
+        <div className="lib-bar">
+          <label className="search"><Icon n="search" s={20} /><input value={q} onChange={e => setQ(e.target.value)} placeholder="Search by title" aria-label="Search books" /></label>
+        </div>
+        <div className="lvl-strip">
+          <button className={"chip" + (!lvl ? " on" : "")} onClick={() => setLvl(0)}>All levels</button>
+          {levels.map(n => <button key={n} className={"chip" + (lvl === n ? " on" : "")} onClick={() => setLvl(n)}>Level {n}</button>)}
+        </div>
+        {shown.length ? <div className="live-shelf">{shown.map(b =>
+          <button key={b.id} className="live-book" onClick={() => go("library", { from, read: b.id, title: b.t })}>
+            <Cover book={b} /><b>{b.t}</b><span>Level {b.l}{HLWS.get(b.id) ? " · Worksheet" : ""}</span>
+          </button>)}</div>
+          : <div className="empty">No books match. Try another level or clear the search.</div>}
+      </>}
+  </div>;
+}
+
+function LiveReader({ code, title, close, toWorksheet, back }) {
+  const [pg, setPg] = React.useState(null); const [err, setErr] = React.useState(false);
+  const [p, setP] = React.useState(0);
+  React.useEffect(() => { HLWS.pages(code).then(setPg).catch(() => setErr(true)); }, [code]);
+  const n = pg ? pg.length : 0;
+  React.useEffect(() => {
+    const k = e => { if (e.key === "ArrowRight") setP(x => Math.min(n - 1, x + 1)); if (e.key === "ArrowLeft") setP(x => Math.max(0, x - 1)); if (e.key === "Escape") close(); };
+    window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
+  }, [n]);
+  const cur = pg && pg[p];
+  return <div className="reader" role="dialog" aria-label={title}>
+    <div className="reader-top"><button className="hl-btn ghost sm" onClick={close}><Icon n="x" s={16} />Close</button><b>{title}</b>{toWorksheet && <button className="hl-btn sm" style={{ marginLeft: "auto" }} onClick={toWorksheet}><Icon n="sheet" s={16} />{back ? "Back to my worksheet" : "Do the worksheet"}</button>}</div>
+    <div className="reader-stage">
+      <button className="reader-nav p" disabled={p === 0} onClick={() => setP(p - 1)} aria-label="Previous page"><Icon n="back" s={26} /></button>
+      <div className="reader-page">{cur ? <div className="rd-live"><img src={cur.img} alt={`Page ${p + 1}`} /><p>{cur.text}</p></div>
+        : <div className="ph">{err || (pg && !n) ? "This book couldn’t open. Try another book." : "Loading…"}</div>}</div>
+      <button className="reader-nav n" disabled={!n || p >= n - 1} onClick={() => setP(p + 1)} aria-label="Next page"><Icon n="next" s={26} /></button>
+    </div>
+    <div className="reader-foot"><span>{n ? `Page ${p + 1} of ${n}` : ""}</span><Bar v={n ? (p + 1) / n * 100 : 0} /></div>
+  </div>;
 }
 function LiveShelf({ L }) {
   const { go } = useHL();

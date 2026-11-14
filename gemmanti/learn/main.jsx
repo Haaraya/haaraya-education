@@ -27,7 +27,7 @@ function PublisherMark() {
 }
 function HLMark() {
   const { state } = useHL();
-  const working = state.route && (state.route.view === "worksheet" || state.route.view === "lesson" || state.route.view === "reader");
+  const working = state.route && (state.route.view === "worksheet" || state.route.view === "lesson" || state.route.view === "reader" || state.route.read);
   return working ? null : <PublisherMark />;
 }
 

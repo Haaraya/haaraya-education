@@ -116,6 +116,13 @@ function HLProvider({ children, initial }) {
       const id = "n" + Date.now(); const c = s.classes.find(c => c.id === classId);
       s.learners[id] = { id, name, classId, schoolId: "gf", level: c.expected, levelPct: 0, lastActive: 99, weekly: Array(10).fill(0), booksDone: [], reading: {}, lessons: {}, achievements: [], skills: { phonics: 0, sight: 0, vocab: 0, comp: 0, seq: 0 }, isNew: true };
     }); toast(`${name} enrolled`); },
+    setClassLibrary: (classId, on) => {
+      const flip = v => up(s => { const c = s.classes.find(c => c.id === classId); if (c) c.showLibrary = v; });
+      flip(on);
+      if (latest.current.live && window.HLLive) HLLive.setShowLibrary(classId, on)
+        .then(() => toast(on ? "Pupils can open the library" : "The library is closed for this class"))
+        .catch(e => { console.warn(e); flip(!on); toast("Couldn’t change it. Try again."); });
+    },
     setClassScores: (classId, on) => {
       const flip = v => up(s => { const c = s.classes.find(c => c.id === classId); if (c) c.showScores = v; });
       flip(on);

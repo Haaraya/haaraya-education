@@ -40,7 +40,7 @@ function Cover({ book, progress, done }) {
     : null;
   return (
     <div className={"hl-cover" + (book.img ? "" : " type")} style={book.img ? null : { background: book.l >= 13 ? "#3F2E05" : st.color }}>
-      {inner || <><small>{book.l >= 13 ? "Odyssey" : book.s} · L{book.l}</small><b>{book.t}</b><small style={{ opacity: .7 }}>Cover art</small></>}
+      {inner || <><small>{book.l >= 13 ? "Odyssey" : book.s} · L{book.l}</small><b>{book.t}</b></>}
       {progress != null && !done && progress > 0 && <div className="prog"><i style={{ width: Math.round(progress * 100) + "%" }}></i></div>}
       {done && <span className="done"><Icon n="check" s={14} w={3} /></span>}
     </div>

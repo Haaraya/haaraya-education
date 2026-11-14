@@ -171,7 +171,8 @@ function LiveStaff({
 }) {
   const {
     state,
-    setClassScores
+    setClassScores,
+    setClassLibrary
   } = useHL();
   const [classId, setClassId] = React.useState(state.classes[0] && state.classes[0].id);
   const [drawer, setDrawer] = React.useState(null);
@@ -205,7 +206,14 @@ function LiveStaff({
     role: "switch",
     "aria-checked": cls.showScores,
     onClick: () => setClassScores(cls.id, !cls.showScores)
-  }, /*#__PURE__*/React.createElement("i", null)), /*#__PURE__*/React.createElement("span", null, "Show scores")));
+  }, /*#__PURE__*/React.createElement("i", null)), /*#__PURE__*/React.createElement("span", null, "Show scores")), state.role === "teacher" && cls.teacherId === state.me.id && /*#__PURE__*/React.createElement("label", {
+    className: "live-scores"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "live-switch" + (cls.showLibrary ? " on" : ""),
+    role: "switch",
+    "aria-checked": !!cls.showLibrary,
+    onClick: () => setClassLibrary(cls.id, !cls.showLibrary)
+  }, /*#__PURE__*/React.createElement("i", null)), /*#__PURE__*/React.createElement("span", null, "Library for pupils")));
   return /*#__PURE__*/React.createElement(AdultShell, {
     nav: nav,
     ctx: ctx
@@ -496,7 +504,11 @@ function LivePupil({
     state,
     go
   } = useHL();
-  const v = state.route.view;
+  const r = state.route;
+  const v = r.view;
+  const cls = state.classes.find(c => c.id === L.classId);
+  const lib = !!(cls && cls.showLibrary);
+  const inWs = v === "worksheet" && r.code;
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("header", {
     className: "hl-top"
   }, /*#__PURE__*/React.createElement("span", {
@@ -507,7 +519,15 @@ function LivePupil({
     alt: "Gemmanti"
   })), /*#__PURE__*/React.createElement("div", {
     className: "hl-spacer"
-  }), /*#__PURE__*/React.createElement("button", {
+  }), lib && v !== "library" && /*#__PURE__*/React.createElement("button", {
+    className: "hl-btn ghost sm live-libbtn",
+    onClick: () => go("library", {
+      from: inWs ? r.code : null
+    })
+  }, /*#__PURE__*/React.createElement(Icon, {
+    n: "book",
+    s: 16
+  }), "Library"), /*#__PURE__*/React.createElement("button", {
     className: "hl-btn ghost sm",
     onClick: () => {
       go("worksheets");
@@ -518,12 +538,175 @@ function LivePupil({
     s: 16
   }), "Finish")), /*#__PURE__*/React.createElement("main", {
     className: "kid"
-  }, v === "worksheet" && state.route.code ? /*#__PURE__*/React.createElement(WorksheetPlayer, {
-    key: state.route.code,
+  }, inWs ? /*#__PURE__*/React.createElement(WorksheetPlayer, {
+    key: r.code,
     L: L,
-    code: state.route.code
+    code: r.code
+  }) : v === "library" && lib ? /*#__PURE__*/React.createElement(LiveLibrary, {
+    L: L,
+    from: r.from
   }) : /*#__PURE__*/React.createElement(LiveShelf, {
     L: L
+  })), v === "library" && lib && r.read && /*#__PURE__*/React.createElement(LiveReader, {
+    code: r.read,
+    title: r.title,
+    close: () => go("library", {
+      from: r.from
+    }),
+    toWorksheet: HLWS.get(r.from || r.read) ? () => go("worksheet", {
+      code: r.from || r.read
+    }) : null,
+    back: !!r.from
+  }));
+}
+
+/* The Haaraya library, opened from a worksheet when the teacher allows it. */
+function LiveLibrary({
+  L,
+  from
+}) {
+  const {
+    go
+  } = useHL();
+  const [list, setList] = React.useState(null);
+  const [err, setErr] = React.useState(false);
+  const [lvl, setLvl] = React.useState(() => {
+    const w = from && HLWS.get(from);
+    return w && w.level || L.level || 0;
+  });
+  const [q, setQ] = React.useState("");
+  React.useEffect(() => {
+    HLLive.books().then(setList).catch(() => setErr(true));
+  }, []);
+  const levels = list ? Array.from(new Set(list.map(b => b.l).filter(Boolean))).sort((a, b) => a - b) : [];
+  const shown = (list || []).filter(b => (!lvl || b.l === lvl) && (!q || b.t.toLowerCase().includes(q.toLowerCase())));
+  const back = from && HLWS.get(from);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "kid-wrap"
+  }, back && /*#__PURE__*/React.createElement("button", {
+    className: "back",
+    onClick: () => go("worksheet", {
+      code: from
+    })
+  }, /*#__PURE__*/React.createElement(Icon, {
+    n: "back"
+  }), "Back to my worksheet"), /*#__PURE__*/React.createElement("h1", null, "Library"), err ? /*#__PURE__*/React.createElement("div", {
+    className: "empty"
+  }, "The library couldn\u2019t load. Check the connection and try again.") : !list ? /*#__PURE__*/React.createElement("div", {
+    className: "empty"
+  }, "Loading books\u2026") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "lib-bar"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "search"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    n: "search",
+    s: 20
+  }), /*#__PURE__*/React.createElement("input", {
+    value: q,
+    onChange: e => setQ(e.target.value),
+    placeholder: "Search by title",
+    "aria-label": "Search books"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "lvl-strip"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "chip" + (!lvl ? " on" : ""),
+    onClick: () => setLvl(0)
+  }, "All levels"), levels.map(n => /*#__PURE__*/React.createElement("button", {
+    key: n,
+    className: "chip" + (lvl === n ? " on" : ""),
+    onClick: () => setLvl(n)
+  }, "Level ", n))), shown.length ? /*#__PURE__*/React.createElement("div", {
+    className: "live-shelf"
+  }, shown.map(b => /*#__PURE__*/React.createElement("button", {
+    key: b.id,
+    className: "live-book",
+    onClick: () => go("library", {
+      from,
+      read: b.id,
+      title: b.t
+    })
+  }, /*#__PURE__*/React.createElement(Cover, {
+    book: b
+  }), /*#__PURE__*/React.createElement("b", null, b.t), /*#__PURE__*/React.createElement("span", null, "Level ", b.l, HLWS.get(b.id) ? " · Worksheet" : "")))) : /*#__PURE__*/React.createElement("div", {
+    className: "empty"
+  }, "No books match. Try another level or clear the search.")));
+}
+function LiveReader({
+  code,
+  title,
+  close,
+  toWorksheet,
+  back
+}) {
+  const [pg, setPg] = React.useState(null);
+  const [err, setErr] = React.useState(false);
+  const [p, setP] = React.useState(0);
+  React.useEffect(() => {
+    HLWS.pages(code).then(setPg).catch(() => setErr(true));
+  }, [code]);
+  const n = pg ? pg.length : 0;
+  React.useEffect(() => {
+    const k = e => {
+      if (e.key === "ArrowRight") setP(x => Math.min(n - 1, x + 1));
+      if (e.key === "ArrowLeft") setP(x => Math.max(0, x - 1));
+      if (e.key === "Escape") close();
+    };
+    window.addEventListener("keydown", k);
+    return () => window.removeEventListener("keydown", k);
+  }, [n]);
+  const cur = pg && pg[p];
+  return /*#__PURE__*/React.createElement("div", {
+    className: "reader",
+    role: "dialog",
+    "aria-label": title
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "reader-top"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "hl-btn ghost sm",
+    onClick: close
+  }, /*#__PURE__*/React.createElement(Icon, {
+    n: "x",
+    s: 16
+  }), "Close"), /*#__PURE__*/React.createElement("b", null, title), toWorksheet && /*#__PURE__*/React.createElement("button", {
+    className: "hl-btn sm",
+    style: {
+      marginLeft: "auto"
+    },
+    onClick: toWorksheet
+  }, /*#__PURE__*/React.createElement(Icon, {
+    n: "sheet",
+    s: 16
+  }), back ? "Back to my worksheet" : "Do the worksheet")), /*#__PURE__*/React.createElement("div", {
+    className: "reader-stage"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "reader-nav p",
+    disabled: p === 0,
+    onClick: () => setP(p - 1),
+    "aria-label": "Previous page"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    n: "back",
+    s: 26
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "reader-page"
+  }, cur ? /*#__PURE__*/React.createElement("div", {
+    className: "rd-live"
+  }, /*#__PURE__*/React.createElement("img", {
+    src: cur.img,
+    alt: `Page ${p + 1}`
+  }), /*#__PURE__*/React.createElement("p", null, cur.text)) : /*#__PURE__*/React.createElement("div", {
+    className: "ph"
+  }, err || pg && !n ? "This book couldn’t open. Try another book." : "Loading…")), /*#__PURE__*/React.createElement("button", {
+    className: "reader-nav n",
+    disabled: !n || p >= n - 1,
+    onClick: () => setP(p + 1),
+    "aria-label": "Next page"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    n: "next",
+    s: 26
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "reader-foot"
+  }, /*#__PURE__*/React.createElement("span", null, n ? `Page ${p + 1} of ${n}` : ""), /*#__PURE__*/React.createElement(Bar, {
+    v: n ? (p + 1) / n * 100 : 0
   })));
 }
 function LiveShelf({
