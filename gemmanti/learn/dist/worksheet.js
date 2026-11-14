@@ -978,10 +978,8 @@ function WorksheetPlayer({
     onClick: () => setReview(true)
   }, "Look at my worksheet"), /*#__PURE__*/React.createElement("button", {
     className: "hl-btn ghost",
-    onClick: () => go("book", {
-      id: code
-    })
-  }, "Back to the book")))));
+    onClick: () => go(state.live ? "worksheets" : "home")
+  }, "Back to the worksheets")))));
   return /*#__PURE__*/React.createElement("div", {
     className: "kid-wrap ws"
   }, head, done && /*#__PURE__*/React.createElement("div", {

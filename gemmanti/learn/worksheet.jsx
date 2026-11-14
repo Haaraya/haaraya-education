@@ -262,7 +262,7 @@ function WorksheetPlayer({ L, code }) {
         <h2>{rec.status === "reviewed" ? `${teacherName} has looked at your worksheet` : `Well done, ${first}! Your worksheet is with ${teacherName}.`}</h2>
         {rec.status === "reviewed" && rec.note && !window.HL_LIVE_ON ? <div className="ws-note"><span className="eyebrow">From your teacher</span><p>{rec.note}</p></div>
           : <p>{rec.status === "reviewed" ? "Keep reading — your next book is waiting." : "Your teacher will listen to your reading and look at your answers."}</p>}
-        <div className="ws-row"><button className="hl-btn" onClick={() => setReview(true)}>Look at my worksheet</button><button className="hl-btn ghost" onClick={() => go("book", { id: code })}>Back to the book</button></div>
+        <div className="ws-row"><button className="hl-btn" onClick={() => setReview(true)}>Look at my worksheet</button><button className="hl-btn ghost" onClick={() => go(state.live ? "worksheets" : "home")}>Back to the worksheets</button></div>
       </div>
     </div></div>;
   return <div className="kid-wrap ws">{head}
