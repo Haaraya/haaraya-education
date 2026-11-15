@@ -600,6 +600,15 @@ function App() {
     }
   };
 
+  // Catalogue QR codes: ?demo=child | parent | teacher | school_admin opens
+  // that demo account straight away, then tidies the address bar.
+  useEffectApp(() => {
+    const r = new URLSearchParams(window.location.search).get("demo");
+    if (!r || !DEMO_LOGINS[r]) return;
+    try { history.replaceState(null, "", window.location.pathname + "#" + DEMO_LOGINS[r].dest); } catch (e) { /* ignore */ }
+    demoRoleSignIn(r);
+  }, []);
+
   const screenLabel = ({
     home:     "01 Home",
     passport: "02 Reading Passport",
