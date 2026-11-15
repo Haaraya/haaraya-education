@@ -183,11 +183,12 @@ function TeacherDashScreen({ onNavigate }) {
           <nav className="nd-nav">
             <a onClick={() => onNavigate("home")}>Home</a>
             <a className="on">Classrooms</a>
-            <a>Assignments</a>
-            <a>Pupil progress</a>
-            <a>Reports</a>
+            <a className="nd-soon" title="Not built yet">Assignments</a>
+            <a className="nd-soon" title="Not built yet">Pupil progress</a>
+            <a className="nd-soon" title="Not built yet">Reports</a>
             <a onClick={() => onNavigate("library")}>Library</a>
           </nav>
+          <a className="nd-gem" href="gemmanti/Gemmanti.html" title="Lessons, worksheets and full reports">Open Gemmanti <span aria-hidden="true">&rarr;</span></a>
           <div className="nd-chip">
             <Avatar name={ME} color="#8E24AA" size={40} />
             <div className="who">
@@ -361,6 +362,7 @@ function SchoolAdminDashScreen({ onNavigate }) {
             <a className="nd-soon" title="Not built yet">Reports</a>
             <a onClick={() => onNavigate("library")}>Library</a>
           </nav>
+          <a className="nd-gem" href="gemmanti/Gemmanti.html" title="Lessons, worksheets and full reports">Open Gemmanti <span aria-hidden="true">&rarr;</span></a>
           <div className="nd-chip">
             <Avatar name={ME} color="#00838F" size={40} />
             <div className="who">
@@ -860,6 +862,7 @@ function HaarayaAdminDashScreen({ onNavigate }) {
             <a className={tab === "content" ? "on" : ""} onClick={() => setTab("content")}>Content</a>
             <a onClick={() => onNavigate("library")}>Library</a>
           </nav>
+          <a className="nd-gem" href="gemmanti/Gemmanti.html" title="Lessons, worksheets and full reports">Open Gemmanti <span aria-hidden="true">&rarr;</span></a>
           <div className="nd-chip">
             <Avatar name="Haaraya" color="#283593" size={40} />
             <div className="who">

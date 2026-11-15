@@ -164,6 +164,9 @@ main:has(> .wrap > .dash.role-adult) {
 .nd-nav a.on { background:var(--d-olive-deep); color:#fff; }
 .nd-nav a.nd-soon { color:var(--d-ink-mid); opacity:.42; cursor:default; }
 .nd-nav a.nd-soon:hover { background:transparent; color:var(--d-ink-mid); }
+.nd-gem { margin-left:auto; padding:10px 20px; border-radius:999px; font-weight:800; font-size:14.5px; white-space:nowrap; text-decoration:none; background:var(--d-accent-bright); color:var(--d-olive-deep); box-shadow:0 2px 0 var(--d-accent-deep); }
+.nd-gem:hover { background:var(--d-accent); color:#fff; }
+.nd-gem + .nd-chip { margin-left:0; }
 .nd-nav a.nd-soon::after { content:"soon"; font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.1em; margin-left:6px; vertical-align:2px; }
 .plan-strip { display:flex; align-items:center; gap:18px; flex-wrap:wrap; background:var(--green-light); border:1px solid var(--green-mid); border-radius:16px; padding:16px 20px; margin:0 0 22px; }
 .plan-strip.urgent { background:#FDF6E3; border-color:#EFE0B0; }
