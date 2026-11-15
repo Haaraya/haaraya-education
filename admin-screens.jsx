@@ -174,6 +174,7 @@ function TeacherDashScreen({ onNavigate }) {
   const { data: assignments }  = useApi(() => classroom ? Api.getAssignmentsForClassroom(classroom.id) : Promise.resolve([]), [classroom && classroom.id, refreshKey]);
 
   if (!classrooms || !teacher) return null;
+  const go = (id) => { const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); };
 
   return (
     <main className="nd-page role-adult" data-screen-label="Teacher Dashboard">
@@ -183,9 +184,8 @@ function TeacherDashScreen({ onNavigate }) {
           <nav className="nd-nav">
             <a onClick={() => onNavigate("home")}>Home</a>
             <a className="on">Classrooms</a>
-            <a className="nd-soon" title="Not built yet">Assignments</a>
-            <a className="nd-soon" title="Not built yet">Pupil progress</a>
-            <a className="nd-soon" title="Not built yet">Reports</a>
+            <a onClick={() => go("td-assignments")}>Assignments</a>
+            <a onClick={() => go("td-progress")}>Pupil progress</a>
             <a onClick={() => onNavigate("library")}>Library</a>
           </nav>
           <a className="nd-gem" href="gemmanti/Gemmanti.html" title="Lessons, worksheets and full reports">Open Gemmanti <span aria-hidden="true">&rarr;</span></a>
@@ -226,7 +226,7 @@ function TeacherDashScreen({ onNavigate }) {
                 </div>
 
                 <div className="adash-grid-2">
-                  <div className="adash-card">
+                  <div className="adash-card" id="td-progress" style={{ scrollMarginTop: 24 }}>
                     <h5>Pupil progress</h5>
                     <div>
                       {(pupils || []).map(s => (
@@ -266,7 +266,7 @@ function TeacherDashScreen({ onNavigate }) {
                   </div>
                 </div>
 
-                <h5 style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--ink-soft)", margin: "28px 0 12px" }}>
+                <h5 style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--ink-soft)", margin: "28px 0 12px", scrollMarginTop: 24 }} id="td-assignments">
                   Current assignments
                 </h5>
                 <table className="adash-table">
@@ -358,8 +358,6 @@ function SchoolAdminDashScreen({ onNavigate }) {
           <nav className="nd-nav">
             <a onClick={() => onNavigate("home")}>Home</a>
             <a className="on">Overview</a>
-            <a className="nd-soon" title="Not built yet">Subscription</a>
-            <a className="nd-soon" title="Not built yet">Reports</a>
             <a onClick={() => onNavigate("library")}>Library</a>
           </nav>
           <a className="nd-gem" href="gemmanti/Gemmanti.html" title="Lessons, worksheets and full reports">Open Gemmanti <span aria-hidden="true">&rarr;</span></a>
