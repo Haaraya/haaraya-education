@@ -41,10 +41,13 @@ function LiveGate({
   if (r.signedOut || r.noProfile) {
     title = "Sign in to Gemmanti";
     body = "Use your Haaraya school account. Teachers and school admins can sign in here.";
-    actions = /*#__PURE__*/React.createElement("a", {
+    actions = /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("a", {
       className: "hl-btn big",
       href: LIVE_LOGIN
-    }, "Sign in");
+    }, "Sign in"), /*#__PURE__*/React.createElement("a", {
+      className: "hl-btn ghost big",
+      href: "Gemmanti.html?demo=child"
+    }, "Try it as a pupil"));
   } else if (r.unsupported && r.parentAccount) {
     title = "Gemmanti is for schools";
     body = "Your family’s reading and progress are on your Haaraya dashboard.";

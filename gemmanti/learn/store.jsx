@@ -14,8 +14,12 @@ function hlSeed() {
   };
 }
 function hlLoad() {
-  try { const s = JSON.parse(localStorage.getItem(HL_KEY)); if (s && s.v === 3) return s; } catch (e) {}
-  return hlSeed();
+  let s = null;
+  try { s = JSON.parse(localStorage.getItem(HL_KEY)); } catch (e) {}
+  if (!s || s.v !== 3) s = hlSeed();
+  /* ?demo=child opens the demo as a pupil (Amara); progress already made in this browser is kept. */
+  if (/[?&]demo=(child|pupil)\b/.test(location.search)) { s.role = "learner"; s.personaId = "amara"; s.route = { view: "home" }; }
+  return s;
 }
 const HLStore = React.createContext(null);
 const nowLabel = () => "Just now";

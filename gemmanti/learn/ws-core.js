@@ -23,34 +23,37 @@ function keyOf(a){return (Array.isArray(a)?a:[a]).map(String);}
 function sortKey(v){return Array.isArray(v)?v.slice().sort().join(""):(v==null?"":String(v));}
 function filled(v){return v!=null&&String(v).trim()!=="";}
 
-/* Returns {units:[{ok:true|false|null, book:bool, label}], open:bool, answered:bool} */
+/* Returns {units:[{ok:true|false|null, blank:bool, book:bool, label}], open:bool, answered:bool}
+   blank = the child left this part empty. A blank is never shown as wrong: it is "not answered". */
 function check(it,r){
  var U=[],open=false,ans=false;
- function u(ok,book,label){U.push({ok:ok,book:!!book,label:label||""});}
+ function u(ok,book,label,blank){U.push({ok:(blank&&ok!==null)?false:ok,blank:!!blank,book:!!book,label:label||""});}
  var isBook=function(i,first){return it.book?it.book.indexOf(i)>=0:i===(first||0);};
  switch(it.t){
-  case "pick": it.lines.forEach(function(L,i){var v=(r&&r[i])||[];if(v.length)ans=true;u(sortKey(v)===sortKey(L.a),isBook(i),"Line "+(i+1));});break;
-  case "match": it.left.forEach(function(l,i){var v=r&&r[i];if(v!=null)ans=true;u(v===it.a[i],isBook(i),l);});break;
+  case "pick": it.lines.forEach(function(L,i){var v=(r&&r[i])||[];if(v.length)ans=true;u(sortKey(v)===sortKey(L.a),isBook(i),"Line "+(i+1),!v.length);});break;
+  case "match": it.left.forEach(function(l,i){var v=r&&r[i];if(v!=null)ans=true;u(v===it.a[i],isBook(i),l,v==null);});break;
   case "fill": var first=it.blanks.findIndex(function(b){return !b.fixed;});
    it.blanks.forEach(function(b,i){if(b.fixed)return;var v=r&&r[i];if(filled(v))ans=true;
-    if(b.a==null){open=true;u(null,false,b.pre||b.pic||"Gap");return;}
-    u(b.a.some(function(x){return norm(x)===norm(v);}),it.book?isBook(i):(i===first&&first===0),b.pic||b.pre||"Gap "+(i+1));});break;
-  case "sort": it.words.forEach(function(w,i){var v=r&&r[i];if(filled(sortKey(v)))ans=true;u(keyOf(it.a[i]).indexOf(sortKey(v))>=0,isBook(i,-1),w);});break;
-  case "order": if(r&&r.length)ans=true;u(!!r&&r.length===it.a.length&&r.every(function(x,i){return x===it.a[i];}),false,"Order");break;
-  case "yesno": it.lines.forEach(function(l,i){var v=r&&r[i];if(v!=null)ans=true;u(v===it.a[i],i===0,l);});break;
-  case "choose": if(r!=null)ans=true;u(r===it.a,false,it.q);break;
-  case "write": if(filled(r))ans=true;
-   if(it.kw)u(filled(r)&&hasKw(r,it.kw),false,it.q);else if(it.kwAll)u(filled(r)&&it.kwAll.every(function(g){return hasKw(r,g);}),false,it.q);else{open=true;u(null,false,it.q);}
+    if(b.a==null){open=true;u(null,false,b.pre||b.pic||"Gap",!filled(v));return;}
+    u(b.a.some(function(x){return norm(x)===norm(v);}),it.book?isBook(i):(i===first&&first===0),b.pic||b.pre||"Gap "+(i+1),!filled(v));});break;
+  case "sort": it.words.forEach(function(w,i){var v=r&&r[i];var f=filled(sortKey(v));if(f)ans=true;u(keyOf(it.a[i]).indexOf(sortKey(v))>=0,isBook(i,-1),w,!f);});break;
+  case "order": var has=!!(r&&r.length);if(has)ans=true;u(has&&r.length===it.a.length&&r.every(function(x,i){return x===it.a[i];}),false,"Order",!has);break;
+  case "yesno": it.lines.forEach(function(l,i){var v=r&&r[i];if(v!=null)ans=true;u(v===it.a[i],i===0,l,v==null);});break;
+  case "choose": if(r!=null)ans=true;u(r===it.a,false,it.q,r==null);break;
+  case "write": var fw=filled(r);if(fw)ans=true;
+   if(it.kw)u(fw&&hasKw(r,it.kw),false,it.q,!fw);else if(it.kwAll)u(fw&&it.kwAll.every(function(g){return hasKw(r,g);}),false,it.q,!fw);else{open=true;u(null,false,it.q,!fw);}
    if(it.check)open=true;break;
   case "fields": it.fields.forEach(function(f,i){var v=r&&r[i];if(filled(v))ans=true;
-    if(f.kw)u(filled(v)&&(f.exact?f.kw.some(function(k){return norm(k)===norm(v);}):hasKw(v,f.kw)),false,f.l);else{open=true;u(null,false,f.l||"Answer");}});break;
+    if(f.kw)u(filled(v)&&(f.exact?f.kw.some(function(k){return norm(k)===norm(v);}):hasKw(v,f.kw)),false,f.l,!filled(v));else{open=true;u(null,false,f.l||"Answer",!filled(v));}});break;
   case "table": it.rows.forEach(function(row,ri){row.forEach(function(c,ci){if(typeof c==="string")return;var v=r&&r[ri]&&r[ri][ci];if(filled(v))ans=true;
-    if(c&&c.kw)u(filled(v)&&hasKw(v,c.kw),false,row[0]||"Row");else{open=true;u(null,false,"Own row");}});});break;
-  case "draw": var d=r||{};if(d.img||filled(d.label))ans=true;open=true;u(null,false,"Drawing");
-   if(it.kw)u(filled(d.label)&&hasKw(d.label,it.kw),false,"Label");break;
+    if(c&&c.kw)u(filled(v)&&hasKw(v,c.kw),false,row[0]||"Row",!filled(v));else{open=true;u(null,false,"Own row",!filled(v));}});});break;
+  case "draw": var d=r||{};if(d.img||filled(d.label))ans=true;open=true;u(null,false,"Drawing",!d.img);
+   if(it.kw)u(filled(d.label)&&hasKw(d.label,it.kw),false,"Label",!filled(d.label));break;
  }
  return {units:U,open:open,answered:ans};
 }
+/* Questions the child has left (fully or partly) empty in one part. Challenges and text are optional. */
+function unanswered(w,k,resp){return secItems(w,k).filter(function(it){return !it.challenge&&it.t!=="text"&&check(it,(resp||{})[it.id]).units.some(function(x){return x.blank;});});}
 function secItems(w,k){return k==="sw"?w.sw.concat(w.ch?[w.ch]:[]):(w[k]||[]);}
 /* Suggest a rating from the closed items only. Teacher always confirms. */
 function suggest(w,k,resp){
@@ -108,6 +111,6 @@ function pages(code){
   .catch(function(e){delete pageCache[code];throw e;});
  return pageCache[code];
 }
-window.HLWS={WS:WS,list:list,get:function(c){return WS[c];},SECS:SECS,RATINGS:RATINGS,HELP:HELP,BOOK_PAGES:BOOKS,check:check,suggest:suggest,secItems:secItems,simulate:simulate,coverUrl:coverUrl,picUrl:picUrl,pages:pages,norm:norm};
+window.HLWS={WS:WS,list:list,get:function(c){return WS[c];},SECS:SECS,RATINGS:RATINGS,HELP:HELP,BOOK_PAGES:BOOKS,check:check,unanswered:unanswered,suggest:suggest,secItems:secItems,simulate:simulate,coverUrl:coverUrl,picUrl:picUrl,pages:pages,norm:norm};
 window.HL_AUDIO=window.HL_AUDIO||{};
 })();

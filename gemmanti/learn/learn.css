@@ -479,7 +479,7 @@ button.ws-pic{cursor:pointer;min-height:44px}
 .ws-pic.good,.ws-word.good{border-color:var(--forest);opacity:1}
 .ws-pic.bad,.ws-word.bad{border-color:var(--warn);box-shadow:0 0 0 3px var(--warn-bg);background:var(--warn-bg)}
 .ws-mk{flex:none;display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;font:900 13px var(--ui)}
-.ws-mk.ok{background:var(--forest);color:#fff}.ws-mk.no{background:var(--warn);color:#fff}.ws-mk.open{background:var(--sand);color:var(--ink-mid);border:1px solid var(--line-2)}
+.ws-mk.ok{background:var(--forest);color:#fff}.ws-mk.no{background:var(--warn);color:#fff}.ws-mk.blank{background:var(--sand);color:var(--ink-soft);border:1px solid var(--line-2)}.ws-mk.open{background:var(--sand);color:var(--ink-mid);border:1px solid var(--line-2)}
 .ws-mrow{display:grid;grid-template-columns:minmax(110px,auto) auto minmax(0,1fr);gap:12px;align-items:center}
 .ws-arrow{color:var(--ink-soft);display:inline-flex}
 .ws-bank{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px;border-radius:14px;background:var(--sand);margin-bottom:14px}
@@ -752,3 +752,9 @@ a.hl-brand{text-decoration:none;color:inherit}
 @media (max-width:640px){.publisher-mark{bottom:calc(12px + env(safe-area-inset-bottom,0px));right:calc(12px + env(safe-area-inset-right,0px))}.publisher-mark-seal{width:88px}.publisher-mark-caption{display:none}}
 @media (prefers-reduced-motion:reduce){.publisher-mark-seal img,.publisher-mark-caption{transition:none}}
 @media print{.publisher-mark{display:none!important}}
+
+/* Unanswered questions: greyed, never marked wrong */
+.ws-item.blank .ws-pics,.ws-item.blank .ws-words,.ws-item.blank .ws-lines,.ws-item.blank .ws-blanks{opacity:.55;filter:grayscale(1)}
+.ws-item.need{margin:6px -14px;padding:16px 14px;border:2px solid var(--yellow-dk);border-radius:16px;background:#FFFBEA}
+.ws-need-tag{display:inline-block;margin-bottom:8px;padding:3px 10px;border-radius:999px;background:var(--sand);border:1px solid var(--line-2);color:var(--ink-mid);font:800 12px var(--ui);letter-spacing:.02em}
+.ws-miss{margin:10px 0 0 18px;display:grid;gap:4px;font-weight:600}

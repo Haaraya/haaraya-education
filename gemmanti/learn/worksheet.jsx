@@ -3,6 +3,7 @@ const WSX = window.HLWS;
 const wsCls = (...a) => a.filter(Boolean).join(" ");
 function WsMark({ u }) {
   if (!u) return null;
+  if (u.blank) return <span className="ws-mk blank" title="Not answered" aria-label="Not answered">–</span>;
   const t = u.ok === null ? "Teacher judgement" : u.ok ? "Right" : "Not yet";
   return <span className={"ws-mk " + (u.ok === null ? "open" : u.ok ? "ok" : "no")} title={t} aria-label={t}>{u.ok === null ? "?" : <Icon n={u.ok ? "check" : "x"} s={13} w={3} />}</span>;
 }
@@ -169,9 +170,12 @@ function ItemText({ it }) {
 const WS_RENDER = { pick: ItemPick, match: ItemMatch, fill: ItemFill, sort: ItemSort, order: ItemOrder, yesno: ItemYesNo, choose: ItemChoose, write: ItemWrite, fields: ItemFields, table: ItemTable, draw: ItemDraw, text: ItemText };
 
 function WsKey({ it }) { return it.key ? <div className="ws-key"><b>Answer</b><span>{it.key}</span>{it.at && <em>{it.at}</em>}</div> : null; }
-function WsItem({ it, n, v, set, ro, fb, teacher, showKey }) {
+function WsItem({ it, n, v, set, ro, fb, teacher, showKey, need }) {
   const R = WS_RENDER[it.t];
-  return <div className={wsCls("ws-item", it.challenge && "ch", it.t === "text" && "txt")}>
+  const blank = fb && fb.units.length > 0 && fb.units.every(u => u.blank);
+  return <div id={"ws-" + it.id} className={wsCls("ws-item", it.challenge && "ch", it.t === "text" && "txt", need && "need", blank && !need && "blank")}>
+    {need && <div className="ws-need-tag">Not answered yet</div>}
+    {blank && !need && <div className="ws-need-tag">Not answered</div>}
     {it.challenge && <div className="ws-ch-tag"><Icon n="star" s={16} />Challenge{teacher ? " · optional, the source of Beyond" : " · if you want to"}</div>}
     {it.h && it.t !== "text" && <div className="ws-h">{it.h}</div>}
     {it.t !== "text" && <p className="ws-q">{n != null && <span className="ws-qn">{n}</span>}<span>{it.q}</span></p>}
@@ -227,18 +231,19 @@ function wsAnswered(w, k, rec) {
   if (k === "ra") return (rec.reads || []).some(Boolean);
   return WSX.secItems(w, k).filter(it => !it.challenge && it.t !== "text").some(it => WSX.check(it, rec.resp[it.id]).answered);
 }
-function WorksheetSection({ w, k, L, rec, ro, setResp, onReads, teacher, showFb, showKey }) {
+function WorksheetSection({ w, k, L, rec, ro, setResp, onReads, teacher, showFb, showKey, need }) {
   if (k === "ra") return <ReadAgain w={w} L={L} rec={rec} ro={ro} setResp={setResp} onReads={onReads} teacher={teacher} />;
   let qn = 0;
   return <WsCodeCtx.Provider value={w.code}>{WSX.secItems(w, k).map(it => { if (k === "ta" && it.t !== "text") qn++;
     return <WsItem key={it.id} it={it} n={k === "ta" && it.t !== "text" ? qn : null} v={rec.resp[it.id]} set={x => setResp(it.id, x)} ro={ro} teacher={teacher} showKey={showKey}
+      need={!!need && need.includes(it.id) && !WSX.unanswered(w, k, rec.resp).every(x => x.id !== it.id)}
       fb={showFb && it.t !== "text" ? WSX.check(it, rec.resp[it.id]) : null} />; })}</WsCodeCtx.Provider>;
 }
 
 function WorksheetPlayer({ L, code }) {
   const { state, go, wsResp, wsReads, wsHandIn, wsSeen } = useHL();
   const w = WSX.get(code); const b = hlBook(code); const rec = hlWsRec(L, code);
-  const [sec, setSec] = React.useState(0); const [review, setReview] = React.useState(false); const [confirm, setConfirm] = React.useState(false);
+  const [sec, setSec] = React.useState(0); const [review, setReview] = React.useState(false); const [ask, setAsk] = React.useState(null); const [need, setNeed] = React.useState([]);
   const done = rec.status === "handed_in" || rec.status === "reviewed";
   React.useEffect(() => { if (rec.status === "reviewed" && !rec.seen) wsSeen(L.id, code); }, []);
   React.useEffect(() => { window.scrollTo(0, 0); }, [sec]);
@@ -246,7 +251,15 @@ function WorksheetPlayer({ L, code }) {
   const S = WSX.SECS[sec]; const ro = done;
   const teacherName = (state.teachers.find(t => (t.classes || []).includes(L.classId)) || { name: "your teacher" }).name;
   const withTeacher = k => w.twoPart && (k === "ra" || k === "ta");
-  const empty = WSX.SECS.filter(s => s.k !== "ra" && !wsAnswered(w, s.k, rec)).map(s => s.n);
+  /* Questions left empty, so the child is asked to answer them before moving on. */
+  const missIn = k => k === "ra" ? [] : WSX.unanswered(w, k, rec.resp);
+  const qLabel = (k, it) => { const items = WSX.secItems(w, k).filter(x => x.t !== "text" && !x.challenge); return "Question " + (items.indexOf(it) + 1) + (it.h ? " · " + it.h : ""); };
+  const showMissing = (k, list) => { setNeed(list.map(it => it.id)); setSec(WSX.SECS.findIndex(s => s.k === k));
+    setTimeout(() => { const el = document.getElementById("ws-" + list[0].id); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); }, 60); };
+  const tryNext = () => { const m = ro || withTeacher(S.k) ? [] : missIn(S.k);
+    if (m.length) setAsk({ kind: "next", groups: [{ k: S.k, n: S.n, list: m }] }); else { setNeed([]); setSec(sec + 1); } };
+  const tryHandIn = () => { const groups = WSX.SECS.map(s => ({ k: s.k, n: s.n, list: missIn(s.k) })).filter(g => g.list.length);
+    if (groups.length) setAsk({ kind: "hand", groups }); else wsHandIn(L.id, code); };
   const first = L.name.split(" ")[0];
   const head = <div className="ws-head">
     <button className="back" onClick={() => go("home")}><Icon n="back" />Home</button>
@@ -272,16 +285,20 @@ function WorksheetPlayer({ L, code }) {
     <section className="ws-sec">
       <div className="ws-sec-h"><h2>{S.i}. {S.n}</h2>{withTeacher(S.k) && <span className="ws-with"><Icon n="users" s={16} />Do this with your teacher</span>}</div>
       {S.k === "wf" && <p className="ws-intro">The first line of each task comes from our book. The next lines are new. Can you still do them?</p>}
-      <WorksheetSection w={w} k={S.k} L={L} rec={rec} ro={ro} setResp={(id, x) => wsResp(L.id, code, id, x)} onReads={r => wsReads(L.id, code, r)} />
+      <WorksheetSection w={w} k={S.k} L={L} rec={rec} ro={ro} need={need} setResp={(id, x) => wsResp(L.id, code, id, x)} onReads={r => wsReads(L.id, code, r)} />
     </section>
     <div className="ws-foot">
       <button className="hl-btn ghost big" disabled={sec === 0} onClick={() => setSec(sec - 1)}><Icon n="back" s={18} />Back</button>
       <span className="ws-saved">{ro ? "" : "Your answers save as you go"}</span>
-      {sec < 3 ? <button className="hl-btn big" onClick={() => setSec(sec + 1)}>Next<Icon n="next" s={18} /></button>
-        : !ro && <button className="hl-btn yellow big" onClick={() => empty.length ? setConfirm(true) : wsHandIn(L.id, code)}><Icon n="send" s={18} />Hand in to my teacher</button>}
+      {sec < 3 ? <button className="hl-btn big" onClick={tryNext}>Next<Icon n="next" s={18} /></button>
+        : !ro && <button className="hl-btn yellow big" onClick={tryHandIn}><Icon n="send" s={18} />Hand in to my teacher</button>}
     </div>
-    {confirm && <Modal title="Hand in now?" onClose={() => setConfirm(false)} foot={<><button className="hl-btn ghost" onClick={() => setConfirm(false)}>Keep working</button><button className="hl-btn" onClick={() => { setConfirm(false); wsHandIn(L.id, code); }}>Hand in</button></>}>
-      <p style={{ fontWeight: 700 }}>Nothing is filled in yet for: {empty.join(", ")}.</p><p className="note" style={{ marginTop: 10 }}>That is fine if your teacher said to leave it.</p></Modal>}
+    {ask && <Modal title={ask.groups.length > 1 || ask.groups[0].list.length > 1 ? "Some questions are not answered yet" : "One question is not answered yet"} onClose={() => setAsk(null)}
+      foot={<><button className="hl-btn ghost" onClick={() => { const g = ask; setAsk(null); setNeed([]); if (g.kind === "hand") wsHandIn(L.id, code); else setSec(sec + 1); }}>{ask.kind === "hand" ? "Hand in anyway" : "Go on anyway"}</button>
+        <button className="hl-btn" onClick={() => { const g = ask.groups[0]; setAsk(null); showMissing(g.k, g.list); }}>Answer {ask.groups.length > 1 || ask.groups[0].list.length > 1 ? "them" : "it"} now</button></>}>
+      <p style={{ fontWeight: 700 }}>Can you answer {ask.groups.length > 1 || ask.groups[0].list.length > 1 ? "these" : "this"} first?</p>
+      <ul className="ws-miss">{ask.groups.map(g => g.list.map(it => <li key={it.id}>{ask.kind === "hand" ? g.n + ": " : ""}{qLabel(g.k, it)}</li>))}</ul>
+      {ask.groups.some(g => withTeacher(g.k)) && <p className="note" style={{ marginTop: 10 }}>If your teacher said to leave a part, that is fine.</p>}</Modal>}
   </div>;
 }
 Object.assign(window, { WorksheetPlayer, WorksheetSection, WsItem, WsKey, WsMark, ReadAgain, wsAnswered, Pic });

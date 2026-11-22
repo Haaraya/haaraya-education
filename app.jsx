@@ -277,6 +277,13 @@ function SignInPanel({ open, currentRole, onChoose, onClose }) {
               Real accounts on live data — a demo shows exactly what the app shows.
             </p>
             <div className="signin-list">
+              <a className="signin-account" href="gemmanti/Gemmanti.html?demo=child" style={{ textDecoration: "none", color: "inherit" }}>
+                <span className="signin-avatar" style={{ background: "#2E7D32" }}>DP</span>
+                <span className="signin-meta">
+                  <span className="signin-name">Demo Pupil</span>
+                  <span className="signin-sub">Gemmanti · a child's lessons and worksheets</span>
+                </span>
+              </a>
               {["child", "parent", "teacher", "school_admin"].map(role => {
                 const d = DEMO_LOGINS[role];
                 if (!d) return null;

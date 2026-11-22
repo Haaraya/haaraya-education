@@ -5,6 +5,11 @@ function WsMark({
   u
 }) {
   if (!u) return null;
+  if (u.blank) return /*#__PURE__*/React.createElement("span", {
+    className: "ws-mk blank",
+    title: "Not answered",
+    "aria-label": "Not answered"
+  }, "\u2013");
   const t = u.ok === null ? "Teacher judgement" : u.ok ? "Right" : "Not yet";
   return /*#__PURE__*/React.createElement("span", {
     className: "ws-mk " + (u.ok === null ? "open" : u.ok ? "ok" : "no"),
@@ -684,12 +689,19 @@ function WsItem({
   ro,
   fb,
   teacher,
-  showKey
+  showKey,
+  need
 }) {
   const R = WS_RENDER[it.t];
+  const blank = fb && fb.units.length > 0 && fb.units.every(u => u.blank);
   return /*#__PURE__*/React.createElement("div", {
-    className: wsCls("ws-item", it.challenge && "ch", it.t === "text" && "txt")
-  }, it.challenge && /*#__PURE__*/React.createElement("div", {
+    id: "ws-" + it.id,
+    className: wsCls("ws-item", it.challenge && "ch", it.t === "text" && "txt", need && "need", blank && !need && "blank")
+  }, need && /*#__PURE__*/React.createElement("div", {
+    className: "ws-need-tag"
+  }, "Not answered yet"), blank && !need && /*#__PURE__*/React.createElement("div", {
+    className: "ws-need-tag"
+  }, "Not answered"), it.challenge && /*#__PURE__*/React.createElement("div", {
     className: "ws-ch-tag"
   }, /*#__PURE__*/React.createElement(Icon, {
     n: "star",
@@ -881,7 +893,8 @@ function WorksheetSection({
   onReads,
   teacher,
   showFb,
-  showKey
+  showKey,
+  need
 }) {
   if (k === "ra") return /*#__PURE__*/React.createElement(ReadAgain, {
     w: w,
@@ -906,6 +919,7 @@ function WorksheetSection({
       ro: ro,
       teacher: teacher,
       showKey: showKey,
+      need: !!need && need.includes(it.id) && !WSX.unanswered(w, k, rec.resp).every(x => x.id !== it.id),
       fb: showFb && it.t !== "text" ? WSX.check(it, rec.resp[it.id]) : null
     });
   }));
@@ -927,7 +941,8 @@ function WorksheetPlayer({
   const rec = hlWsRec(L, code);
   const [sec, setSec] = React.useState(0);
   const [review, setReview] = React.useState(false);
-  const [confirm, setConfirm] = React.useState(false);
+  const [ask, setAsk] = React.useState(null);
+  const [need, setNeed] = React.useState([]);
   const done = rec.status === "handed_in" || rec.status === "reviewed";
   React.useEffect(() => {
     if (rec.status === "reviewed" && !rec.seen) wsSeen(L.id, code);
@@ -942,7 +957,48 @@ function WorksheetPlayer({
     name: "your teacher"
   }).name;
   const withTeacher = k => w.twoPart && (k === "ra" || k === "ta");
-  const empty = WSX.SECS.filter(s => s.k !== "ra" && !wsAnswered(w, s.k, rec)).map(s => s.n);
+  /* Questions left empty, so the child is asked to answer them before moving on. */
+  const missIn = k => k === "ra" ? [] : WSX.unanswered(w, k, rec.resp);
+  const qLabel = (k, it) => {
+    const items = WSX.secItems(w, k).filter(x => x.t !== "text" && !x.challenge);
+    return "Question " + (items.indexOf(it) + 1) + (it.h ? " · " + it.h : "");
+  };
+  const showMissing = (k, list) => {
+    setNeed(list.map(it => it.id));
+    setSec(WSX.SECS.findIndex(s => s.k === k));
+    setTimeout(() => {
+      const el = document.getElementById("ws-" + list[0].id);
+      if (el) el.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+    }, 60);
+  };
+  const tryNext = () => {
+    const m = ro || withTeacher(S.k) ? [] : missIn(S.k);
+    if (m.length) setAsk({
+      kind: "next",
+      groups: [{
+        k: S.k,
+        n: S.n,
+        list: m
+      }]
+    });else {
+      setNeed([]);
+      setSec(sec + 1);
+    }
+  };
+  const tryHandIn = () => {
+    const groups = WSX.SECS.map(s => ({
+      k: s.k,
+      n: s.n,
+      list: missIn(s.k)
+    })).filter(g => g.list.length);
+    if (groups.length) setAsk({
+      kind: "hand",
+      groups
+    });else wsHandIn(L.id, code);
+  };
   const first = L.name.split(" ")[0];
   const head = /*#__PURE__*/React.createElement("div", {
     className: "ws-head"
@@ -1024,6 +1080,7 @@ function WorksheetPlayer({
     L: L,
     rec: rec,
     ro: ro,
+    need: need,
     setResp: (id, x) => wsResp(L.id, code, id, x),
     onReads: r => wsReads(L.id, code, r)
   })), /*#__PURE__*/React.createElement("div", {
@@ -1039,39 +1096,49 @@ function WorksheetPlayer({
     className: "ws-saved"
   }, ro ? "" : "Your answers save as you go"), sec < 3 ? /*#__PURE__*/React.createElement("button", {
     className: "hl-btn big",
-    onClick: () => setSec(sec + 1)
+    onClick: tryNext
   }, "Next", /*#__PURE__*/React.createElement(Icon, {
     n: "next",
     s: 18
   })) : !ro && /*#__PURE__*/React.createElement("button", {
     className: "hl-btn yellow big",
-    onClick: () => empty.length ? setConfirm(true) : wsHandIn(L.id, code)
+    onClick: tryHandIn
   }, /*#__PURE__*/React.createElement(Icon, {
     n: "send",
     s: 18
-  }), "Hand in to my teacher")), confirm && /*#__PURE__*/React.createElement(Modal, {
-    title: "Hand in now?",
-    onClose: () => setConfirm(false),
+  }), "Hand in to my teacher")), ask && /*#__PURE__*/React.createElement(Modal, {
+    title: ask.groups.length > 1 || ask.groups[0].list.length > 1 ? "Some questions are not answered yet" : "One question is not answered yet",
+    onClose: () => setAsk(null),
     foot: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
       className: "hl-btn ghost",
-      onClick: () => setConfirm(false)
-    }, "Keep working"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        const g = ask;
+        setAsk(null);
+        setNeed([]);
+        if (g.kind === "hand") wsHandIn(L.id, code);else setSec(sec + 1);
+      }
+    }, ask.kind === "hand" ? "Hand in anyway" : "Go on anyway"), /*#__PURE__*/React.createElement("button", {
       className: "hl-btn",
       onClick: () => {
-        setConfirm(false);
-        wsHandIn(L.id, code);
+        const g = ask.groups[0];
+        setAsk(null);
+        showMissing(g.k, g.list);
       }
-    }, "Hand in"))
+    }, "Answer ", ask.groups.length > 1 || ask.groups[0].list.length > 1 ? "them" : "it", " now"))
   }, /*#__PURE__*/React.createElement("p", {
     style: {
       fontWeight: 700
     }
-  }, "Nothing is filled in yet for: ", empty.join(", "), "."), /*#__PURE__*/React.createElement("p", {
+  }, "Can you answer ", ask.groups.length > 1 || ask.groups[0].list.length > 1 ? "these" : "this", " first?"), /*#__PURE__*/React.createElement("ul", {
+    className: "ws-miss"
+  }, ask.groups.map(g => g.list.map(it => /*#__PURE__*/React.createElement("li", {
+    key: it.id
+  }, ask.kind === "hand" ? g.n + ": " : "", qLabel(g.k, it))))), ask.groups.some(g => withTeacher(g.k)) && /*#__PURE__*/React.createElement("p", {
     className: "note",
     style: {
       marginTop: 10
     }
-  }, "That is fine if your teacher said to leave it.")));
+  }, "If your teacher said to leave a part, that is fine.")));
 }
 Object.assign(window, {
   WorksheetPlayer,

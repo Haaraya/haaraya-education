@@ -22,7 +22,7 @@ function LiveGate({ busy, res, retry }) {
   if (r.signedOut || r.noProfile) {
     title = "Sign in to Gemmanti";
     body = "Use your Haaraya school account. Teachers and school admins can sign in here.";
-    actions = <a className="hl-btn big" href={LIVE_LOGIN}>Sign in</a>;
+    actions = <><a className="hl-btn big" href={LIVE_LOGIN}>Sign in</a><a className="hl-btn ghost big" href="Gemmanti.html?demo=child">Try it as a pupil</a></>;
   } else if (r.unsupported && r.parentAccount) {
     title = "Gemmanti is for schools";
     body = "Your family’s reading and progress are on your Haaraya dashboard.";

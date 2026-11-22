@@ -25,11 +25,20 @@ function hlSeed() {
   };
 }
 function hlLoad() {
+  let s = null;
   try {
-    const s = JSON.parse(localStorage.getItem(HL_KEY));
-    if (s && s.v === 3) return s;
+    s = JSON.parse(localStorage.getItem(HL_KEY));
   } catch (e) {}
-  return hlSeed();
+  if (!s || s.v !== 3) s = hlSeed();
+  /* ?demo=child opens the demo as a pupil (Amara); progress already made in this browser is kept. */
+  if (/[?&]demo=(child|pupil)\b/.test(location.search)) {
+    s.role = "learner";
+    s.personaId = "amara";
+    s.route = {
+      view: "home"
+    };
+  }
+  return s;
 }
 const HLStore = React.createContext(null);
 const nowLabel = () => "Just now";
