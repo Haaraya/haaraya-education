@@ -681,6 +681,21 @@ function WsKey({
     className: "ws-key"
   }, /*#__PURE__*/React.createElement("b", null, "Answer"), /*#__PURE__*/React.createElement("span", null, it.key), it.at && /*#__PURE__*/React.createElement("em", null, it.at)) : null;
 }
+function WsItemArt({
+  it
+}) {
+  const code = React.useContext(WsCodeCtx);
+  const [bad, setBad] = React.useState(false);
+  const id = code && window.HLWS_ART && (window.HLWS_ART[code] || {})[it.id];
+  if (!id || bad) return null;
+  return /*#__PURE__*/React.createElement("img", {
+    className: "ws-item-art",
+    src: WSX.picUrl(code, id),
+    alt: "",
+    loading: "lazy",
+    onError: () => setBad(true)
+  });
+}
 function WsItem({
   it,
   n,
@@ -712,7 +727,9 @@ function WsItem({
     className: "ws-q"
   }, n != null && /*#__PURE__*/React.createElement("span", {
     className: "ws-qn"
-  }, n), /*#__PURE__*/React.createElement("span", null, it.q)), /*#__PURE__*/React.createElement(R, {
+  }, n), /*#__PURE__*/React.createElement("span", null, it.q)), /*#__PURE__*/React.createElement(WsItemArt, {
+    it: it
+  }), /*#__PURE__*/React.createElement(R, {
     it: it,
     v: v,
     set: set || (() => {}),

@@ -14,7 +14,7 @@ function AdultShell({ nav, ctx, children }) {
 }
 const dayLabel = d => d === 0 ? "Today" : d === 1 ? "Yesterday" : d >= 99 ? "Never" : `${d} days ago`;
 function lessonCell(L, cls) {
-  if (cls.id !== "p3i" && !L.lessons[TD.LESSON_ID]) return { st: null };
+  if (!L.lessons[TD.LESSON_ID]) return { st: null };
   const r = hlLessonRec(L); const a = hlLastAttempt(r);
   return { st: a && !a.pass ? "fail" : r.status, a };
 }
@@ -58,29 +58,31 @@ function StackBar({ c }) {
 
 function TOverview({ cls, learners, attention, openL, openAssign }) {
   const { state, go } = useHL();
-  const asg = state.assignments.filter(a => a.classId === cls.id);
+  /* Mixed demo class: the overview lists lessons and worksheets; every book is on Assigned learning. */
+  const asg = state.assignments.filter(a => a.classId === cls.id && !(cls.mixed && a.type === "book"));
   const active = learners.filter(l => l.lastActive <= 7).length;
   const scores = learners.map(l => hlAvgScore(l)).filter(x => x != null);
   const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
   const lessonA = asg.find(a => a.type === "lesson");
   const lc = lessonA && assignCounts(state, learners, lessonA);
   const dist = TD.LEVELS.slice(0, 12).map(lv => learners.filter(l => l.level === lv.n).length);
-  const lo = Math.max(0, cls.expected - 3), hi = Math.min(12, cls.expected + 3);
+  const lo = cls.mixed ? 0 : Math.max(0, cls.expected - 3), hi = cls.mixed ? 12 : Math.min(12, cls.expected + 3);
   const events = state.events.filter(e => e.classId === cls.id).slice(0, 7);
   return <>
-    <div className="ph-h"><div><h1>{cls.name}</h1><p>{learners.length} learners · Expected level L{cls.expected} · Term 1, week 10</p></div>
+    <div className="ph-h"><div><h1>{cls.name}</h1><p>{learners.length} learners · {cls.mixed ? "one pupil at each level, L1 to L12" : `Expected level L${cls.expected}`} · Term 1, week 10</p></div>
       <div className="acts"><button className="hl-btn" onClick={() => openAssign({})}><Icon n="plus" s={16} />Assign content</button></div></div>
     <div className="kpis">
       <Kpi label="Active this week" value={`${active}/${learners.length}`} note={`${Math.round(active / learners.length * 100)}% participation`} />
       {lc && <Kpi label={`${lessonA.title} complete`} value={`${lc.complete}/${lc.n}`} note={`${lc.in_progress} in progress`} />}
-      <Kpi label="Avg. check score" value={avg != null ? avg + "%" : "—"} note={`${scores.length} learners assessed`} />
-      <Kpi label="At or above level" value={`${learners.filter(l => l.level >= cls.expected).length}`} note={`of ${learners.length} at L${cls.expected}+`} />
+      {scores.length > 0 && <Kpi label="Avg. check score" value={avg != null ? avg + "%" : "—"} note={`${scores.length} learners assessed`} />}
+      {cls.mixed ? <Kpi label="Worksheets to review" value={learners.filter(l => Object.values(l.worksheets || {}).some(r => r.status === "handed_in")).length} note="handed in, waiting for you" />
+        : <Kpi label="At or above level" value={`${learners.filter(l => l.level >= cls.expected).length}`} note={`of ${learners.length} at L${cls.expected}+`} />}
       <Kpi label="Need attention" value={attention.length} note="See list" dir={attention.length ? "dn" : ""} />
     </div>
     <div className="grid3">
       <div className="card"><div className="card-h"><div><h3>Assigned learning</h3><p>Completion across the class</p></div><div className="legend"><span><i style={{ background: "var(--forest)" }}></i>Complete</span><span><i style={{ background: "var(--yellow-dk)" }}></i>In progress</span></div></div>
         <div className="tbl-wrap"><table className="tbl"><thead><tr><th>Assignment</th><th>Due</th><th style={{ width: "34%" }}>Progress</th><th className="num">Done</th></tr></thead>
-          <tbody>{asg.map(a => { const c = assignCounts(state, learners, a); return <tr key={a.id} className="click" onClick={() => go("assignments")}><td><b>{a.title}</b><div style={{ fontSize: 12, color: "var(--ink-soft)", fontWeight: 700, textTransform: "capitalize" }}>{a.type}{a.to !== "all" ? ` · ${a.to.length} learners` : ""}</div></td><td>{new Date(a.due).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}{hlIsOverdue(a.due, c.complete >= c.n) && <> <Overdue /></>}</td><td><StackBar c={c} /></td><td className="num"><b>{c.complete}</b>/{c.n}</td></tr>; })}
+          <tbody>{asg.map(a => { const c = assignCounts(state, learners, a); return <tr key={a.id} className="click" onClick={() => go("assignments")}><td><b>{a.title}</b><div style={{ fontSize: 12, color: "var(--ink-soft)", fontWeight: 700, textTransform: "capitalize" }}>{a.type}{a.to !== "all" ? ` · ${a.to.length} ${a.to.length === 1 ? "learner" : "learners"}` : ""}</div></td><td>{new Date(a.due).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}{hlIsOverdue(a.due, c.complete >= c.n) && <> <Overdue /></>}</td><td><StackBar c={c} /></td><td className="num"><b>{c.complete}</b>/{c.n}</td></tr>; })}
             {!asg.length && <tr><td colSpan="4" style={{ color: "var(--ink-soft)" }}>Nothing assigned yet.</td></tr>}</tbody></table></div>
       </div>
       <div className="card"><div className="card-h"><div><h3>Needs attention</h3><p>Below pass mark, inactive, or behind level</p></div></div>
@@ -93,8 +95,8 @@ function TOverview({ cls, learners, attention, openL, openAssign }) {
       <div className="card"><div className="card-h"><div><h3>Recent activity</h3><p>Updates as learners work</p></div></div>
         <div className="feed">{events.map((e, i) => <div key={i} className={e.live ? "live" : ""}><span><b>{e.who}</b> {e.text}</span><time>{e.at}</time></div>)}{!events.length && <p style={{ color: "var(--ink-soft)", fontSize: 14 }}>No activity yet.</p>}</div>
       </div>
-      <div className="card"><div className="card-h"><div><h3>Reading levels</h3><p>Learners per level · expected L{cls.expected} highlighted</p></div></div>
-        <Bars data={dist.slice(lo, hi)} labels={TD.LEVELS.slice(lo, hi).map(l => "L" + l.n)} highlight={i => lo + i + 1 === cls.expected} />
+      <div className="card"><div className="card-h"><div><h3>Reading levels</h3><p>{cls.mixed ? "Learners per level" : `Learners per level · expected L${cls.expected} highlighted`}</p></div></div>
+        <Bars data={dist.slice(lo, hi)} labels={TD.LEVELS.slice(lo, hi).map(l => "L" + l.n)} highlight={i => !cls.mixed && lo + i + 1 === cls.expected} />
       </div>
     </div>
   </>;
@@ -102,13 +104,14 @@ function TOverview({ cls, learners, attention, openL, openAssign }) {
 
 function TRoster({ cls, learners, openL, openAssign }) {
   const [q, setQ] = React.useState(""); const [lvl, setLvl] = React.useState("all"); const [st, setSt] = React.useState("all"); const [flagOnly, setFlagOnly] = React.useState(false);
-  const [sort, setSort] = React.useState({ k: "name", d: 1 });
+  const [sort, setSort] = React.useState({ k: cls.mixed ? "level" : "name", d: 1 });
   const rows = learners.map(l => ({ l, lc: lessonCell(l, cls), avg: hlAvgScore(l), flags: hlFlags(l, cls) }))
     .filter(r => (!q || r.l.name.toLowerCase().includes(q.toLowerCase())) && (lvl === "all" || r.l.level === +lvl) && (st === "all" || r.lc.st === st) && (!flagOnly || r.flags.length));
   const key = { name: r => r.l.name, level: r => r.l.level + r.l.levelPct / 100, score: r => r.avg ?? -1, books: r => r.l.booksDone.length, active: r => r.l.lastActive, status: r => r.lc.st || "" };
   rows.sort((a, b) => { const x = key[sort.k](a), y = key[sort.k](b); return (x > y ? 1 : x < y ? -1 : 0) * sort.d; });
   const Th = ({ k, children, num }) => <th className={"sort" + (num ? " num" : "")} onClick={() => setSort({ k, d: sort.k === k ? -sort.d : 1 })}>{children}{sort.k === k ? (sort.d > 0 ? " ↑" : " ↓") : ""}</th>;
   const levels = [...new Set(learners.map(l => l.level))].sort((a, b) => a - b);
+  const hasLesson = learners.some(l => l.lessons[TD.LESSON_ID]);
   return <>
     <div className="ph-h"><div><h1>Learners</h1><p>{cls.name} · click a learner for their full record</p></div>
       <div className="acts"><button className="hl-btn ghost" onClick={() => csvDownload(`${cls.name} roster.csv`, [["Learner", "Level", "Level %", "Steps in Order", "Last score", "Books finished", "Last active", "Flags"], ...rows.map(r => [r.l.name, "L" + r.l.level, r.l.levelPct, r.lc.st || "", r.lc.a ? `${r.lc.a.score}/6` : "", r.l.booksDone.length, dayLabel(r.l.lastActive), r.flags.join("; ")])])}><Icon n="dl" s={16} />Export CSV</button></div></div>
@@ -116,24 +119,31 @@ function TRoster({ cls, learners, openL, openAssign }) {
       <div className="filters">
         <input className="hl-input s" placeholder="Search learners" value={q} onChange={e => setQ(e.target.value)} />
         <select className="hl-select" value={lvl} onChange={e => setLvl(e.target.value)}><option value="all">All levels</option>{levels.map(l => <option key={l} value={l}>L{l}</option>)}</select>
-        {cls.id === "p3i" && <select className="hl-select" value={st} onChange={e => setSt(e.target.value)}><option value="all">Steps in Order: any</option><option value="complete">Complete</option><option value="in_progress">In progress</option><option value="not_started">Not started</option><option value="fail">Below pass</option></select>}
+        {hasLesson && <select className="hl-select" value={st} onChange={e => setSt(e.target.value)}><option value="all">Steps in Order: any</option><option value="complete">Complete</option><option value="in_progress">In progress</option><option value="not_started">Not started</option><option value="fail">Below pass</option></select>}
         <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 14, fontWeight: 700 }}><input type="checkbox" checked={flagOnly} onChange={e => setFlagOnly(e.target.checked)} />Needs attention only</label>
         <span style={{ marginLeft: "auto", fontSize: 13, color: "var(--ink-soft)", fontWeight: 700 }}>{rows.length} of {learners.length}</span>
       </div>
-      <div className="tbl-wrap"><table className="tbl"><thead><tr><Th k="name">Learner</Th><Th k="level">Level</Th>{cls.id === "p3i" && <Th k="status">Steps in Order</Th>}<Th k="score" num>Last score</Th><Th k="books" num>Books</Th><Th k="active">Last active</Th><th>Flags</th><th></th></tr></thead>
+      <div className="tbl-wrap"><table className="tbl"><thead><tr><Th k="name">Learner</Th><Th k="level">Level</Th>{hasLesson && <Th k="status">Steps in Order</Th>}<Th k="score" num>Last score</Th><Th k="books" num>Books</Th><Th k="active">Last active</Th><th>Flags</th><th title="Lets this pupil choose books and worksheets at their own level and below">Work ahead</th><th></th></tr></thead>
         <tbody>{rows.map(({ l, lc, flags }) => <tr key={l.id} className={"click" + (l.lastActive === 0 && state_isLive(l) ? " live" : "")} onClick={() => openL(l.id)}>
           <td><span className="who"><Avatar name={l.name} size="sm" />{l.name}</span></td>
           <td><div className="mini-bar"><LevelTag l={l.level} /><Bar v={l.levelPct} /><span>{l.levelPct}%</span></div></td>
-          {cls.id === "p3i" && <td>{lc.st ? <Status s={lc.st} /> : "—"}</td>}
+          {hasLesson && <td>{lc.st ? <Status s={lc.st} /> : "—"}</td>}
           <td className="num">{lc.a ? <b>{lc.a.score}/6</b> : "—"}</td>
           <td className="num">{l.booksDone.length}</td>
           <td style={{ whiteSpace: "nowrap" }}>{dayLabel(l.lastActive)}</td>
           <td><div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>{flags.map(f => <span key={f} className="flag">{f}</span>)}</div></td>
+          <td onClick={e => e.stopPropagation()}><WorkAheadSwitch L={l} /></td>
           <td><button className="hl-btn quiet sm" onClick={e => { e.stopPropagation(); openAssign({ to: [l.id] }); }}>Assign</button></td>
         </tr>)}</tbody></table></div>
       {!rows.length && <div className="empty" style={{ marginTop: 12 }}>No learners match these filters.</div>}
     </div>
   </>;
+}
+/* Per pupil: off = only what the teacher assigns; on = also books and worksheets at the pupil's level and below. */
+function WorkAheadSwitch({ L }) {
+  const { setWorkAhead } = useHL();
+  const on = !!L.workAhead;
+  return <button className={"live-switch" + (on ? " on" : "")} role="switch" aria-checked={on} aria-label={`Work ahead for ${L.name}`} title={on ? "On: can choose books up to their level" : "Off: only what you assign"} onClick={() => setWorkAhead(L.id, !on)}><i></i></button>;
 }
 const state_isLive = l => Object.values(l.lessons).some(r => r.attempts.some(a => a.date === "2026-10-26"));
 
@@ -145,9 +155,10 @@ function LearnerDrawer({ L, cls, onClose, onAssign }) {
     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>{hlFlags(L, cls).map(f => <span key={f} className="flag">{f}</span>)}</div>
     <div className="kpis" style={{ gridTemplateColumns: "repeat(3,1fr)" }}><Kpi label="Level" value={"L" + L.level} note={`${L.levelPct}% through`} /><Kpi label="Books" value={L.booksDone.length} note="finished" /><Kpi label="Avg. score" value={hlAvgScore(L) != null ? hlAvgScore(L) + "%" : "—"} /></div>
     <div className="stack">
+      <div className="card"><div className="card-h"><div><h3>Work ahead</h3><p>{L.workAhead ? `On: ${L.name.split(" ")[0]} can also choose books and worksheets up to Level ${L.level}.` : `Off: ${L.name.split(" ")[0]} only sees what you assign.`}</p></div><WorkAheadSwitch L={L} /></div></div>
       <div className="card"><div className="card-h"><h3>Skills</h3></div><div className="skills">{SK.map(([k, n]) => <div className="r" key={k}><span>{n}</span><Bar v={L.skills[k]} cls={L.skills[k] < 60 ? "y" : ""} /><span style={{ textAlign: "right" }}>{L.skills[k]}</span></div>)}</div></div>
       <div className="card"><div className="card-h"><div><h3>Worksheets</h3><p>Ratings per section · NY D S B</p></div></div><WsRecordList L={L} /></div>
-      {(cls.id === "p3i" || rec.attempts.length > 0) && <div className="card"><div className="card-h"><div><h3>Steps in Order · assessment attempts</h3><p>Pass mark {TD.LESSON.passMark}/6 · current status <Status s={rec.status} /></p></div></div>
+      {(L.lessons[TD.LESSON_ID] || rec.attempts.length > 0) && <div className="card"><div className="card-h"><div><h3>Steps in Order · assessment attempts</h3><p>Pass mark {TD.LESSON.passMark}/6 · current status <Status s={rec.status} /></p></div></div>
         {rec.attempts.length ? <div className="tbl-wrap"><table className="tbl"><thead><tr><th>Attempt</th><th>Date</th><th className="num">Score</th><th>Result</th></tr></thead><tbody>{rec.attempts.map((a, i) => <tr key={i} className={a.date === "2026-10-26" ? "live" : ""}><td>#{i + 1}</td><td>{a.date === "2026-10-26" ? "Today" : a.date}</td><td className="num"><b>{a.score}/{a.total}</b></td><td><Status s={a.pass ? "complete" : "fail"} label={a.pass ? "Pass" : "Fail"} /></td></tr>)}</tbody></table></div>
           : <p style={{ fontSize: 14, color: "var(--ink-soft)" }}>{rec.status === "in_progress" ? `In progress · reached section ${rec.step + 1} of 6` : "Not started"}</p>}</div>}
       <div className="card"><div className="card-h"><h3>Reading now</h3></div>
@@ -201,7 +212,7 @@ function TAssignments({ cls, learners, openAssign }) {
     <div className="stack">{asg.map(a => { const c = assignCounts(state, learners, a); const tgt = learners.filter(l => a.to === "all" || a.to.includes(l.id));
       return <div className="card" key={a.id}>
         <div className="card-h"><div style={{ display: "flex", gap: 12, alignItems: "center" }}>{a.type === "book" || a.type === "worksheet" ? <div style={{ width: 40 }}><Cover book={hlBook(a.ref)} /></div> : <span className="hl-av" style={{ background: "var(--forest-dk)" }}><Icon n={a.type === "lesson" ? "star" : "path"} s={16} /></span>}
-          <div><h3>{a.title}</h3><p style={{ textTransform: "capitalize" }}>{a.type} · {a.to === "all" ? "Whole class" : `${a.to.length} learners`} · due {new Date(a.due).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}{hlIsOverdue(a.due, c.complete >= c.n) && <> · <Overdue /></>} · set {a.created}</p></div></div>
+          <div><h3>{a.title}</h3><p style={{ textTransform: "capitalize" }}>{a.type} · <span style={{ textTransform: "none" }}>{a.to === "all" ? "Whole class" : a.to.length === 1 && state.learners[a.to[0]] ? state.learners[a.to[0]].name : `${a.to.length} learners`}</span> · due {new Date(a.due).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}{hlIsOverdue(a.due, c.complete >= c.n) && <> · <Overdue /></>} · set {a.created}</p></div></div>
           <div style={{ display: "flex", gap: 14, alignItems: "center" }}><StackBar c={c} /><b style={{ fontSize: 14, whiteSpace: "nowrap" }}>{c.complete}/{c.n} done</b><button className="hl-btn ghost sm" onClick={() => setOpen(open === a.id ? null : a.id)}>{open === a.id ? "Hide" : "Details"}</button><button className="hl-btn quiet sm" onClick={() => removeAssignment(a.id)}>Remove</button></div></div>
         {open === a.id && <div className="tbl-wrap"><table className="tbl"><thead><tr><th>Learner</th><th>Status</th>{a.type === "lesson" && <th className="num">Score</th>}<th>Last active</th></tr></thead><tbody>{tgt.map(l => { const s = hlAssignStatus(l, a); const at = a.type === "lesson" && hlLastAttempt(hlLessonRec(l, a.ref));
           return <tr key={l.id}><td><span className="who"><Avatar name={l.name} size="sm" />{l.name}</span></td><td><Status s={at && !at.pass ? "fail" : s} /></td>{a.type === "lesson" && <td className="num">{at ? `${at.score}/6` : "—"}</td>}<td>{dayLabel(l.lastActive)}</td></tr>; })}</tbody></table></div>}
@@ -221,7 +232,8 @@ function TReports({ cls, learners, openL }) {
     <div className="ph-h"><div><h1>Reports</h1><p>{cls.name} · Term 1</p></div>
       <div className="acts"><button className="hl-btn ghost" onClick={() => csvDownload(`${cls.name} report.csv`, [["Learner", "Level", ...TD.TERM_WEEKS.map(w => w + " activities"), "Last score", "Support flags"], ...learners.map(l => { const a = hlLastAttempt(hlLessonRec(l)); return [l.name, "L" + l.level, ...l.weekly, a ? `${a.score}/6` : "", hlFlags(l, cls).join("; ")]; })])}><Icon n="dl" s={16} />Download CSV</button></div></div>
     <div className="pill-tabs">{[["levels", "Reading levels"], ["completion", "Completion over time"], ["assessment", "Assessment"], ["participation", "Participation"], ["support", `Support (${support.length})`]].map(([k, l]) => <button key={k} className={"chip" + (view === k ? " on" : "")} onClick={() => setView(k)}>{l}</button>)}</div>
-    {view === "levels" && <div className="grid2"><div className="card"><div className="card-h"><div><h3>Reading progress by level</h3><p>Expected for {cls.name}: L{cls.expected}</p></div></div><Bars data={dist} labels={TD.LEVELS.slice(0, 12).map(l => "L" + l.n)} highlight={i => i + 1 === cls.expected} h={200} /></div>
+    {view === "levels" && cls.mixed && <div className="card"><div className="card-h"><div><h3>Reading progress by level</h3><p>{cls.name}: one pupil at each level</p></div></div><Bars data={dist} labels={TD.LEVELS.slice(0, 12).map(l => "L" + l.n)} highlight={() => false} h={200} /></div>}
+    {view === "levels" && !cls.mixed && <div className="grid2"><div className="card"><div className="card-h"><div><h3>Reading progress by level</h3><p>Expected for {cls.name}: L{cls.expected}</p></div></div><Bars data={dist} labels={TD.LEVELS.slice(0, 12).map(l => "L" + l.n)} highlight={i => i + 1 === cls.expected} h={200} /></div>
       <div className="card"><div className="card-h"><h3>Against expectation</h3></div><div className="hbars">{[["Above", learners.filter(l => l.level > cls.expected).length, "var(--forest-dk)"], ["At level", learners.filter(l => l.level === cls.expected).length, "var(--forest)"], ["1 below", learners.filter(l => l.level === cls.expected - 1).length, "var(--yellow-dk)"], ["2+ below", learners.filter(l => l.level < cls.expected - 1).length, "var(--warn)"]].map(([n, v, c]) => <div className="r" key={n}><span>{n}</span><div className="tr"><i style={{ width: v / learners.length * 100 + "%", background: c }}></i></div><span className="v">{v}</span></div>)}</div>
         <p className="note" style={{ marginTop: 16 }}>{learners.filter(l => l.level < cls.expected - 1).length} learners are two or more levels behind. Consider assigning Soundables decodables at their level.</p></div></div>}
     {view === "completion" && <div className="card"><div className="card-h"><div><h3>Activities completed per week</h3><p>Books, lessons and checks · all learners</p></div></div><LineChart labels={TD.TERM_WEEKS} series={[{ name: "Class", color: "#1A6E1A", data: weekly }]} h={220} /></div>}
@@ -253,4 +265,4 @@ function TRequests({ me }) {
     </div>
   </>;
 }
-Object.assign(window, { TeacherApp, AdultShell, LearnerDrawer, StackBar, dayLabel });
+Object.assign(window, { WorkAheadSwitch, TeacherApp, AdultShell, LearnerDrawer, StackBar, dayLabel });

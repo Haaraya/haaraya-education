@@ -40,14 +40,16 @@ function ParentApp() {
             <div style={{ fontSize: 13, fontWeight: 800 }}>Strongest: {SKILL_NAMES[sk[0][0]]}, {SKILL_NAMES[sk[1][0]]}</div>
             {sk.slice(-2).reverse().map(([k]) => <div key={k} className="note"><b>Practise {SKILL_NAMES[k].toLowerCase()} at home.</b> {HOME_TIPS[k]}</div>)}
           </div></div>
-        <div className="card"><div className="card-h"><div><h3>Learning journey</h3><p>{L.level === 4 ? AD.JOURNEYS[0].title : "Level 2 · Sounds Together"}</p></div></div>
+        {J && L.lessons[AD.LESSON_ID] ? <>        <div className="card"><div className="card-h"><div><h3>Learning journey</h3><p>{L.level === 4 ? AD.JOURNEYS[0].title : "Level 2 · Sounds Together"}</p></div></div>
           {J ? <div className="feed">{J.map((u, i) => { const st = u.done || (u.live && rec.status === "complete") ? "complete" : u.live ? rec.status : "not_started"; const a = u.live && last;
             return <div key={u.id}><span><b>Unit {i + 1}</b> · {u.title}{a ? <span style={{ color: "var(--ink-soft)" }}> · score {a.score}/6</span> : null}</span><Status s={a && !a.pass ? "fail" : st} label={st === "not_started" ? "Upcoming" : null} /></div>; })}</div>
             : <div className="feed">{["Short Vowel Sounds", "Blends: st, sp, sn", "Sight Words in Sentences", "Reading Sound Stories", "Sounds Together Review", "Level 2 Check"].map((t, i) => <div key={t}><span><b>Unit {i + 1}</b> · {t}</span><Status s={i < 2 ? "complete" : i === 2 ? "in_progress" : "not_started"} label={i > 2 ? "Upcoming" : null} /></div>)}</div>}
-        </div>
+        </div></> : <div className="card"><div className="card-h"><div><h3>Set by the teacher</h3><p>Books and worksheets for {L.name.split(" ")[0]}</p></div></div>
+          <div className="feed">{hlAssignedFor(state, L).map(a => <div key={a.id}><span><b>{a.type === "book" ? "Book" : a.type === "worksheet" ? "Worksheet" : "Lesson"}</b> · {a.title.replace(" · worksheet", "")}</span><Status s={hlAssignStatus(L, a)} /></div>)}
+            {!hlAssignedFor(state, L).length && <p style={{ color: "var(--ink-soft)", fontSize: 14 }}>Nothing set yet.</p>}</div></div>}
       </div>
       <div className="card" style={{ marginTop: 16 }}><div className="card-h"><div><h3>Worksheets</h3><p>What the teacher saw, section by section. Haaraya does not turn these into scores.</p></div></div><WsRecordList L={L} family /></div>
-      <div className="card" style={{ marginTop: 16 }}><div className="card-h"><h3>Completed books</h3><span style={{ fontSize: 13, fontWeight: 700, color: "var(--ink-soft)" }}>{L.booksDone.length} books</span></div><div className="cover-strip" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(88px,1fr))" }}>{L.booksDone.map(hlBook).filter(Boolean).map(b => <Cover key={b.id} book={b} />)}</div></div>
+      <div className="card" style={{ marginTop: 16 }}><div className="card-h"><h3>Completed books</h3><span style={{ fontSize: 13, fontWeight: 700, color: "var(--ink-soft)" }}>{L.booksDone.length} {L.booksDone.length === 1 ? "book" : "books"}</span></div><div className="cover-strip" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(88px,1fr))" }}>{L.booksDone.map(hlBook).filter(Boolean).map(b => <Cover key={b.id} book={b} />)}</div></div>
     </main></div>
   </>;
 }

@@ -156,7 +156,7 @@ function ParentApp() {
   }, "Strongest: ", SKILL_NAMES[sk[0][0]], ", ", SKILL_NAMES[sk[1][0]]), sk.slice(-2).reverse().map(([k]) => /*#__PURE__*/React.createElement("div", {
     key: k,
     className: "note"
-  }, /*#__PURE__*/React.createElement("b", null, "Practise ", SKILL_NAMES[k].toLowerCase(), " at home."), " ", HOME_TIPS[k])))), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("b", null, "Practise ", SKILL_NAMES[k].toLowerCase(), " at home."), " ", HOME_TIPS[k])))), J && L.lessons[AD.LESSON_ID] ? /*#__PURE__*/React.createElement(React.Fragment, null, "        ", /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "card-h"
@@ -182,7 +182,22 @@ function ParentApp() {
   }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "Unit ", i + 1), " \xB7 ", t), /*#__PURE__*/React.createElement(Status, {
     s: i < 2 ? "complete" : i === 2 ? "in_progress" : "not_started",
     label: i > 2 ? "Upcoming" : null
-  })))))), /*#__PURE__*/React.createElement("div", {
+  })))))) : /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-h"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "Set by the teacher"), /*#__PURE__*/React.createElement("p", null, "Books and worksheets for ", L.name.split(" ")[0]))), /*#__PURE__*/React.createElement("div", {
+    className: "feed"
+  }, hlAssignedFor(state, L).map(a => /*#__PURE__*/React.createElement("div", {
+    key: a.id
+  }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, a.type === "book" ? "Book" : a.type === "worksheet" ? "Worksheet" : "Lesson"), " \xB7 ", a.title.replace(" · worksheet", "")), /*#__PURE__*/React.createElement(Status, {
+    s: hlAssignStatus(L, a)
+  }))), !hlAssignedFor(state, L).length && /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: "var(--ink-soft)",
+      fontSize: 14
+    }
+  }, "Nothing set yet.")))), /*#__PURE__*/React.createElement("div", {
     className: "card",
     style: {
       marginTop: 16
@@ -205,7 +220,7 @@ function ParentApp() {
       fontWeight: 700,
       color: "var(--ink-soft)"
     }
-  }, L.booksDone.length, " books")), /*#__PURE__*/React.createElement("div", {
+  }, L.booksDone.length, " ", L.booksDone.length === 1 ? "book" : "books")), /*#__PURE__*/React.createElement("div", {
     className: "cover-strip",
     style: {
       gridTemplateColumns: "repeat(auto-fill,minmax(88px,1fr))"

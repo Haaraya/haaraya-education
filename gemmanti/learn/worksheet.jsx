@@ -170,6 +170,12 @@ function ItemText({ it }) {
 const WS_RENDER = { pick: ItemPick, match: ItemMatch, fill: ItemFill, sort: ItemSort, order: ItemOrder, yesno: ItemYesNo, choose: ItemChoose, write: ItemWrite, fields: ItemFields, table: ItemTable, draw: ItemDraw, text: ItemText };
 
 function WsKey({ it }) { return it.key ? <div className="ws-key"><b>Answer</b><span>{it.key}</span>{it.at && <em>{it.at}</em>}</div> : null; }
+function WsItemArt({ it }) {
+  const code = React.useContext(WsCodeCtx); const [bad, setBad] = React.useState(false);
+  const id = code && window.HLWS_ART && (window.HLWS_ART[code] || {})[it.id];
+  if (!id || bad) return null;
+  return <img className="ws-item-art" src={WSX.picUrl(code, id)} alt="" loading="lazy" onError={() => setBad(true)} />;
+}
 function WsItem({ it, n, v, set, ro, fb, teacher, showKey, need }) {
   const R = WS_RENDER[it.t];
   const blank = fb && fb.units.length > 0 && fb.units.every(u => u.blank);
@@ -179,6 +185,7 @@ function WsItem({ it, n, v, set, ro, fb, teacher, showKey, need }) {
     {it.challenge && <div className="ws-ch-tag"><Icon n="star" s={16} />Challenge{teacher ? " · optional, the source of Beyond" : " · if you want to"}</div>}
     {it.h && it.t !== "text" && <div className="ws-h">{it.h}</div>}
     {it.t !== "text" && <p className="ws-q">{n != null && <span className="ws-qn">{n}</span>}<span>{it.q}</span></p>}
+    <WsItemArt it={it} />
     <R it={it} v={v} set={set || (() => {})} ro={ro} fb={fb} />
     {it.say && <p className="ws-hint">Tell your teacher why.</p>}
     {showKey && <WsKey it={it} />}

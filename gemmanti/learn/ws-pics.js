@@ -35,11 +35,19 @@ window.HLWS_PICS = {
   "TFT-05-01": {
     "vine and stick": "WS-TFT-05-01-01", "ball under a bed": "WS-TFT-05-01-02", "mango up high": "WS-TFT-05-01-03",
     "bucket in a well": "WS-TFT-05-01-04", "rope": "WS-TFT-05-01-05", "broom": "WS-TFT-05-01-06",
-    "long pole": "WS-TFT-05-01-07", "treat in a tree": "BOOK-TFT-05-01_P2",
+    "long pole": "WS-TFT-05-01-07", "treat in a tree": "BOOK-TFT-05-01_P2", "Goat": "WS-TFT-05-01-11", "Tortoise": "WS-TFT-05-01-12", "Dog": "WS-TFT-05-01-13",
     "sleepy": "WS-TFT-05-01-14", "bored": "WS-TFT-05-01-15", "surprised": "WS-TFT-05-01-16"
   },
   "TD-06-01": {
     "the demons": "WS-TD-06-01-01", "one boy keeps the ball": "WS-TD-06-01-02", "a team lifts a cup": "WS-TD-06-01-03",
     "neighbours fix a roof": "WS-TD-06-01-04", "a man sits alone": "WS-TD-06-01-05", "the four friends": "BOOK-TD-06-01_P13"
   }
+};
+
+/* Small drawings shown beside a whole question (worksheet icons from the same line-art sheet). */
+window.HLWS_ART = {
+  "SN-07-01": { "sw0": "WS-SN-07-01-01" },
+  "SP-08-01": { "sw0": "WS-SP-08-01-01", "ch": "WS-SP-08-01-02" },
+  "SF-09-01": { "sw0": "WS-SF-09-01-01" },
+  "TN-10-02": { "sw0": "WS-TN-10-02-01" }
 };

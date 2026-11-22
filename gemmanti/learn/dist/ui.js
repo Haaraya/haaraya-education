@@ -322,19 +322,13 @@ function csvDownload(name, rows) {
   a.click();
   a.remove();
 }
-const PERSONAS = [{
+const PERSONAS = [...window.HL_DATA.LEARNERS.filter(l => l.classId === "p3i").sort((a, b) => a.level - b.level).map(l => ({
   role: "learner",
-  id: "amara",
-  label: "Amara Obi",
-  sub: "Child · Level 4 · Primary 3",
-  group: "Child / Learner"
-}, {
-  role: "learner",
-  id: "emeka",
-  label: "Emeka Obi",
-  sub: "Child · Level 2 · Primary 1",
-  group: "Child / Learner"
-}, {
+  id: l.id,
+  label: l.name,
+  sub: `Pupil · Level ${l.level} · Haaraya Demo Class`,
+  group: "Pupils (Haaraya Demo Class)"
+})), {
   role: "parent",
   label: "Mrs Ngozi Obi",
   sub: "Parent of Amara and Emeka",
@@ -342,7 +336,7 @@ const PERSONAS = [{
 }, {
   role: "teacher",
   label: "Mrs Adaeze Adekunle",
-  sub: "Teacher · Primary 3 Ivory, Primary 4 Amber",
+  sub: "Teacher · Haaraya Demo Class, Levels 1–12",
   group: "Teacher"
 }, {
   role: "school",

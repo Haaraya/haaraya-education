@@ -1,5 +1,5 @@
 /* Gemmanti — local application state (simulated learning record). */
-const HL_KEY = "gemmanti-demo-v1";
+const HL_KEY = "gemmanti-demo-v2";
 const D = window.HL_DATA;
 function hlSeed() {
   const learners = {};
@@ -7,11 +7,11 @@ function hlSeed() {
     learners[l.id] = JSON.parse(JSON.stringify(l));
   });
   return {
-    v: 3,
+    v: 4,
     role: "learner",
     personaId: "amara",
     route: {
-      view: "home"
+      view: "pick"
     },
     learners,
     assignments: D.ASSIGNMENTS.slice(),
@@ -29,13 +29,12 @@ function hlLoad() {
   try {
     s = JSON.parse(localStorage.getItem(HL_KEY));
   } catch (e) {}
-  if (!s || s.v !== 3) s = hlSeed();
-  /* ?demo=child opens the demo as a pupil (Amara); progress already made in this browser is kept. */
+  if (!s || s.v !== 4) s = hlSeed();
+  /* ?demo=child opens the demo on the pupil picker; progress already made in this browser is kept. */
   if (/[?&]demo=(child|pupil)\b/.test(location.search)) {
     s.role = "learner";
-    s.personaId = "amara";
     s.route = {
-      view: "home"
+      view: "pick"
     };
   }
   return s;
@@ -118,6 +117,12 @@ function HLProvider({
         view: role === "learner" ? "home" : "overview"
       };
     }),
+    setWorkAhead: (lid, on) => {
+      up(s => {
+        s.learners[lid].workAhead = !!on;
+      });
+      toast(on ? "Work ahead is on" : "Work ahead is off");
+    },
     lessonSave: (lid, lessonId, patch) => up(s => {
       const L = s.learners[lid];
       const r = L.lessons[lessonId] || (L.lessons[lessonId] = {
@@ -465,7 +470,7 @@ function hlFlags(L, cls) {
   const last = hlLastAttempt(rec);
   if (last && !last.pass) f.push("Below pass mark");
   if (L.lastActive >= 7 && L.lastActive < 99) f.push(`Inactive ${L.lastActive} days`);
-  if (cls && L.level < cls.expected - 1) f.push("Below expected level");
+  if (cls && !cls.mixed && L.level < cls.expected - 1) f.push("Below expected level");
   if (L.isNew) f.push("Not started");
   return f;
 }

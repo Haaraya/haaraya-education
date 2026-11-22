@@ -1,12 +1,12 @@
 /* Gemmanti — local application state (simulated learning record). */
-const HL_KEY = "gemmanti-demo-v1";
+const HL_KEY = "gemmanti-demo-v2";
 const D = window.HL_DATA;
 
 function hlSeed() {
   const learners = {};
   D.LEARNERS.forEach(l => { learners[l.id] = JSON.parse(JSON.stringify(l)); });
   return {
-    v: 3, role: "learner", personaId: "amara", route: { view: "home" },
+    v: 4, role: "learner", personaId: "amara", route: { view: "pick" },
     learners, assignments: D.ASSIGNMENTS.slice(), events: D.EVENTS.slice(), requests: D.REQUESTS.slice(),
     teachers: D.TEACHERS.slice(), classes: D.CLASSES.slice(),
     orgCollections: Object.fromEntries(Object.entries(D.ORG_STATS).map(([k, v]) => [k, v.collections.slice()])),
@@ -16,9 +16,9 @@ function hlSeed() {
 function hlLoad() {
   let s = null;
   try { s = JSON.parse(localStorage.getItem(HL_KEY)); } catch (e) {}
-  if (!s || s.v !== 3) s = hlSeed();
-  /* ?demo=child opens the demo as a pupil (Amara); progress already made in this browser is kept. */
-  if (/[?&]demo=(child|pupil)\b/.test(location.search)) { s.role = "learner"; s.personaId = "amara"; s.route = { view: "home" }; }
+  if (!s || s.v !== 4) s = hlSeed();
+  /* ?demo=child opens the demo on the pupil picker; progress already made in this browser is kept. */
+  if (/[?&]demo=(child|pupil)\b/.test(location.search)) { s.role = "learner"; s.route = { view: "pick" }; }
   return s;
 }
 const HLStore = React.createContext(null);
@@ -55,6 +55,7 @@ function HLProvider({ children, initial }) {
       s.role = role; if (personaId) s.personaId = personaId;
       s.route = { view: role === "learner" ? "home" : "overview" };
     }),
+    setWorkAhead: (lid, on) => { up(s => { s.learners[lid].workAhead = !!on; }); toast(on ? "Work ahead is on" : "Work ahead is off"); },
     lessonSave: (lid, lessonId, patch) => up(s => {
       const L = s.learners[lid]; const r = L.lessons[lessonId] || (L.lessons[lessonId] = { status: "not_started", step: 0, attempts: [] });
       if (r.status === "not_started") r.status = "in_progress";
@@ -176,7 +177,7 @@ function hlFlags(L, cls) {
   const f = []; const rec = hlLessonRec(L); const last = hlLastAttempt(rec);
   if (last && !last.pass) f.push("Below pass mark");
   if (L.lastActive >= 7 && L.lastActive < 99) f.push(`Inactive ${L.lastActive} days`);
-  if (cls && L.level < cls.expected - 1) f.push("Below expected level");
+  if (cls && !cls.mixed && L.level < cls.expected - 1) f.push("Below expected level");
   if (L.isNew) f.push("Not started");
   return f;
 }

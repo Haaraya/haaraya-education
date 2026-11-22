@@ -31,7 +31,7 @@ function AdultShell({
 }
 const dayLabel = d => d === 0 ? "Today" : d === 1 ? "Yesterday" : d >= 99 ? "Never" : `${d} days ago`;
 function lessonCell(L, cls) {
-  if (cls.id !== "p3i" && !L.lessons[TD.LESSON_ID]) return {
+  if (!L.lessons[TD.LESSON_ID]) return {
     st: null
   };
   const r = hlLessonRec(L);
@@ -142,19 +142,20 @@ function TOverview({
     state,
     go
   } = useHL();
-  const asg = state.assignments.filter(a => a.classId === cls.id);
+  /* Mixed demo class: the overview lists lessons and worksheets; every book is on Assigned learning. */
+  const asg = state.assignments.filter(a => a.classId === cls.id && !(cls.mixed && a.type === "book"));
   const active = learners.filter(l => l.lastActive <= 7).length;
   const scores = learners.map(l => hlAvgScore(l)).filter(x => x != null);
   const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
   const lessonA = asg.find(a => a.type === "lesson");
   const lc = lessonA && assignCounts(state, learners, lessonA);
   const dist = TD.LEVELS.slice(0, 12).map(lv => learners.filter(l => l.level === lv.n).length);
-  const lo = Math.max(0, cls.expected - 3),
-    hi = Math.min(12, cls.expected + 3);
+  const lo = cls.mixed ? 0 : Math.max(0, cls.expected - 3),
+    hi = cls.mixed ? 12 : Math.min(12, cls.expected + 3);
   const events = state.events.filter(e => e.classId === cls.id).slice(0, 7);
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "ph-h"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, cls.name), /*#__PURE__*/React.createElement("p", null, learners.length, " learners \xB7 Expected level L", cls.expected, " \xB7 Term 1, week 10")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, cls.name), /*#__PURE__*/React.createElement("p", null, learners.length, " learners \xB7 ", cls.mixed ? "one pupil at each level, L1 to L12" : `Expected level L${cls.expected}`, " \xB7 Term 1, week 10")), /*#__PURE__*/React.createElement("div", {
     className: "acts"
   }, /*#__PURE__*/React.createElement("button", {
     className: "hl-btn",
@@ -172,11 +173,15 @@ function TOverview({
     label: `${lessonA.title} complete`,
     value: `${lc.complete}/${lc.n}`,
     note: `${lc.in_progress} in progress`
-  }), /*#__PURE__*/React.createElement(Kpi, {
+  }), scores.length > 0 && /*#__PURE__*/React.createElement(Kpi, {
     label: "Avg. check score",
     value: avg != null ? avg + "%" : "—",
     note: `${scores.length} learners assessed`
-  }), /*#__PURE__*/React.createElement(Kpi, {
+  }), cls.mixed ? /*#__PURE__*/React.createElement(Kpi, {
+    label: "Worksheets to review",
+    value: learners.filter(l => Object.values(l.worksheets || {}).some(r => r.status === "handed_in")).length,
+    note: "handed in, waiting for you"
+  }) : /*#__PURE__*/React.createElement(Kpi, {
     label: "At or above level",
     value: `${learners.filter(l => l.level >= cls.expected).length}`,
     note: `of ${learners.length} at L${cls.expected}+`
@@ -224,7 +229,7 @@ function TOverview({
         fontWeight: 700,
         textTransform: "capitalize"
       }
-    }, a.type, a.to !== "all" ? ` · ${a.to.length} learners` : "")), /*#__PURE__*/React.createElement("td", null, new Date(a.due).toLocaleDateString("en-GB", {
+    }, a.type, a.to !== "all" ? ` · ${a.to.length} ${a.to.length === 1 ? "learner" : "learners"}` : "")), /*#__PURE__*/React.createElement("td", null, new Date(a.due).toLocaleDateString("en-GB", {
       day: "numeric",
       month: "short"
     }), hlIsOverdue(a.due, c.complete >= c.n) && /*#__PURE__*/React.createElement(React.Fragment, null, " ", /*#__PURE__*/React.createElement(Overdue, null))), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(StackBar, {
@@ -291,10 +296,10 @@ function TOverview({
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "card-h"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "Reading levels"), /*#__PURE__*/React.createElement("p", null, "Learners per level \xB7 expected L", cls.expected, " highlighted"))), /*#__PURE__*/React.createElement(Bars, {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "Reading levels"), /*#__PURE__*/React.createElement("p", null, cls.mixed ? "Learners per level" : `Learners per level · expected L${cls.expected} highlighted`))), /*#__PURE__*/React.createElement(Bars, {
     data: dist.slice(lo, hi),
     labels: TD.LEVELS.slice(lo, hi).map(l => "L" + l.n),
-    highlight: i => lo + i + 1 === cls.expected
+    highlight: i => !cls.mixed && lo + i + 1 === cls.expected
   }))));
 }
 function TRoster({
@@ -308,7 +313,7 @@ function TRoster({
   const [st, setSt] = React.useState("all");
   const [flagOnly, setFlagOnly] = React.useState(false);
   const [sort, setSort] = React.useState({
-    k: "name",
+    k: cls.mixed ? "level" : "name",
     d: 1
   });
   const rows = learners.map(l => ({
@@ -342,6 +347,7 @@ function TRoster({
     })
   }, children, sort.k === k ? sort.d > 0 ? " ↑" : " ↓" : "");
   const levels = [...new Set(learners.map(l => l.level))].sort((a, b) => a - b);
+  const hasLesson = learners.some(l => l.lessons[TD.LESSON_ID]);
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "ph-h"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Learners"), /*#__PURE__*/React.createElement("p", null, cls.name, " \xB7 click a learner for their full record")), /*#__PURE__*/React.createElement("div", {
@@ -370,7 +376,7 @@ function TRoster({
   }, "All levels"), levels.map(l => /*#__PURE__*/React.createElement("option", {
     key: l,
     value: l
-  }, "L", l))), cls.id === "p3i" && /*#__PURE__*/React.createElement("select", {
+  }, "L", l))), hasLesson && /*#__PURE__*/React.createElement("select", {
     className: "hl-select",
     value: st,
     onChange: e => setSt(e.target.value)
@@ -411,7 +417,7 @@ function TRoster({
     k: "name"
   }, "Learner"), /*#__PURE__*/React.createElement(Th, {
     k: "level"
-  }, "Level"), cls.id === "p3i" && /*#__PURE__*/React.createElement(Th, {
+  }, "Level"), hasLesson && /*#__PURE__*/React.createElement(Th, {
     k: "status"
   }, "Steps in Order"), /*#__PURE__*/React.createElement(Th, {
     k: "score",
@@ -421,7 +427,9 @@ function TRoster({
     num: true
   }, "Books"), /*#__PURE__*/React.createElement(Th, {
     k: "active"
-  }, "Last active"), /*#__PURE__*/React.createElement("th", null, "Flags"), /*#__PURE__*/React.createElement("th", null))), /*#__PURE__*/React.createElement("tbody", null, rows.map(({
+  }, "Last active"), /*#__PURE__*/React.createElement("th", null, "Flags"), /*#__PURE__*/React.createElement("th", {
+    title: "Lets this pupil choose books and worksheets at their own level and below"
+  }, "Work ahead"), /*#__PURE__*/React.createElement("th", null))), /*#__PURE__*/React.createElement("tbody", null, rows.map(({
     l,
     lc,
     flags
@@ -440,7 +448,7 @@ function TRoster({
     l: l.level
   }), /*#__PURE__*/React.createElement(Bar, {
     v: l.levelPct
-  }), /*#__PURE__*/React.createElement("span", null, l.levelPct, "%"))), cls.id === "p3i" && /*#__PURE__*/React.createElement("td", null, lc.st ? /*#__PURE__*/React.createElement(Status, {
+  }), /*#__PURE__*/React.createElement("span", null, l.levelPct, "%"))), hasLesson && /*#__PURE__*/React.createElement("td", null, lc.st ? /*#__PURE__*/React.createElement(Status, {
     s: lc.st
   }) : "—"), /*#__PURE__*/React.createElement("td", {
     className: "num"
@@ -459,7 +467,11 @@ function TRoster({
   }, flags.map(f => /*#__PURE__*/React.createElement("span", {
     key: f,
     className: "flag"
-  }, f)))), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("button", {
+  }, f)))), /*#__PURE__*/React.createElement("td", {
+    onClick: e => e.stopPropagation()
+  }, /*#__PURE__*/React.createElement(WorkAheadSwitch, {
+    L: l
+  })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("button", {
     className: "hl-btn quiet sm",
     onClick: e => {
       e.stopPropagation();
@@ -473,6 +485,23 @@ function TRoster({
       marginTop: 12
     }
   }, "No learners match these filters.")));
+}
+/* Per pupil: off = only what the teacher assigns; on = also books and worksheets at the pupil's level and below. */
+function WorkAheadSwitch({
+  L
+}) {
+  const {
+    setWorkAhead
+  } = useHL();
+  const on = !!L.workAhead;
+  return /*#__PURE__*/React.createElement("button", {
+    className: "live-switch" + (on ? " on" : ""),
+    role: "switch",
+    "aria-checked": on,
+    "aria-label": `Work ahead for ${L.name}`,
+    title: on ? "On: can choose books up to their level" : "Off: only what you assign",
+    onClick: () => setWorkAhead(L.id, !on)
+  }, /*#__PURE__*/React.createElement("i", null));
 }
 const state_isLive = l => Object.values(l.lessons).some(r => r.attempts.some(a => a.date === "2026-10-26"));
 function LearnerDrawer({
@@ -549,6 +578,12 @@ function LearnerDrawer({
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "card-h"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "Work ahead"), /*#__PURE__*/React.createElement("p", null, L.workAhead ? `On: ${L.name.split(" ")[0]} can also choose books and worksheets up to Level ${L.level}.` : `Off: ${L.name.split(" ")[0]} only sees what you assign.`)), /*#__PURE__*/React.createElement(WorkAheadSwitch, {
+    L: L
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-h"
   }, /*#__PURE__*/React.createElement("h3", null, "Skills")), /*#__PURE__*/React.createElement("div", {
     className: "skills"
   }, SK.map(([k, n]) => /*#__PURE__*/React.createElement("div", {
@@ -567,7 +602,7 @@ function LearnerDrawer({
     className: "card-h"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "Worksheets"), /*#__PURE__*/React.createElement("p", null, "Ratings per section \xB7 NY D S B"))), /*#__PURE__*/React.createElement(WsRecordList, {
     L: L
-  })), (cls.id === "p3i" || rec.attempts.length > 0) && /*#__PURE__*/React.createElement("div", {
+  })), (L.lessons[TD.LESSON_ID] || rec.attempts.length > 0) && /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "card-h"
@@ -890,7 +925,11 @@ function TAssignments({
       style: {
         textTransform: "capitalize"
       }
-    }, a.type, " \xB7 ", a.to === "all" ? "Whole class" : `${a.to.length} learners`, " \xB7 due ", new Date(a.due).toLocaleDateString("en-GB", {
+    }, a.type, " \xB7 ", /*#__PURE__*/React.createElement("span", {
+      style: {
+        textTransform: "none"
+      }
+    }, a.to === "all" ? "Whole class" : a.to.length === 1 && state.learners[a.to[0]] ? state.learners[a.to[0]].name : `${a.to.length} learners`), " \xB7 due ", new Date(a.due).toLocaleDateString("en-GB", {
       day: "numeric",
       month: "short"
     }), hlIsOverdue(a.due, c.complete >= c.n) && /*#__PURE__*/React.createElement(React.Fragment, null, " \xB7 ", /*#__PURE__*/React.createElement(Overdue, null)), " \xB7 set ", a.created))), /*#__PURE__*/React.createElement("div", {
@@ -974,7 +1013,16 @@ function TReports({
     key: k,
     className: "chip" + (view === k ? " on" : ""),
     onClick: () => setView(k)
-  }, l))), view === "levels" && /*#__PURE__*/React.createElement("div", {
+  }, l))), view === "levels" && cls.mixed && /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-h"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "Reading progress by level"), /*#__PURE__*/React.createElement("p", null, cls.name, ": one pupil at each level"))), /*#__PURE__*/React.createElement(Bars, {
+    data: dist,
+    labels: TD.LEVELS.slice(0, 12).map(l => "L" + l.n),
+    highlight: () => false,
+    h: 200
+  })), view === "levels" && !cls.mixed && /*#__PURE__*/React.createElement("div", {
     className: "grid2"
   }, /*#__PURE__*/React.createElement("div", {
     className: "card"
@@ -1241,6 +1289,7 @@ function TRequests({
   }), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("time", null, r.date))))))));
 }
 Object.assign(window, {
+  WorkAheadSwitch,
   TeacherApp,
   AdultShell,
   LearnerDrawer,

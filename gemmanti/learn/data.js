@@ -34,16 +34,16 @@ var SCHOOLS=[
  {id:"es",name:"Enugu State Reading Cohort",city:"Enugu",type:"Government cohort",status:"Onboarding",since:"Oct 2026"}
 ];
 var TEACHERS=[
- {id:"t1",name:"Mrs Adaeze Adekunle",email:"a.adekunle@greenfield.example",schoolId:"gf",classes:["p3i","p4a"]},
+ {id:"t1",name:"Mrs Adaeze Adekunle",email:"a.adekunle@greenfield.example",schoolId:"gf",classes:["p3i"]},
  {id:"t2",name:"Mr Sani Yusuf",email:"s.yusuf@greenfield.example",schoolId:"gf",classes:["p1s"]},
  {id:"t3",name:"Mrs Halima Bello",email:"h.bello@greenfield.example",schoolId:"gf",classes:["p2c"]},
- {id:"t4",name:"Mr Tobi Ojo",email:"t.ojo@greenfield.example",schoolId:"gf",classes:["p5j"]}
+ {id:"t4",name:"Mr Tobi Ojo",email:"t.ojo@greenfield.example",schoolId:"gf",classes:["p4a","p5j"]}
 ];
 var CLASSES=[
  {id:"p1s",name:"Primary 1 Sapphire",grade:1,teacherId:"t2",expected:2,size:22},
  {id:"p2c",name:"Primary 2 Coral",grade:2,teacherId:"t3",expected:3,size:24},
- {id:"p3i",name:"Primary 3 Ivory",grade:3,teacherId:"t1",expected:4,size:24},
- {id:"p4a",name:"Primary 4 Amber",grade:4,teacherId:"t1",expected:5,size:23},
+ {id:"p3i",name:"Haaraya Demo Class",grade:3,teacherId:"t1",expected:4,size:0,mixed:true},
+ {id:"p4a",name:"Primary 4 Amber",grade:4,teacherId:"t4",expected:5,size:23},
  {id:"p5j",name:"Primary 5 Jade",grade:5,teacherId:"t4",expected:6,size:21}
 ];
 var FIRST=["Tunde","Zainab","Chidi","Fatima","Kelechi","Ife","Musa","Ngozi","Yusuf","Bisi","Obinna","Aisha","Femi","Halima","Ikenna","Folake","Sadiq","Chiamaka","Dayo","Hauwa","Uche","Temi","Bello","Ebere","Kunle","Amina","Nnamdi","Simi","Ahmed","Adaku","Seun","Rukayya","Jide","Ifunanya","Garba","Toyin","Ejike","Maryam","Lanre","Chinwe"];
@@ -51,7 +51,10 @@ var LAST=["Bakare","Musa","Eze","Bello","Nwosu","Adeyemi","Ibrahim","Okafor","Ab
 
 var LESSON_ID="L4-U3";
 var LEARNERS=[];
-var nameUsed={};
+/* The demo class: one pupil at each level, L1 to L12, each with that level's showcase book and worksheet. */
+var DEMO_PUPILS=[["tunde","Tunde Bakare"],["emeka","Emeka Obi"],["zainab","Zainab Musa"],["amara","Amara Obi"],["chidi","Chidi Eze"],["fatima","Fatima Bello"],
+ ["kelechi","Kelechi Nwosu"],["ife","Ife Adeyemi"],["musa","Musa Ibrahim"],["bisi","Bisi Okafor"],["yusuf","Yusuf Abdullahi"],["halima","Halima Umar"]];
+var nameUsed={};DEMO_PUPILS.forEach(function(p){nameUsed[p[1]]=1;});
 function makeName(){for(var k=0;k<50;k++){var n=pick(FIRST)+" "+pick(LAST);if(!nameUsed[n]){nameUsed[n]=1;return n;}}return "Learner "+LEARNERS.length;}
 function weekly(base){var a=[];for(var w=0;w<10;w++)a.push(Math.max(0,Math.round(base+(R()-.5)*base*0.9)));return a;}
 CLASSES.forEach(function(c){
@@ -71,24 +74,34 @@ CLASSES.forEach(function(c){
   LEARNERS.push(L);
  }
 });
-/* Primary personas */
-var amara=LEARNERS.find(function(l){return l.classId==="p3i";});
-Object.assign(amara,{id:"amara",name:"Amara Obi",level:4,levelPct:58,lastActive:0,weekly:[4,5,6,5,7,6,8,7,6,7],
- skills:{phonics:92,sight:88,vocab:74,comp:69,seq:58},achievements:["first-book","ten-books","level-3"],
- booksDone:["TF-03-02","H-02-02","S-01-06"],
- reading:{"TP-04-01":{page:3,pages:8,done:false,at:"2026-10-25"}},
+/* Demo class pupils */
+var BY_LEVEL={};BOOKS.forEach(function(b){BY_LEVEL[b.l]=b;});
+DEMO_PUPILS.forEach(function(p,i){
+ var lvl=i+1,b=BY_LEVEL[lvl];
+ var L={id:p[0],name:p[1],classId:"p3i",schoolId:"gf",level:lvl,levelPct:ri(25,70),lastActive:ri(0,2),weekly:weekly(ri(4,8)),
+  booksDone:BOOKS.filter(function(x){return x.l<lvl;}).map(function(x){return x.id;}),
+  reading:{},lessons:{},worksheets:{},achievements:lvl>1?["first-book"]:[],workAhead:false,
+  skills:{phonics:ri(60,95),sight:ri(60,95),vocab:ri(55,92),comp:ri(50,92),seq:ri(50,90)}};
+ L.reading[b.id]={page:Math.max(1,Math.round(b.pages*.4)),pages:b.pages,done:false,at:"2026-11-20"};
+ LEARNERS.push(L);
+});
+var amara=LEARNERS.find(function(l){return l.id==="amara";});
+Object.assign(amara,{levelPct:58,skills:{phonics:92,sight:88,vocab:74,comp:69,seq:58},achievements:["first-book","level-3"],
  lessons:{"L4-U3":{status:"in_progress",step:1,attempts:[]}}});
-var emeka=LEARNERS.find(function(l){return l.classId==="p1s";});
-Object.assign(emeka,{id:"emeka",name:"Emeka Obi",level:2,levelPct:31,lastActive:1,weekly:[2,3,3,4,2,3,5,4,3,4],
- skills:{phonics:81,sight:63,vocab:58,comp:55,seq:50},achievements:["first-book"],
- booksDone:["S-01-06"],
- reading:{"H-02-02":{page:4,pages:12,done:false,at:"2026-10-24"}},lessons:{}});
+var emeka=LEARNERS.find(function(l){return l.id==="emeka";});
+Object.assign(emeka,{levelPct:31,skills:{phonics:81,sight:63,vocab:58,comp:55,seq:50}});
+/* Chidi (L5) and Fatima (L6) have finished their books and handed in their worksheets, ready for the teacher. */
+[["chidi",.9],["fatima",.85]].forEach(function(x){
+ var L=LEARNERS.find(function(l){return l.id===x[0];}),b=BY_LEVEL[L.level],w=HW.get(b.id);
+ delete L.reading[b.id];L.booksDone.push(b.id);
+ L.worksheets[b.id]={status:"handed_in",resp:HW.simulate(w,rng(L.level*97),x[1]),reads:w.ra.reads===2?[true,true]:[true],at:"Yesterday",handedAt:"Yesterday"};
+});
 LEARNERS.forEach(function(l){
- if(!l.booksDone.length){var pool=BOOKS.filter(function(b){return b.l<=l.level&&b.l>=l.level-2;});var n=ri(3,14);for(var q=0;q<n&&pool.length;q++){var b=pool.splice(Math.floor(R()*pool.length),1)[0];l.booksDone.push(b.id);}}
+ if(l.classId!=="p3i"&&!l.booksDone.length){var pool=BOOKS.filter(function(b){return b.l<=l.level&&b.l>=l.level-2;});var n=ri(3,14);for(var q=0;q<n&&pool.length;q++){var b=pool.splice(Math.floor(R()*pool.length),1)[0];l.booksDone.push(b.id);}}
 });
 
 /* Worksheet records: responses, then teacher ratings for some. */
-[["p3i","TP-04-01"],["p4a","TFT-05-01"]].forEach(function(pair){
+[["p4a","TFT-05-01"]].forEach(function(pair){
  var w=HW.get(pair[1]);
  LEARNERS.filter(function(l){return l.classId===pair[0]&&l.id!=="amara";}).forEach(function(l){
   var x=R();if(x<.25)return;
@@ -165,18 +178,22 @@ var ACHIEVEMENTS={
  "level-4":{label:"Level 4",desc:"Completed Level 4",stamp:"assets/stamp-l4.png"}
 };
 
+/* Due dates count from today, so the demo never looks out of date. */
+function dueIn(d){var t=new Date();t.setDate(t.getDate()+d);return t.toISOString().slice(0,10);}
 var ASSIGNMENTS=[
- {id:"a1",classId:"p3i",type:"lesson",ref:"L4-U3",title:"Steps in Order",due:"2026-10-30",to:"all",created:"2026-10-19"},
- {id:"a2",classId:"p3i",type:"book",ref:"TP-04-01",title:"Sun, Then Rain",due:"2026-11-12",to:"all",created:"2026-11-03"},
- {id:"a3",classId:"p3i",type:"worksheet",ref:"TP-04-01",title:"Sun, Then Rain · worksheet",due:"2026-11-14",to:"all",created:"2026-11-03"},
- {id:"a5",classId:"p4a",type:"worksheet",ref:"TFT-05-01",title:"Clever Tortoise · worksheet",due:"2026-11-14",to:"all",created:"2026-11-02"},
- {id:"a6",classId:"p1s",type:"worksheet",ref:"H-02-02",title:"Pull, Gani, Pull! · worksheet",due:"2026-11-13",to:"all",created:"2026-11-04"},
- {id:"a4",classId:"p4a",type:"journey",ref:"J-L5-T",title:"Level 5 · Stories and Facts",due:"2026-11-14",to:"all",created:"2026-10-12"}
+ {id:"a1",classId:"p3i",type:"lesson",ref:"L4-U3",title:"Steps in Order",due:dueIn(5),to:["amara"],created:dueIn(-4)},
+ {id:"a5",classId:"p4a",type:"worksheet",ref:"TFT-05-01",title:"Clever Tortoise · worksheet",due:dueIn(4),to:"all",created:dueIn(-6)},
+ {id:"a6",classId:"p1s",type:"worksheet",ref:"H-02-02",title:"Pull, Gani, Pull! · worksheet",due:dueIn(4),to:"all",created:dueIn(-5)}
 ];
+LEARNERS.filter(function(l){return l.classId==="p3i";}).forEach(function(l){
+ var b=BY_LEVEL[l.level];
+ ASSIGNMENTS.push({id:"b-"+l.id,classId:"p3i",type:"book",ref:b.id,title:b.t,due:dueIn(3),to:[l.id],created:dueIn(-3)});
+ ASSIGNMENTS.push({id:"w-"+l.id,classId:"p3i",type:"worksheet",ref:b.id,title:b.t+" · worksheet",due:dueIn(7),to:[l.id],created:dueIn(-3)});
+});
 var EVENTS=[
- {at:"Yesterday 16:40",who:"Zainab",text:"passed Steps in Order · 5/6",classId:"p3i"},
- {at:"Yesterday 15:12",who:"Amara",text:"read 3 pages of Sun, Then Rain",classId:"p3i"},
- {at:"Fri 11:05",who:"Chidi",text:"handed in the Sun, Then Rain worksheet",classId:"p3i"}
+ {at:"Yesterday 16:40",who:"Fatima",text:"handed in the Momotaro, the Peach Boy worksheet",classId:"p3i"},
+ {at:"Yesterday 15:12",who:"Chidi",text:"handed in the Clever Tortoise worksheet",classId:"p3i"},
+ {at:"Yesterday 11:05",who:"Amara",text:"read 3 pages of Sun, Then Rain",classId:"p3i"}
 ];
 var REQUESTS=[
  {id:"r1",kind:"New content",level:4,strand:"Tafiya Fiction",text:"More non-fiction about Nigerian food and farming at Level 4.",status:"Under review",date:"2026-10-08",by:"Mrs Adaeze Adekunle"}

@@ -7,6 +7,17 @@ const JOURNEY_STEPS = [
   { k: "Done", label: "Completion", sec: 5 }
 ];
 const L2_UNITS = [{ id: "L2-U1", title: "Short Vowel Sounds", done: true }, { id: "L2-U2", title: "Blends: st, sp, sn", done: true }, { id: "L2-U3", title: "Sight Words in Sentences", cur: true }, { id: "L2-U4", title: "Reading Sound Stories" }, { id: "L2-U5", title: "Sounds Together Review" }, { id: "L2-U6", title: "Level 2 Check" }];
+/* What a pupil may open. Work ahead off: only what the teacher assigned (and a book already being read).
+   Work ahead on: also any book and worksheet at the pupil's own level or below, never above. */
+function hlMayRead(state, L, b) {
+  const asg = hlAssignedFor(state, L).some(a => a.ref === b.id && (a.type === "book" || a.type === "worksheet"));
+  return asg || !!L.reading[b.id] || (!!L.workAhead && b.l <= L.level);
+}
+function hlMayWorksheet(state, L, code) {
+  const b = hlBook(code); if (!b || !HLWS.get(code)) return false;
+  return hlAssignedFor(state, L).some(a => a.type === "worksheet" && a.ref === code) || !!(L.worksheets || {})[code] || (!!L.workAhead && b.l <= L.level);
+}
+function hlHasJourney(state, L) { return hlAssignedFor(state, L).some(a => a.type === "lesson") || Object.keys(L.lessons || {}).length > 0; }
 function journeyFor(L) {
   if (L.level === 4) return LD.JOURNEYS[0];
   return { id: "J-L2-S", title: "Level 2 · Sounds Together", level: 2, strand: "Soundables", units: L2_UNITS };
@@ -45,7 +56,8 @@ function LearnerHome({ L }) {
   const wsA = assigned.find(a => a.type === "worksheet" && hlWsRec(L, a.ref).status !== "reviewed") || assigned.find(a => a.type === "worksheet");
   const wsR = wsA && hlWsRec(L, wsA.ref); const wsW = wsA && HLWS.get(wsA.ref);
   const J = journeyFor(L);
-  const shelf = LD.BOOKS.filter(b => b.l === L.level || b.l === L.level - 1).slice(0, 14);
+  const shelf = LD.BOOKS.filter(b => hlMayRead(state, L, b)).sort((a, b) => b.l - a.l).slice(0, 14);
+  const hasJ = hlHasJourney(state, L);
   const jpos = journeyPos(rec);
   const first = L.name.split(" ")[0];
   return <div className="kid-wrap">
@@ -102,7 +114,7 @@ function LearnerHome({ L }) {
       })}</div>
     </section>}
 
-    <section className="kid-sec">
+    {hasJ && <section className="kid-sec">
       <div className="kid-sec-h"><h2>My learning journey</h2><button className="hl-btn quiet" onClick={() => go("journey")}>Open journey<Icon n="next" s={16} /></button></div>
       <div className="unit" style={{ padding: "16px 18px" }}>
         <div className="eyebrow">{J.title}</div>
@@ -110,7 +122,7 @@ function LearnerHome({ L }) {
           {J.units.map((u, i) => { const st = u.done ? "done" : (u.live ? (rec.status === "complete" ? "done" : "cur") : u.cur ? "cur" : ""); return <div key={u.id} className={"stepc " + st}><span className="k">Unit {i + 1}</span>{u.title}<span className="ico">{st === "done" ? "Done" : st === "cur" ? "Now" : "Up next"}</span></div>; })}
         </div>
       </div>
-    </section>
+    </section>}
 
     <section className="kid-sec">
       <div className="kid-sec-h"><h2>My library</h2><button className="hl-btn quiet" onClick={() => go("library")}>See all books<Icon n="next" s={16} /></button></div>
@@ -145,7 +157,8 @@ function Achievement({ id, fresh, locked }) {
 function Library({ L }) {
   const { go } = useHL();
   const [q, setQ] = React.useState(""); const [strand, setStrand] = React.useState("All"); const [lvl, setLvl] = React.useState(0); const [st, setSt] = React.useState("All");
-  const list = LD.BOOKS.filter(b => (!q || b.t.toLowerCase().includes(q.toLowerCase())) && (strand === "All" || b.s === strand) && (!lvl || b.l === lvl) &&
+  const { state } = useHL();
+  const list = LD.BOOKS.filter(b => hlMayRead(state, L, b)).filter(b => (!q || b.t.toLowerCase().includes(q.toLowerCase())) && (strand === "All" || b.s === strand) && (!lvl || b.l === lvl) &&
     (st === "All" || (st === "Finished" ? L.booksDone.includes(b.id) : st === "Reading" ? (L.reading[b.id] && !L.reading[b.id].done && !L.booksDone.includes(b.id)) : !L.reading[b.id] && !L.booksDone.includes(b.id))));
   return <div className="kid-wrap">
     <h1>Library</h1>
@@ -159,6 +172,7 @@ function Library({ L }) {
     </div>
     <div className="chips" style={{ marginTop: 8 }}>{["All", "Reading", "Finished", "Not started"].map(s => <button key={s} className={"chip" + (st === s ? " on" : "")} onClick={() => setSt(s)}>{s}</button>)}</div>
     <div className="lib-count">{list.length} {list.length === 1 ? "book" : "books"}{lvl >= 13 ? " · Odyssey" : ""}</div>
+    <p className="note" style={{ marginBottom: 14 }}>{L.workAhead ? `Your teacher lets you work ahead. You can choose any book up to Level ${L.level}.` : "Your teacher chooses your books. Ask your teacher if you want to read more."}</p>
     {list.length ? <div className="shelf">{list.map(b => <BookCard key={b.id} book={b} L={L} onOpen={b => go("book", { id: b.id })} />)}</div>
       : <div className="empty">No books match. Try another level or clear the search.</div>}
   </div>;
@@ -182,7 +196,7 @@ function BookDetail({ L, id }) {
         <div className="actions">
           <button className="hl-btn big" onClick={() => go("reader", { id: b.id, restart: done })}><Icon n="play" s={18} />{done ? "Read again" : r ? `Resume from page ${r.page}` : "Start reading"}</button>
           {r && !done && <button className="hl-btn big ghost" onClick={() => go("reader", { id: b.id, restart: true })}>Start over</button>}
-          {HLWS.get(b.id) && <button className="hl-btn big yellow" onClick={() => go("worksheet", { code: b.id })}><Icon n="sheet" s={18} />{hlWsRec(L, b.id).status === "not_started" ? "Do the worksheet" : hlWsRec(L, b.id).status === "in_progress" ? "Continue the worksheet" : "My worksheet"}</button>}
+          {hlMayWorksheet(state, L, b.id) && <button className="hl-btn big yellow" onClick={() => go("worksheet", { code: b.id })}><Icon n="sheet" s={18} />{hlWsRec(L, b.id).status === "not_started" ? "Do the worksheet" : hlWsRec(L, b.id).status === "in_progress" ? "Continue the worksheet" : "My worksheet"}</button>}
         </div>
       </div>
     </div>
@@ -280,10 +294,25 @@ function LessonInfo({ id }) {
     <p className="note" style={{ maxWidth: 520 }}>This prototype includes one playable lesson: “Steps in Order” (Level 4). Other lessons appear here once Haaraya Studio publishes them.</p></div>;
 }
 
-const KID_NAV = [["home", "Home", "home"], ["library", "Library", "book"], ["journey", "Journey", "path"], ["me", "My reading", "star"]];
+const KID_NAV_ALL = [["home", "Home", "home"], ["library", "Library", "book"], ["journey", "Journey", "path"], ["me", "My reading", "star"]];
+/* Demo: choose which pupil of the Haaraya Demo Class to be. */
+function PupilPicker() {
+  const { state, setRole } = useHL();
+  const pupils = Object.values(state.learners).filter(l => l.classId === "p3i").sort((a, b) => a.level - b.level);
+  return <><TopNav items={null} />
+    <main className="kid"><div className="kid-wrap">
+      <h1>Choose a pupil</h1>
+      <p className="note" style={{ margin: "6px 0 22px", maxWidth: 620 }}>Haaraya Demo Class has one pupil at each level, from Level 1 to Level 12. Pick a pupil to read their book and do their worksheet. You can switch pupil at any time from the top right.</p>
+      <div className="pick-grid">{pupils.map(l => { const b = LD.BOOKS.find(x => x.l === l.level); return <button key={l.id} className="pick-card" onClick={() => setRole("learner", l.id)}>
+        <div className="pick-cover"><Cover book={b} /></div>
+        <div><LevelTag l={l.level} /><b>{l.name}</b><span>{b ? b.t : ""}</span></div></button>; })}</div>
+    </div></main></>;
+}
 function LearnerApp() {
   const { state, go } = useHL();
   const L = state.learners[state.personaId]; const r = state.route;
+  if (r.view === "pick" || !L) return <PupilPicker />;
+  const KID_NAV = KID_NAV_ALL.filter(n => n[0] !== "journey" || hlHasJourney(state, L));
   const navOn = { book: "library", reader: "library", lessoninfo: "home", lesson: "journey", worksheet: "home" }[r.view] || r.view;
   return <>
     <TopNav items={KID_NAV} on={navOn} />
@@ -310,4 +339,4 @@ function TopNav({ items, on }) {
     <RoleSwitcher />
   </header>;
 }
-Object.assign(window, { LearnerApp, TopNav, LevelPath, journeyPos, JOURNEY_STEPS });
+Object.assign(window, { PupilPicker, hlMayRead, hlMayWorksheet, LearnerApp, TopNav, LevelPath, journeyPos, JOURNEY_STEPS });

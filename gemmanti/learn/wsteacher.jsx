@@ -12,7 +12,9 @@ function WsStatus({ s }) { const [c, l] = WS_STATUS[s] || WS_STATUS.not_started;
 function TWorksheets({ cls, learners, openAssign, showScores }) {
   const { state } = useHL();
   const asg = state.assignments.filter(a => a.classId === cls.id && a.type === "worksheet");
-  const [code, setCode] = React.useState(asg[0] ? asg[0].ref : WT.list()[0].code);
+  const toRecord = ref => learners.filter(l => hlWsRec(l, ref).status === "handed_in").length;
+  const firstDue = asg.find(x => toRecord(x.ref) > 0);
+  const [code, setCode] = React.useState(firstDue ? firstDue.ref : asg[0] ? asg[0].ref : WT.list()[0].code);
   const [open, setOpen] = React.useState(null); const [guide, setGuide] = React.useState(false); const [f, setF] = React.useState("all");
   const w = WT.get(code); const a = asg.find(x => x.ref === code);
   const tgt = learners.filter(l => !a || a.to === "all" || a.to.includes(l.id)).sort((x, y) => x.name.localeCompare(y.name));
@@ -25,12 +27,12 @@ function TWorksheets({ cls, learners, openAssign, showScores }) {
       <div className="acts"><button className="hl-btn ghost" onClick={() => setGuide(true)}><Icon n="book" s={16} />Teacher guide</button>{openAssign && <button className="hl-btn" onClick={() => openAssign({ type: "worksheet" })}><Icon n="plus" s={16} />Assign a worksheet</button>}</div></div>
     <div className="filters">
       <select className="hl-select" value={code} onChange={e => setCode(e.target.value)} aria-label="Worksheet">
-        {asg.length > 0 && <optgroup label="Assigned to this class">{asg.map(x => <option key={x.id} value={x.ref}>{WT.get(x.ref).title} · L{WT.get(x.ref).level}</option>)}</optgroup>}
+        {asg.length > 0 && <optgroup label="Assigned to this class">{asg.map(x => <option key={x.id} value={x.ref}>L{WT.get(x.ref).level} · {WT.get(x.ref).title}{toRecord(x.ref) ? ` · ${toRecord(x.ref)} to record` : ""}</option>)}</optgroup>}
         <optgroup label="All worksheets">{WT.list().map(x => <option key={x.code} value={x.code}>L{x.level} · {x.title}</option>)}</optgroup></select>
       <div className="seg">{[["all", "All", tgt.length], ["handed_in", "To record", cnt("handed_in")], ["reviewed", "Recorded", cnt("reviewed")], ["in_progress", "Working", cnt("in_progress")], ["not_started", "Not started", tgt.length - cnt("handed_in") - cnt("reviewed") - cnt("in_progress")]].map(([k, l, n]) => <button key={k} className={f === k ? "on" : ""} onClick={() => setF(k)}>{l} · {n}</button>)}</div>
     </div>
     <div className="card ws-sum">
-      <div className="ws-sum-b"><div className="th"><Cover book={hlBook(code)} /></div><div><div className="eyebrow">Level {w.level} · {w.strand} · {w.code}</div><h3>{w.title}</h3><p>{w.blurb}</p>{a ? <p className="meta">Due {new Date(a.due).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} · {a.to === "all" ? "whole class" : a.to.length + " learners"}</p> : !window.HL_LIVE_ON && <p className="meta">Not assigned to this class</p>}</div></div>
+      <div className="ws-sum-b"><div className="th"><Cover book={hlBook(code)} /></div><div><div className="eyebrow">Level {w.level} · {w.strand} · {w.code}</div><h3>{w.title}</h3><p>{w.blurb}</p>{a ? <p className="meta">Due {new Date(a.due).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} · {a.to === "all" ? "whole class" : a.to.length === 1 && state.learners[a.to[0]] ? state.learners[a.to[0]].name : a.to.length + " learners"}</p> : !window.HL_LIVE_ON && <p className="meta">Not assigned to this class</p>}</div></div>
       <div className="ws-dist">{WT.SECS.map(s => <div key={s.k}><span>{s.n}</span><div className="ws-dist-r">{dist(s.k).map(([r, n]) => <span key={r} className={"ws-dist-c r-" + r} title={`${WT.RATINGS[r]}: ${n}`}><b>{r}</b>{n}</span>)}</div></div>)}</div>
     </div>
     <div className="card" style={{ padding: 0 }}><div className="tbl-wrap"><table className="tbl ws-grid"><thead><tr><th>Learner</th><th>Status</th>{WT.SECS.map(s => <th key={s.k} className="c" title={s.n}>{s.n.split(" ").map(x => x[0]).join("")}</th>)}<th className="c" title="Overall help">Help</th>{showScores && <th className="c">Score</th>}<th></th></tr></thead>

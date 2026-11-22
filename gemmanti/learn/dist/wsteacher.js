@@ -48,7 +48,9 @@ function TWorksheets({
     state
   } = useHL();
   const asg = state.assignments.filter(a => a.classId === cls.id && a.type === "worksheet");
-  const [code, setCode] = React.useState(asg[0] ? asg[0].ref : WT.list()[0].code);
+  const toRecord = ref => learners.filter(l => hlWsRec(l, ref).status === "handed_in").length;
+  const firstDue = asg.find(x => toRecord(x.ref) > 0);
+  const [code, setCode] = React.useState(firstDue ? firstDue.ref : asg[0] ? asg[0].ref : WT.list()[0].code);
   const [open, setOpen] = React.useState(null);
   const [guide, setGuide] = React.useState(false);
   const [f, setF] = React.useState("all");
@@ -89,7 +91,7 @@ function TWorksheets({
   }, asg.map(x => /*#__PURE__*/React.createElement("option", {
     key: x.id,
     value: x.ref
-  }, WT.get(x.ref).title, " \xB7 L", WT.get(x.ref).level))), /*#__PURE__*/React.createElement("optgroup", {
+  }, "L", WT.get(x.ref).level, " \xB7 ", WT.get(x.ref).title, toRecord(x.ref) ? ` · ${toRecord(x.ref)} to record` : ""))), /*#__PURE__*/React.createElement("optgroup", {
     label: "All worksheets"
   }, WT.list().map(x => /*#__PURE__*/React.createElement("option", {
     key: x.code,
@@ -115,7 +117,7 @@ function TWorksheets({
   }, "Due ", new Date(a.due).toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short"
-  }), " \xB7 ", a.to === "all" ? "whole class" : a.to.length + " learners") : !window.HL_LIVE_ON && /*#__PURE__*/React.createElement("p", {
+  }), " \xB7 ", a.to === "all" ? "whole class" : a.to.length === 1 && state.learners[a.to[0]] ? state.learners[a.to[0]].name : a.to.length + " learners") : !window.HL_LIVE_ON && /*#__PURE__*/React.createElement("p", {
     className: "meta"
   }, "Not assigned to this class"))), /*#__PURE__*/React.createElement("div", {
     className: "ws-dist"

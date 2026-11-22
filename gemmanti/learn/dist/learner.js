@@ -42,6 +42,20 @@ const L2_UNITS = [{
   id: "L2-U6",
   title: "Level 2 Check"
 }];
+/* What a pupil may open. Work ahead off: only what the teacher assigned (and a book already being read).
+   Work ahead on: also any book and worksheet at the pupil's own level or below, never above. */
+function hlMayRead(state, L, b) {
+  const asg = hlAssignedFor(state, L).some(a => a.ref === b.id && (a.type === "book" || a.type === "worksheet"));
+  return asg || !!L.reading[b.id] || !!L.workAhead && b.l <= L.level;
+}
+function hlMayWorksheet(state, L, code) {
+  const b = hlBook(code);
+  if (!b || !HLWS.get(code)) return false;
+  return hlAssignedFor(state, L).some(a => a.type === "worksheet" && a.ref === code) || !!(L.worksheets || {})[code] || !!L.workAhead && b.l <= L.level;
+}
+function hlHasJourney(state, L) {
+  return hlAssignedFor(state, L).some(a => a.type === "lesson") || Object.keys(L.lessons || {}).length > 0;
+}
 function journeyFor(L) {
   if (L.level === 4) return LD.JOURNEYS[0];
   return {
@@ -117,7 +131,8 @@ function LearnerHome({
   const wsR = wsA && hlWsRec(L, wsA.ref);
   const wsW = wsA && HLWS.get(wsA.ref);
   const J = journeyFor(L);
-  const shelf = LD.BOOKS.filter(b => b.l === L.level || b.l === L.level - 1).slice(0, 14);
+  const shelf = LD.BOOKS.filter(b => hlMayRead(state, L, b)).sort((a, b) => b.l - a.l).slice(0, 14);
+  const hasJ = hlHasJourney(state, L);
   const jpos = journeyPos(rec);
   const first = L.name.split(" ")[0];
   return /*#__PURE__*/React.createElement("div", {
@@ -253,7 +268,7 @@ function LearnerHome({
       s: st,
       label: st === "complete" ? "Done" : null
     }));
-  }))), /*#__PURE__*/React.createElement("section", {
+  }))), hasJ && /*#__PURE__*/React.createElement("section", {
     className: "kid-sec"
   }, /*#__PURE__*/React.createElement("div", {
     className: "kid-sec-h"
@@ -364,7 +379,10 @@ function Library({
   const [strand, setStrand] = React.useState("All");
   const [lvl, setLvl] = React.useState(0);
   const [st, setSt] = React.useState("All");
-  const list = LD.BOOKS.filter(b => (!q || b.t.toLowerCase().includes(q.toLowerCase())) && (strand === "All" || b.s === strand) && (!lvl || b.l === lvl) && (st === "All" || (st === "Finished" ? L.booksDone.includes(b.id) : st === "Reading" ? L.reading[b.id] && !L.reading[b.id].done && !L.booksDone.includes(b.id) : !L.reading[b.id] && !L.booksDone.includes(b.id))));
+  const {
+    state
+  } = useHL();
+  const list = LD.BOOKS.filter(b => hlMayRead(state, L, b)).filter(b => (!q || b.t.toLowerCase().includes(q.toLowerCase())) && (strand === "All" || b.s === strand) && (!lvl || b.l === lvl) && (st === "All" || (st === "Finished" ? L.booksDone.includes(b.id) : st === "Reading" ? L.reading[b.id] && !L.reading[b.id].done && !L.booksDone.includes(b.id) : !L.reading[b.id] && !L.booksDone.includes(b.id))));
   return /*#__PURE__*/React.createElement("div", {
     className: "kid-wrap"
   }, /*#__PURE__*/React.createElement("h1", null, "Library"), /*#__PURE__*/React.createElement("div", {
@@ -413,7 +431,12 @@ function Library({
     onClick: () => setSt(s)
   }, s))), /*#__PURE__*/React.createElement("div", {
     className: "lib-count"
-  }, list.length, " ", list.length === 1 ? "book" : "books", lvl >= 13 ? " · Odyssey" : ""), list.length ? /*#__PURE__*/React.createElement("div", {
+  }, list.length, " ", list.length === 1 ? "book" : "books", lvl >= 13 ? " · Odyssey" : ""), /*#__PURE__*/React.createElement("p", {
+    className: "note",
+    style: {
+      marginBottom: 14
+    }
+  }, L.workAhead ? `Your teacher lets you work ahead. You can choose any book up to Level ${L.level}.` : "Your teacher chooses your books. Ask your teacher if you want to read more."), list.length ? /*#__PURE__*/React.createElement("div", {
     className: "shelf"
   }, list.map(b => /*#__PURE__*/React.createElement(BookCard, {
     key: b.id,
@@ -508,7 +531,7 @@ function BookDetail({
       id: b.id,
       restart: true
     })
-  }, "Start over"), HLWS.get(b.id) && /*#__PURE__*/React.createElement("button", {
+  }, "Start over"), hlMayWorksheet(state, L, b.id) && /*#__PURE__*/React.createElement("button", {
     className: "hl-btn big yellow",
     onClick: () => go("worksheet", {
       code: b.id
@@ -900,7 +923,43 @@ function LessonInfo({
     }
   }, "This prototype includes one playable lesson: \u201CSteps in Order\u201D (Level 4). Other lessons appear here once Haaraya Studio publishes them."));
 }
-const KID_NAV = [["home", "Home", "home"], ["library", "Library", "book"], ["journey", "Journey", "path"], ["me", "My reading", "star"]];
+const KID_NAV_ALL = [["home", "Home", "home"], ["library", "Library", "book"], ["journey", "Journey", "path"], ["me", "My reading", "star"]];
+/* Demo: choose which pupil of the Haaraya Demo Class to be. */
+function PupilPicker() {
+  const {
+    state,
+    setRole
+  } = useHL();
+  const pupils = Object.values(state.learners).filter(l => l.classId === "p3i").sort((a, b) => a.level - b.level);
+  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(TopNav, {
+    items: null
+  }), /*#__PURE__*/React.createElement("main", {
+    className: "kid"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kid-wrap"
+  }, /*#__PURE__*/React.createElement("h1", null, "Choose a pupil"), /*#__PURE__*/React.createElement("p", {
+    className: "note",
+    style: {
+      margin: "6px 0 22px",
+      maxWidth: 620
+    }
+  }, "Haaraya Demo Class has one pupil at each level, from Level 1 to Level 12. Pick a pupil to read their book and do their worksheet. You can switch pupil at any time from the top right."), /*#__PURE__*/React.createElement("div", {
+    className: "pick-grid"
+  }, pupils.map(l => {
+    const b = LD.BOOKS.find(x => x.l === l.level);
+    return /*#__PURE__*/React.createElement("button", {
+      key: l.id,
+      className: "pick-card",
+      onClick: () => setRole("learner", l.id)
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "pick-cover"
+    }, /*#__PURE__*/React.createElement(Cover, {
+      book: b
+    })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(LevelTag, {
+      l: l.level
+    }), /*#__PURE__*/React.createElement("b", null, l.name), /*#__PURE__*/React.createElement("span", null, b ? b.t : "")));
+  })))));
+}
 function LearnerApp() {
   const {
     state,
@@ -908,6 +967,8 @@ function LearnerApp() {
   } = useHL();
   const L = state.learners[state.personaId];
   const r = state.route;
+  if (r.view === "pick" || !L) return /*#__PURE__*/React.createElement(PupilPicker, null);
+  const KID_NAV = KID_NAV_ALL.filter(n => n[0] !== "journey" || hlHasJourney(state, L));
   const navOn = {
     book: "library",
     reader: "library",
@@ -987,6 +1048,9 @@ function TopNav({
   }), /*#__PURE__*/React.createElement(RoleSwitcher, null));
 }
 Object.assign(window, {
+  PupilPicker,
+  hlMayRead,
+  hlMayWorksheet,
   LearnerApp,
   TopNav,
   LevelPath,
