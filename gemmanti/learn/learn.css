@@ -574,8 +574,9 @@ button.ws-pic{cursor:pointer;min-height:44px}
 .ws-mini{display:flex;gap:6px;margin:8px 0 4px}
 .ws-mini span{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--sand);font-weight:900;font-size:13px;color:var(--ink-mid)}
 .ws-mini span.on{background:var(--forest);color:#fff}
-.rd-live{display:grid;grid-template-rows:minmax(0,1fr) auto;gap:10px;height:100%;background:#fff;padding:10px}
-.rd-live img{width:100%;height:100%;object-fit:contain;min-height:0}
+/* Picture first, the text straight under it; any spare space falls below the text. */
+.rd-live{width:100%;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;gap:14px;height:100%;background:#fff;padding:10px}
+.rd-live img{display:block;width:100%;height:auto;max-height:72%;object-fit:contain;flex:0 1 auto;min-height:0}
 .rd-live p{margin:0;text-align:left;width:100%;max-width:34em;justify-self:center;padding:0 8px;font-family:var(--read);font-size:24px;font-weight:700;color:var(--ink);white-space:pre-line}
 @media (max-width:720px){.ws-steps .l{display:none}.ws-steps button{justify-content:center}.ws-title{grid-template-columns:64px minmax(0,1fr)}.ws-title h1{font-size:26px}.ws-line{grid-template-columns:minmax(0,1fr) auto}.ws-line>.ws-tag{grid-column:1/-1;justify-self:start}.ws-mrow{grid-template-columns:minmax(0,1fr)}.ws-mrow .ws-arrow{display:none}.ws-pic{width:calc(50% - 5px)}.ws-sec{padding:16px}.ws-passage p{font-size:21px}.ws-done{grid-template-columns:1fr}.ws-sort-r{grid-template-columns:minmax(0,1fr) repeat(var(--bins),64px) 24px}.ws-q{font-size:19px}}
 /* Teacher records */
