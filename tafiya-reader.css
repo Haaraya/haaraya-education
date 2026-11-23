@@ -185,7 +185,7 @@
   position: relative;
   width: 100%;
   height: auto;
-  max-height: 58cqh;
+  max-height: var(--img-max, 58cqh);
   flex: 0 0 auto; /* hugs the picture, so text sits right under it */
   min-height: 0;
   display: flex;
@@ -193,11 +193,11 @@
   justify-content: center;
   overflow: hidden;
 }
-.tfr .story-img:not(:has(img)) { height: 58cqh; flex-basis: 58cqh; }
+.tfr .story-img:not(:has(img)) { height: var(--img-max, 58cqh); flex-basis: var(--img-max, 58cqh); }
 .tfr .story-img img {
   display: block;
   max-width: 100%;
-  max-height: 58cqh;
+  max-height: var(--img-max, 58cqh);
   width: auto;
   height: auto;
   object-fit: contain;

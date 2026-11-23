@@ -330,13 +330,22 @@ function LearnerApp() {
     <nav className="mobile-tabs">{KID_NAV.map(([v, l, i]) => <button key={v} className={navOn === v ? "on" : ""} onClick={() => go(v)}><Icon n={i} s={22} />{l}</button>)}</nav>
   </>;
 }
+/* Back to the main Haaraya Literacy site: its home page and its full library. */
+function HaarayaLinks() {
+  const base = "../Haaraya%20Home.html";
+  return <div className="hl-outlinks" aria-label="Haaraya Literacy">
+    <a className="hl-btn ghost sm" href={base + "#home"} title="Haaraya Literacy home"><Icon n="home" s={16} /><span>Home</span></a>
+    <a className="hl-btn ghost sm" href={base + "#library"} title="Haaraya Literacy library"><Icon n="book" s={16} /><span>Library</span></a>
+  </div>;
+}
 function TopNav({ items, on }) {
   const { go } = useHL();
   return <header className="hl-top">
     <button className="hl-brand" onClick={() => items && go(items[0][0])} aria-label="Gemmanti home"><img className="hl-logo" src="assets/logo-gemmanti.png" alt="Gemmanti" /></button>
     <nav className="hl-topnav">{items && items.map(([v, l, i]) => <button key={v} className={on === v ? "on" : ""} onClick={() => go(v)}><Icon n={i} />{l}</button>)}</nav>
     {!items && <div className="hl-spacer"></div>}
+    <HaarayaLinks />
     <RoleSwitcher />
   </header>;
 }
-Object.assign(window, { PupilPicker, hlMayRead, hlMayWorksheet, LearnerApp, TopNav, LevelPath, journeyPos, JOURNEY_STEPS });
+Object.assign(window, { HaarayaLinks, PupilPicker, hlMayRead, hlMayWorksheet, LearnerApp, TopNav, LevelPath, journeyPos, JOURNEY_STEPS });

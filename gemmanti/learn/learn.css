@@ -855,3 +855,9 @@ a.hl-brand{text-decoration:none;color:inherit}
   .lc-card{height:62mm;box-sizing:border-box;overflow:hidden}
   .lc-card:nth-child(8n){break-after:page;page-break-after:always}
 }
+
+/* Links back to the main Haaraya Literacy site (Home, Library) */
+.hl-outlinks{display:flex;gap:6px;align-items:center}
+.hl-outlinks .hl-btn{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.35);box-shadow:none}
+.hl-outlinks .hl-btn:hover{background:rgba(255,255,255,.24)}
+@media (max-width:700px){.hl-outlinks .hl-btn span{display:none}.hl-outlinks .hl-btn{padding:8px 10px}}

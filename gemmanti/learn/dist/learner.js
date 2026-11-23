@@ -1018,6 +1018,28 @@ function LearnerApp() {
     s: 22
   }), l))));
 }
+/* Back to the main Haaraya Literacy site: its home page and its full library. */
+function HaarayaLinks() {
+  const base = "../Haaraya%20Home.html";
+  return /*#__PURE__*/React.createElement("div", {
+    className: "hl-outlinks",
+    "aria-label": "Haaraya Literacy"
+  }, /*#__PURE__*/React.createElement("a", {
+    className: "hl-btn ghost sm",
+    href: base + "#home",
+    title: "Haaraya Literacy home"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    n: "home",
+    s: 16
+  }), /*#__PURE__*/React.createElement("span", null, "Home")), /*#__PURE__*/React.createElement("a", {
+    className: "hl-btn ghost sm",
+    href: base + "#library",
+    title: "Haaraya Literacy library"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    n: "book",
+    s: 16
+  }), /*#__PURE__*/React.createElement("span", null, "Library")));
+}
 function TopNav({
   items,
   on
@@ -1045,9 +1067,10 @@ function TopNav({
     n: i
   }), l))), !items && /*#__PURE__*/React.createElement("div", {
     className: "hl-spacer"
-  }), /*#__PURE__*/React.createElement(RoleSwitcher, null));
+  }), /*#__PURE__*/React.createElement(HaarayaLinks, null), /*#__PURE__*/React.createElement(RoleSwitcher, null));
 }
 Object.assign(window, {
+  HaarayaLinks,
   PupilPicker,
   hlMayRead,
   hlMayWorksheet,

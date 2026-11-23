@@ -101,61 +101,87 @@ function TfrPage({ page, local, level }) {
   const textRef = useRefTfr(null);
   const wrapRef = useRefTfr(null);
   const [single, setSingle] = useStateTfr(false);
-  // The illustration is letterboxed inside a full-width band (object-fit:
-  // contain), so its left edge sits inboard of the page margin by a different
-  // amount on every page. Measure the rendered image and match the text block
-  // to it, so the first character lines up with the picture's left edge.
-  const [bounds, setBounds] = useStateTfr(null);
-  useEffectTfr(() => {
-    const wrap = wrapRef.current;
-    if (!wrap) return;
-    const sync = () => {
-      const band = wrap.querySelector(".story-img");
-      const img = wrap.querySelector(".story-img img");
-      if (!band || !img || !img.naturalWidth) { setBounds(null); return; }
-      const b = band.getBoundingClientRect(), r = img.getBoundingClientRect();
-      if (!b.width || !r.width) { setBounds(null); return; }
-      setBounds({ x: Math.max(0, Math.round(r.left - b.left)), w: Math.round(r.width) });
-    };
-    sync();
-    const img = wrap.querySelector(".story-img img");
-    if (img) img.addEventListener("load", sync);
-    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(sync) : null;
-    if (ro) { ro.observe(wrap); if (img) ro.observe(img); }
-    window.addEventListener("resize", sync);
-    return () => {
-      if (img) img.removeEventListener("load", sync);
-      if (ro) ro.disconnect();
-      window.removeEventListener("resize", sync);
-    };
-  }, [page]);
-  // HAARAYA_BOTTOM_LAYOUT_V1: fixed font size, no per-page shrink.
+  // Page layout, worked out on the page itself (reader and print alike):
+  // 1. The illustration is letterboxed inside a full-width band (object-fit:
+  //    contain), so the text block is matched to the picture's own edges and
+  //    its first character lines up with the picture's left edge.
+  // 2. No page ever cuts text off. When the text does not fit under the
+  //    picture, the picture shrinks just enough (down to 36% of the page
+  //    height); only if that is still not enough does the text get smaller.
+  //    Text size otherwise stays the same on every page of a book.
   useEffectTfr(() => {
     const wrap = wrapRef.current;
     const el = textRef.current;
     if (!wrap || !el) return;
-    const check = () => {
-      const lh = parseFloat(getComputedStyle(el).lineHeight) || 20;
-      setSingle(!!text && el.scrollHeight <= lh * 1.6 &&
-        !text.includes("\n") && text.length <= 24);
-      const cs = getComputedStyle(wrap);
-      const available = wrap.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
-      wrap.classList.toggle("story-layout-overflow",
-        el.scrollHeight + parseFloat(cs.rowGap || "0") > available + 2);
+    let busy = false;
+    const align = () => {
+      const band = wrap.querySelector(".story-img");
+      const img = wrap.querySelector(".story-img img");
+      const b = band && band.getBoundingClientRect(), r = img && img.naturalWidth && img.getBoundingClientRect();
+      if (!b || !r || !b.width || !r.width) { el.style.width = ""; el.style.marginLeft = ""; return; }
+      el.style.width = Math.round(r.width) + "px";
+      el.style.marginLeft = Math.max(0, Math.round(r.left - b.left)) + "px";
     };
-    check();
-    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(check) : null;
+    const fits = () => {
+      const cs = getComputedStyle(wrap);
+      const bottom = wrap.getBoundingClientRect().bottom - parseFloat(cs.paddingBottom || "0");
+      return el.getBoundingClientRect().bottom <= bottom + 1;
+    };
+    const layout = () => {
+      if (busy) return;
+      busy = true;
+      try {
+        wrap.style.removeProperty("--img-max");
+        el.style.fontSize = "";
+        align();
+        const lh = parseFloat(getComputedStyle(el).lineHeight) || 20;
+        setSingle(!!text && el.scrollHeight <= lh * 1.6 && !text.includes("\n") && text.length <= 24);
+        let ok = fits();
+        // a. Smaller picture, text still matched to the picture's edges.
+        for (let h = 56; !ok && h >= 44; h -= 2) {
+          wrap.style.setProperty("--img-max", h + "cqh");
+          align();
+          ok = fits();
+        }
+        // b. Very long pages: text uses the full page width (a narrow picture
+        //    would make a narrow, taller column), picture shrinks further.
+        for (let h = 58; !ok && h >= 36; h -= 2) {
+          wrap.style.setProperty("--img-max", h + "cqh");
+          el.style.width = ""; el.style.marginLeft = "";
+          ok = fits();
+        }
+        if (!ok) {
+          const base = parseFloat(getComputedStyle(el).fontSize) || 16;
+          for (let f = 0.96; !ok && f >= 0.7; f -= 0.04) {
+            el.style.fontSize = (base * f).toFixed(2) + "px";
+            ok = fits();
+          }
+        }
+        wrap.classList.toggle("story-layout-overflow", !ok);
+      } finally { busy = false; }
+    };
+    layout();
+    // The picture arrives after the page renders: re-run when any image in the
+    // page loads (load does not bubble, so listen in the capture phase).
+    wrap.addEventListener("load", layout, true);
+    let last = "";
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => {
+      const k = wrap.clientWidth + "x" + wrap.clientHeight;
+      if (k !== last) { last = k; layout(); }
+    }) : null;
     if (ro) ro.observe(wrap);
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(check);
-    window.addEventListener("resize", check);
-    return () => { if (ro) ro.disconnect(); window.removeEventListener("resize", check); };
-  }, [text]);
-  // Same as before the layout test: text block matches the picture's edges.
-  const textStyle = bounds ? { width: bounds.w + "px", marginLeft: bounds.x + "px" } : null;
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+    window.addEventListener("resize", layout);
+    return () => {
+      wrap.removeEventListener("load", layout, true);
+      if (ro) ro.disconnect();
+      window.removeEventListener("resize", layout);
+    };
+  }, [page, text, single]);
   return (
     <div className={"surface story " + lvlBand} ref={wrapRef}>
       <TfrImage className="story-img" path={page.image_path} local={local} label={"illustration · page " + page.page_number} />
-      <p ref={textRef} style={textStyle} className={"story-text" + (text ? "" : " is-empty") + (single ? " is-single" : "")}>{text || "Story text will appear here"}</p>
+      <p ref={textRef} className={"story-text" + (text ? "" : " is-empty") + (single ? " is-single" : "")}>{text || "Story text will appear here"}</p>
     </div>
   );
 }
