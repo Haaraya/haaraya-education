@@ -875,3 +875,7 @@ a.hl-brand{text-decoration:none;color:inherit}
 .gdg-num{width:26px;height:26px;border-radius:50%;background:var(--forest,#228B22);color:#fff!important;font-weight:900;font-size:13px!important;display:grid;place-items:center}
 .gdg-cta{font-weight:800;color:var(--forest,#228B22)!important}
 @media print{.gdg{display:none}}
+
+/* Worksheet / teacher guide PDF download */
+.md-wrap{position:relative;display:inline-flex}
+.md-msg{position:absolute;top:calc(100% + 6px);right:0;z-index:5;width:max-content;max-width:280px;background:#fff4f0;border:1px solid #f0c4b4;color:#8a2c0d;font-size:13px;font-weight:700;padding:8px 10px;border-radius:10px;box-shadow:0 6px 16px rgba(0,0,0,.08)}

@@ -73,7 +73,13 @@ function TWorksheets({
   }, /*#__PURE__*/React.createElement(Icon, {
     n: "dl",
     s: 16
-  }), "Print book"), /*#__PURE__*/React.createElement("button", {
+  }), "Print book"), /*#__PURE__*/React.createElement(MaterialDownload, {
+    code: code,
+    kind: "worksheet"
+  }), /*#__PURE__*/React.createElement(MaterialDownload, {
+    code: code,
+    kind: "guide"
+  }), /*#__PURE__*/React.createElement("button", {
     className: "hl-btn ghost",
     onClick: () => setGuide(true)
   }, /*#__PURE__*/React.createElement(Icon, {

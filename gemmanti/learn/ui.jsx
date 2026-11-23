@@ -136,4 +136,41 @@ function DemoRoleSwitcher() {
 }
 function Toast() { const { state } = useHL(); return state.toast ? <div className="toast" key={state.toast.id}>{state.toast.msg}</div> : null; }
 
-Object.assign(window, { Icon, Cover, LevelTag, StrandTag, Status, Bar, Avatar, Modal, Drawer, Kpi, LineChart, Bars, csvDownload, RoleSwitcher, Toast, strandOf, PERSONAS });
+/* Download a showcase worksheet or teacher guide as a PDF. The teacher-material
+   service checks the person is a teacher or school admin, stamps the school
+   code and a download code on every page, and logs the download. */
+function MaterialDownload({ code, kind, small }) {
+  const [busy, setBusy] = React.useState(false);
+  const [msg, setMsg] = React.useState("");
+  const label = kind === "guide" ? "Teacher guide (PDF)" : "Worksheet (PDF)";
+  const go = async () => {
+    if (busy) return;
+    setBusy(true); setMsg("");
+    try {
+      const sb = window.HaarayaSupabase;
+      const s = sb && (await sb.auth.getSession()).data.session;
+      if (!s) throw new Error("Sign in on Haaraya as a teacher to download.");
+      const r = await sb.functions.invoke("teacher-material", { body: { book: code, kind } });
+      if (r.error) {
+        let m = r.error.message;
+        try { const j = r.error.context && await r.error.context.json(); if (j && j.error) m = j.error; } catch (e) {}
+        throw new Error(m);
+      }
+      const blob = r.data instanceof Blob ? r.data : new Blob([r.data], { type: "application/pdf" });
+      let name = `Haaraya_${kind === "guide" ? "Teacher_Guide" : "Worksheet"}_${code}.pdf`;
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([blob], { type: "application/pdf" })); a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    } catch (e) { setMsg((e && e.message) || "Couldn’t download just now."); }
+    setBusy(false);
+  };
+  return <span className="md-wrap">
+    <button type="button" className={"hl-btn ghost" + (small ? " sm" : "")} onClick={go} disabled={busy} title="Download, stamped with your school’s code">
+      <Icon n="dl" s={16} />{busy ? "Preparing…" : label}
+    </button>
+    {msg && <span className="md-msg" role="alert">{msg}</span>}
+  </span>;
+}
+
+Object.assign(window, { MaterialDownload, Icon, Cover, LevelTag, StrandTag, Status, Bar, Avatar, Modal, Drawer, Kpi, LineChart, Bars, csvDownload, RoleSwitcher, Toast, strandOf, PERSONAS });

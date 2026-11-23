@@ -423,7 +423,76 @@ function Toast() {
     key: state.toast.id
   }, state.toast.msg) : null;
 }
+
+/* Download a showcase worksheet or teacher guide as a PDF. The teacher-material
+   service checks the person is a teacher or school admin, stamps the school
+   code and a download code on every page, and logs the download. */
+function MaterialDownload({
+  code,
+  kind,
+  small
+}) {
+  const [busy, setBusy] = React.useState(false);
+  const [msg, setMsg] = React.useState("");
+  const label = kind === "guide" ? "Teacher guide (PDF)" : "Worksheet (PDF)";
+  const go = async () => {
+    if (busy) return;
+    setBusy(true);
+    setMsg("");
+    try {
+      const sb = window.HaarayaSupabase;
+      const s = sb && (await sb.auth.getSession()).data.session;
+      if (!s) throw new Error("Sign in on Haaraya as a teacher to download.");
+      const r = await sb.functions.invoke("teacher-material", {
+        body: {
+          book: code,
+          kind
+        }
+      });
+      if (r.error) {
+        let m = r.error.message;
+        try {
+          const j = r.error.context && (await r.error.context.json());
+          if (j && j.error) m = j.error;
+        } catch (e) {}
+        throw new Error(m);
+      }
+      const blob = r.data instanceof Blob ? r.data : new Blob([r.data], {
+        type: "application/pdf"
+      });
+      let name = `Haaraya_${kind === "guide" ? "Teacher_Guide" : "Worksheet"}_${code}.pdf`;
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([blob], {
+        type: "application/pdf"
+      }));
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    } catch (e) {
+      setMsg(e && e.message || "Couldn’t download just now.");
+    }
+    setBusy(false);
+  };
+  return /*#__PURE__*/React.createElement("span", {
+    className: "md-wrap"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "hl-btn ghost" + (small ? " sm" : ""),
+    onClick: go,
+    disabled: busy,
+    title: "Download, stamped with your school\u2019s code"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    n: "dl",
+    s: 16
+  }), busy ? "Preparing…" : label), msg && /*#__PURE__*/React.createElement("span", {
+    className: "md-msg",
+    role: "alert"
+  }, msg));
+}
 Object.assign(window, {
+  MaterialDownload,
   Icon,
   Cover,
   LevelTag,

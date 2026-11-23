@@ -336,7 +336,7 @@ const GDG_CARDS = {
   teacher: [
     ["A class at every level", "Twelve pupils, Levels 1 to 12. Each has a book, a worksheet and a lesson.", "overview", "Class overview"],
     ["Mark handed-in work", "Chidi (Level 5) and Fatima (Level 6) have handed in. Mark written answers Right, Partly or Not yet.", "worksheets", "Open Worksheets"],
-    ["Teach a lesson", "Step-by-step guides for each book, with Show to class for a projector or TV.", "teach", "Open Teach"],
+    ["Teach a lesson", "Step-by-step guides for each book, with Show to class for a projector or TV. Download the worksheet and teacher guide as PDFs.", "teach", "Open Teach"],
     ["Work ahead", "Choose, pupil by pupil, whether they may read beyond their assigned work.", "roster", "Open Learners"],
     ["Reports", "Scores and progress for the class, ready to download.", "reports", "Open Reports"],
   ],

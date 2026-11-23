@@ -24,7 +24,7 @@ function TWorksheets({ cls, learners, openAssign, showScores }) {
   const dist = k => RATE_ORDER.map(r => [r, recs.filter(([, x]) => x.ratings && x.ratings[k] === r).length]);
   return <>
     <div className="ph-h"><div><h1>Worksheets</h1><p>{cls.name} · ratings follow the Haaraya teacher guide</p></div>
-      <div className="acts"><a className="hl-btn ghost" href={"../Haaraya%20Print.html?book=" + encodeURIComponent(code)} target="_blank" rel="noopener"><Icon n="dl" s={16} />Print book</a><button className="hl-btn ghost" onClick={() => setGuide(true)}><Icon n="book" s={16} />Teacher guide</button>{openAssign && <button className="hl-btn" onClick={() => openAssign({ type: "worksheet" })}><Icon n="plus" s={16} />Assign a worksheet</button>}</div></div>
+      <div className="acts"><a className="hl-btn ghost" href={"../Haaraya%20Print.html?book=" + encodeURIComponent(code)} target="_blank" rel="noopener"><Icon n="dl" s={16} />Print book</a><MaterialDownload code={code} kind="worksheet" /><MaterialDownload code={code} kind="guide" /><button className="hl-btn ghost" onClick={() => setGuide(true)}><Icon n="book" s={16} />Teacher guide</button>{openAssign && <button className="hl-btn" onClick={() => openAssign({ type: "worksheet" })}><Icon n="plus" s={16} />Assign a worksheet</button>}</div></div>
     <div className="filters">
       <select className="hl-select" value={code} onChange={e => setCode(e.target.value)} aria-label="Worksheet">
         {asg.length > 0 && <optgroup label="Assigned to this class">{asg.map(x => <option key={x.id} value={x.ref}>L{WT.get(x.ref).level} · {WT.get(x.ref).title}{toRecord(x.ref) ? ` · ${toRecord(x.ref)} to record` : ""}</option>)}</optgroup>}

@@ -18,7 +18,7 @@ const DG_CARDS = {
     { t: "Your demo class", d: "Primary 3 · Demo: seven pupils, the books they’ve read and their reading checks.", go: "teacher", cta: "Open the class" },
     { t: "Gemmanti for teachers", d: "Mark worksheets, see each pupil’s library reading and print pupil login cards.", href: DG_GEM, cta: "Open Gemmanti" },
     { t: "A class at every level", d: "Twelve pupils, Levels 1 to 12, each with a book, a worksheet and a lesson. Try marking Chidi’s and Fatima’s handed-in work.", href: DG_GEM + "?demo=teacher", cta: "See the 12-level class" },
-    { t: "Teach a lesson", d: "Step-by-step lesson guides, with Show to class for a projector or TV.", href: DG_GEM + "?demo=teacher&view=teach", cta: "Open Teach" },
+    { t: "Teach a lesson", d: "Step-by-step lesson guides, with Show to class for a projector or TV. Worksheets and teacher guides also download as PDFs.", href: DG_GEM + "?demo=teacher&view=teach", cta: "Open Teach" },
     { t: "Read a showcase book", d: "One book for each level opens in the demo. Look for the Showcase tag.", go: "library", cta: "Open the library" },
     { t: "Print a booklet", d: "Open a showcase book and press Print book. Every print carries your school’s code.", go: "library", cta: "Choose a book" },
   ],

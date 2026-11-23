@@ -852,12 +852,12 @@ function AdminPrints() {
   };
   const when = d => new Date(d).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
   const Table = ({ rows }) => <table className="adash-table">
-    <thead><tr><th>Print code</th><th>School</th><th>Printed by</th><th>Book</th><th>Paper</th><th>When</th></tr></thead>
+    <thead><tr><th>Print code</th><th>School</th><th>Printed by</th><th>Book</th><th>What</th><th>When</th></tr></thead>
     <tbody>{rows.map(r => <tr key={r.code}>
       <td><b>{r.code}</b></td>
       <td>{r.school ? r.school.name : "Haaraya Education"}<div style={{ fontSize: 12, color: "var(--ink-soft)" }}>School code {r.school_code}</div></td>
       <td>{r.user ? (r.user.full_name || r.user.email) : "—"}<div style={{ fontSize: 12, color: "var(--ink-soft)" }}>{r.user ? `${r.user.email || ""}${r.user.role ? " · " + r.user.role.replace("_", " ") : ""}` : ""}</div></td>
-      <td>{r.book_code}</td><td>{r.paper === "letter" ? "US Letter" : "A4"}</td><td style={{ whiteSpace: "nowrap" }}>{when(r.created_at)}</td>
+      <td>{r.book_code}</td><td>{({ letter: "Book, US Letter", a4: "Book, A4", "ws-pdf": "Worksheet PDF", "tg-pdf": "Teacher guide PDF" })[r.paper] || r.paper}</td><td style={{ whiteSpace: "nowrap" }}>{when(r.created_at)}</td>
     </tr>)}</tbody></table>;
   return <div>
     <div className="adash-card" style={{ marginBottom: 16 }}>
