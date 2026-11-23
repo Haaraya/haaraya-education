@@ -85,7 +85,12 @@ function FirstRunGuide({ role, screen, session, onNavigate }) {
 
   useEffectOnb(() => {
     if (!guide || screen !== guide.screen) { setOpen(false); return; }
-    setOpen(!onbSeen(who));
+    // Demo accounts get the demo guide instead of this first-run card.
+    const A = window.HaarayaAccess;
+    if (!A) { setOpen(!onbSeen(who)); return; }
+    let alive = true;
+    A.ready().then(() => { if (alive) setOpen(!A.demo() && !onbSeen(who)); });
+    return () => { alive = false; };
   }, [role, screen, who]);
 
   useEffectOnb(() => {

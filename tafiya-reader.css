@@ -600,6 +600,7 @@
 }
 .tfl-tag--free { background: #2A6FDB; box-shadow: 0 4px 10px -4px rgba(42,111,219,.6); }
 .tfl-tag--done { background: var(--deep-forest, #145214); }
+.tfl-tag--showcase { background: var(--sun, #e0a100); color: #1f2a1f; }
 .tfl-lock {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;

@@ -34,6 +34,28 @@
   "use strict";
 
   var STAFF = ["teacher", "school_admin", "admin", "reviewer"];
+
+  // ---- Demo accounts ----
+  // The public demo logins (…@haaraya-demo.com) and the pupils of the demo
+  // school open only the 12 showcase books (one per level) plus the usual
+  // free samples. The school, pupils and scores in the demo are invented.
+  var DEMO_DOMAIN = "@haaraya-demo.com";
+  var DEMO_SCHOOL = "cccc0000-0000-4000-8000-000000000001";
+  var SHOWCASE = ["S-01-06", "H-02-02", "TF-03-02", "TP-04-01", "TFT-05-01", "TD-06-01",
+                  "SN-07-01", "SP-08-01", "SF-09-01", "TN-10-02", "TN-11-01", "SN-12-01"];
+  async function isDemoAccount() {
+    try {
+      var A = window.HaarayaAuth, sb = window.HaarayaSupabase;
+      var p = A && A.getProfile ? await A.getProfile() : null;
+      if (!p) return false;
+      if (String(p.email || "").toLowerCase().slice(-DEMO_DOMAIN.length) === DEMO_DOMAIN) return true;
+      if (p.role === "pupil" && sb) {
+        var r = await sb.from("children").select("school_id").eq("pupil_user_id", p.id).limit(1).maybeSingle();
+        return !!(r && r.data && r.data.school_id === DEMO_SCHOOL);
+      }
+    } catch (e) { /* not a demo */ }
+    return false;
+  }
   var LAPSED = ["expired", "cancelled", "canceled", "past_due", "unpaid"];
 
   var state = { known: false, full: false, status: null, reason: "loading", trialEndsAt: null, daysLeft: null };
@@ -56,7 +78,9 @@
 
   async function read() {
     var r = role();
-    if (r === "visitor") return set({ full: false, status: null, reason: "visitor", trialEndsAt: null, daysLeft: null });
+    if (r === "visitor") return set({ full: false, demo: false, status: null, reason: "visitor", trialEndsAt: null, daysLeft: null });
+    if (await isDemoAccount()) return set({ full: false, demo: true, status: "demo", reason: "demo", trialEndsAt: null, daysLeft: null });
+    state.demo = false;
     if (STAFF.indexOf(r) >= 0) return set({ full: true, status: "staff", reason: "staff", trialEndsAt: null, daysLeft: null });
 
     var DB = window.HaarayaPlatformDB;
@@ -106,9 +130,13 @@
     known: function () { return !!state.known; },
     reason: function () { return state.reason; },
     daysLeft: function () { return state.daysLeft; },
+    demo: function () { return !!state.demo; },
+    SHOWCASE: SHOWCASE,
+    isShowcase: function (code) { return SHOWCASE.indexOf(code) >= 0; },
     // Copy for the lock screens / banners, keyed by reason.
     message: function () {
       switch (state.reason) {
+        case "demo": return "This demonstration opens the 12 showcase books, one for each level. The whole library comes with a school subscription.";
         case "visitor": return "Sign in or start a free trial to read the whole library.";
         case "trial_expired": return "Your free trial has ended. Choose a plan to carry on reading — every stamp and Odyssey entry is still here.";
         case "lapsed": return "Your subscription has lapsed. Renew to open the full library again.";

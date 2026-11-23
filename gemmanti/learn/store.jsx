@@ -19,6 +19,12 @@ function hlLoad() {
   if (!s || s.v !== 4) s = hlSeed();
   /* ?demo=child opens the demo on the pupil picker; progress already made in this browser is kept. */
   if (/[?&]demo=(child|pupil)\b/.test(location.search)) { s.role = "learner"; s.route = { view: "pick" }; }
+  /* ?demo=teacher opens the demo class as its teacher; &view=teach opens a page of it. */
+  if (/[?&]demo=teacher\b/.test(location.search)) {
+    const v = new URLSearchParams(location.search).get("view");
+    s.role = "teacher";
+    s.route = { view: ["overview", "roster", "teach", "assignments", "worksheets", "reports"].includes(v) ? v : "overview" };
+  }
   return s;
 }
 const HLStore = React.createContext(null);

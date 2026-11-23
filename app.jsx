@@ -720,6 +720,7 @@ function App() {
         />
       )}
 
+      {booted && typeof DemoGuide !== "undefined" && <DemoGuide role={role} screen={screen} onNavigate={navigate} />}
       {!booted && <BootSplash />}
       {booted && screen === "home"     && <HomePage onNavigate={navigate} />}
       {booted && screen === "faq"      && <FaqScreen onNavigate={navigate} />}

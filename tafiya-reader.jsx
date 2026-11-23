@@ -982,7 +982,8 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
     window.HaarayaAccess.ready().then(on);
     return () => { alive = false; window.removeEventListener("haaraya:access", on); };
   }, []);
-  const isFreeBook = !!(window.TafiyaData && catalog.length && window.TafiyaData.isFree(code, catalog));
+  const isFreeBook = !!(window.TafiyaData && catalog.length && window.TafiyaData.isFree(code, catalog))
+    || !!(access.demo && window.HaarayaAccess && window.HaarayaAccess.isShowcase(code));
   // Only lock once BOTH the entitlement and the catalogue are known, so a free
   // sample never flashes locked while the catalogue is still loading.
   const gated = !!(access.known && !access.full && catalog.length > 0 && !isFreeBook);
@@ -1269,11 +1270,11 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
             <article className="book">
               <div className="surface gate">
                 <div className="gate-lock" aria-hidden="true">🔒</div>
-                <div className="gate-eyebrow">{access.reason === "trial_expired" ? "Free trial ended" : "Subscribers only"}</div>
+                <div className="gate-eyebrow">{access.demo ? "Not in the demo" : access.reason === "trial_expired" ? "Free trial ended" : "Subscribers only"}</div>
                 <h2 className="gate-title">{tfrText(b.title) || code}</h2>
                 <p className="gate-body">{A ? A.message() : "Choose a plan to open the full library."}</p>
                 <div className="gate-actions">
-                  <button className="quiz-btn" type="button" onClick={() => onNavigate("pricing")}>See plans →</button>
+                  {!access.demo && <button className="quiz-btn" type="button" onClick={() => onNavigate("pricing")}>See plans →</button>}
                   <button className="quiz-btn ghost" type="button" onClick={() => onNavigate("library")}>Back to library</button>
                 </div>
               </div>
@@ -1305,7 +1306,7 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
               <span className="ico" aria-hidden="true">❖</span><span>Passport</span>
             </button>
             <TfrSaveButton code={code} book={b} />
-            {["teacher", "school_admin", "admin"].includes(_role) && (
+            {["teacher", "school_admin", "admin"].includes(_role) && !(access.demo && !(window.HaarayaAccess && window.HaarayaAccess.isShowcase(code))) && (
               <a className="btn btn-ghost" href={"Haaraya Print.html?book=" + encodeURIComponent(b.book_code || b.code || code)} target="_blank" rel="noopener">
                 <span className="ico" aria-hidden="true">⎙</span><span>Print book</span>
               </a>
@@ -1560,9 +1561,12 @@ function LibraryScreen({ onNavigate, initialLevel }) {
   const STRANDS = window.STRANDS || {};
   const StrandLogo = window.StrandLogo;
 
+  // Demo accounts also open the 12 showcase books (one per level).
+  const isDemo = !!access.demo;
   const freeSet = React.useMemo(
-    () => new Set(window.TafiyaData ? window.TafiyaData.freeCodes(catalog) : []),
-    [catalog]
+    () => new Set((window.TafiyaData ? window.TafiyaData.freeCodes(catalog) : [])
+      .concat(isDemo && window.HaarayaAccess ? window.HaarayaAccess.SHOWCASE : [])),
+    [catalog, isDemo]
   );
 
   const codeOf = (b) => b.book_code || b.code;
@@ -1630,7 +1634,7 @@ function LibraryScreen({ onNavigate, initialLevel }) {
             className={`filter-chip tfl-sample-chip ${sampleOnly ? "active" : ""}`}
             onClick={() => setSampleOnly(s => !s)}
           >
-            Sample books
+            {isDemo ? "Books you can open" : "Sample books"}
           </span>
         </div>
 
@@ -1697,7 +1701,8 @@ function LibraryScreen({ onNavigate, initialLevel }) {
               const Lib = window.HaarayaLibrary;
               const saved = !!(Lib && Lib.has("tafiya", code));
               const full = !!(Lib && Lib.isFull() && !saved);
-              const openBook = () => locked ? onNavigate("pricing") : onNavigate("reader", { bookCode: code });
+              const showcase = isDemo && window.HaarayaAccess && window.HaarayaAccess.isShowcase(code);
+              const openBook = () => locked && !isDemo ? onNavigate("pricing") : onNavigate("reader", { bookCode: code });
               return (
                 <div
                   key={code}
@@ -1713,6 +1718,7 @@ function LibraryScreen({ onNavigate, initialLevel }) {
                       : null}
                     <span className="tfl-thumb-ph" style={(b.thumbnail_image_path || b.cover_image_path) ? { display: "none" } : undefined}>{code}</span>
                     {done && <span className="tfl-tag tfl-tag--done" title="You finished this book">✓ Read</span>}
+                    {showcase && !done && <span className="tfl-tag tfl-tag--showcase" title="Open in the demo">Showcase</span>}
                     {locked && <span className="tfl-lock" aria-label="Subscriber only">🔒</span>}
                     {!locked && Lib && (
                       <button

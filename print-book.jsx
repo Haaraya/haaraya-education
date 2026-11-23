@@ -108,7 +108,11 @@ function PrintBookApp() {
       catch (e) { setWho({ none: true }); }
     })();
   }, []);
-  const allowed = who && !who.none && ["teacher", "school_admin", "haaraya_admin"].includes(who.role);
+  // Demo accounts print only the 12 showcase books (same list as access.js).
+  const PB_SHOWCASE = ["S-01-06", "H-02-02", "TF-03-02", "TP-04-01", "TFT-05-01", "TD-06-01", "SN-07-01", "SP-08-01", "SF-09-01", "TN-10-02", "TN-11-01", "SN-12-01"];
+  const isDemo = !!(who && who.email && /@haaraya-demo\.com$/i.test(who.email));
+  const demoBlocked = isDemo && !PB_SHOWCASE.includes(code);
+  const allowed = who && !who.none && !demoBlocked && ["teacher", "school_admin", "haaraya_admin"].includes(who.role);
   useEffectPB(() => {
     if (!allowed || !code) return;
     window.TafiyaData.getPackage(code).then(async p => {
@@ -141,6 +145,7 @@ function PrintBookApp() {
 
   if (!who) return <div className="pb-msg"><p>Loading…</p></div>;
   if (who.none) return <div className="pb-msg"><h1>Sign in to print</h1><p>Printing books is for teachers and school admins. Sign in on the Haaraya website, then open this page again.</p><a className="pb-btn" href="Haaraya Home.html">Go to Haaraya</a></div>;
+  if (demoBlocked) return <div className="pb-msg"><h1>Not in the demo</h1><p>The demonstration prints the 12 showcase books, one for each level. Schools with the Print add-on can print any book in the library.</p><a className="pb-btn" href="Haaraya Home.html#library">Back to the library</a></div>;
   if (!allowed) return <div className="pb-msg"><h1>Printing is for schools</h1><p>Printed books are available to teachers and school admins at schools with the Print add-on.</p><a className="pb-btn" href="Haaraya Home.html">Back to Haaraya</a></div>;
   if (!code) return <div className="pb-msg"><h1>No book chosen</h1><p>Open a book in the library and press Print book.</p></div>;
   if (err && !pkg) return <div className="pb-msg"><h1>This book could not load</h1><p>{err}</p></div>;

@@ -330,6 +330,52 @@ function LearnerApp() {
     <nav className="mobile-tabs">{KID_NAV.map(([v, l, i]) => <button key={v} className={navOn === v ? "on" : ""} onClick={() => go(v)}><Icon n={i} s={22} />{l}</button>)}</nav>
   </>;
 }
+/* Demo guide for the invented demo (?demo): says the data is invented, and
+   on each role's first screen lists features to try. Hidden while a pupil works. */
+const GDG_CARDS = {
+  teacher: [
+    ["A class at every level", "Twelve pupils, Levels 1 to 12. Each has a book, a worksheet and a lesson.", "overview", "Class overview"],
+    ["Mark handed-in work", "Chidi (Level 5) and Fatima (Level 6) have handed in. Mark written answers Right, Partly or Not yet.", "worksheets", "Open Worksheets"],
+    ["Teach a lesson", "Step-by-step guides for each book, with Show to class for a projector or TV.", "teach", "Open Teach"],
+    ["Work ahead", "Choose, pupil by pupil, whether they may read beyond their assigned work.", "roster", "Open Learners"],
+    ["Reports", "Scores and progress for the class, ready to download.", "reports", "Open Reports"],
+  ],
+  learner: [
+    ["Pick a pupil", "Each pupil is at a different level, from Level 1 to Level 12.", "pick", "Choose a pupil"],
+    ["Read the book", "Start with the book your teacher set. Read it, then try the worksheet.", "home", "My work"],
+    ["Do the worksheet", "Tap your answers. Anything you skip is asked again before you hand in.", "home", "My work"],
+  ],
+  parent: [["Your children", "Amara and Emeka’s reading, lessons and worksheets.", null, null]],
+  school: [["Your school", "Classes, teachers, enrolment and reports for the whole school.", "overview", "School overview"]],
+  admin: [["Platform view", "Schools, content and usage across Haaraya.", "overview", "Overview"]],
+};
+const GDG_LANDING = { teacher: ["overview"], learner: ["pick", "home"], parent: [undefined, "overview", "home"], school: ["overview"], admin: ["overview"] };
+const GDG_WORKING = ["reader", "worksheet", "lesson"];
+function GDemoGuide() {
+  const { state, go } = useHL();
+  const key = "gemmanti-demo-guide:" + state.role;
+  const [hidden, setHidden] = React.useState(() => { try { return localStorage.getItem(key) === "1"; } catch (e) { return false; } });
+  React.useEffect(() => { try { setHidden(localStorage.getItem(key) === "1"); } catch (e) {} }, [key]);
+  const v = state.route && state.route.view;
+  if (state.role === "learner" && GDG_WORKING.includes(v)) return null;
+  const cards = GDG_CARDS[state.role] || [];
+  const full = !hidden && cards.length > 0 && (GDG_LANDING[state.role] || []).includes(v);
+  const hide = h => { setHidden(h); try { localStorage.setItem(key, h ? "1" : "0"); } catch (e) {} };
+  const open = view => { if (!view) return; if (view === "pick") go("pick"); else go(view); };
+  return <section className={"gdg" + (full ? " gdg--full" : "")} aria-label="Demo guide">
+    <div className="gdg-bar">
+      <span className="gdg-pill">Demo</span>
+      <span className="gdg-note">Everything here is invented: the school, the teachers, the pupils and their scores. Switch who you are with the button at the top right.</span>
+      {full ? <button className="gdg-link" onClick={() => hide(true)}>Got it</button>
+        : cards.length > 0 && <button className="gdg-link" onClick={() => { hide(false); open((GDG_LANDING[state.role] || [])[0]); }}>Demo guide</button>}
+    </div>
+    {full && <div className="gdg-grid">{cards.map(([t, d, view, cta], i) =>
+      <button key={t} className="gdg-card" disabled={!view} onClick={() => open(view)}>
+        <span className="gdg-num">{i + 1}</span><b>{t}</b><span>{d}</span>{cta && <span className="gdg-cta">{cta} →</span>}
+      </button>)}</div>}
+  </section>;
+}
+
 /* Back to the main Haaraya Literacy site: its home page and its full library. */
 function HaarayaLinks() {
   const base = "../Haaraya%20Home.html";
@@ -339,13 +385,13 @@ function HaarayaLinks() {
   </div>;
 }
 function TopNav({ items, on }) {
-  const { go } = useHL();
-  return <header className="hl-top">
+  const { state, go } = useHL();
+  return <><header className="hl-top">
     <button className="hl-brand" onClick={() => items && go(items[0][0])} aria-label="Gemmanti home"><img className="hl-logo" src="assets/logo-gemmanti.png" alt="Gemmanti" /></button>
     <nav className="hl-topnav">{items && items.map(([v, l, i]) => <button key={v} className={on === v ? "on" : ""} onClick={() => go(v)}><Icon n={i} />{l}</button>)}</nav>
     {!items && <div className="hl-spacer"></div>}
     <HaarayaLinks />
     <RoleSwitcher />
-  </header>;
+  </header>{!state.live && <GDemoGuide />}</>;
 }
-Object.assign(window, { HaarayaLinks, PupilPicker, hlMayRead, hlMayWorksheet, LearnerApp, TopNav, LevelPath, journeyPos, JOURNEY_STEPS });
+Object.assign(window, { GDemoGuide, HaarayaLinks, PupilPicker, hlMayRead, hlMayWorksheet, LearnerApp, TopNav, LevelPath, journeyPos, JOURNEY_STEPS });
