@@ -4,7 +4,7 @@
    front cover, About this book, every story page, back cover. Default is a
    folded booklet (two pages per side, both sides, imposed so the stack folds
    and staples into a book); one page per sheet is the alternative. A4 or US
-   Letter. The teacher prints, or chooses Save as PDF.
+   Letter. Printing only: the page never offers a PDF download.
 
    Every print is traceable. issue_print_code() (Supabase) checks the person is
    a teacher or school admin at a school with the 'print' add-on, records the
@@ -80,14 +80,14 @@ function pbImpose(N) {
 }
 
 const PB_HOW = {
-  booklet: ["Press Print or save as PDF.",
+  booklet: ["Press Print.",
     "In the print box, set Layout to Landscape and Paper size to the one you chose here.",
     "Turn on Print on both sides (two-sided), and choose Flip on short edge. It may be under More settings or Printer properties.",
     "Turn off Headers and footers. Leave Scale at Default (100%).",
     "Print. Keep the sheets in the order they come out.",
     "Fold the whole stack in half along the middle, with the front cover on the outside.",
     "Staple twice along the fold, about a quarter of the way in from each end."],
-  single: ["Press Print or save as PDF.",
+  single: ["Press Print.",
     "In the print box, set Layout to Portrait and Paper size to the one you chose here.",
     "Turn off Headers and footers. Leave Scale at Default (100%).",
     "Print, then staple the pages at the top left corner."]
@@ -165,11 +165,11 @@ function PrintBookApp() {
       <div className="pb-bar-t"><b>{b.title || code}</b><span>{b.book_code || code} · {N} pages · {sheets} {sheets === 1 ? "sheet" : "sheets"} of paper{booklet ? ", printed on both sides" : ""}</span></div>
       <div className="pb-paper" role="group" aria-label="Layout">{[["booklet", "Folded booklet"], ["single", "One page per sheet"]].map(([k, l]) => <button key={k} className={layout === k ? "on" : ""} onClick={() => { setLayout(k); setMark(null); }}>{l}</button>)}</div>
       <div className="pb-paper" role="group" aria-label="Paper size">{Object.entries(PB_PAPER).map(([k, v]) => <button key={k} className={paper === k ? "on" : ""} onClick={() => { setPaper(k); setMark(null); }}>{v.label}</button>)}</div>
-      <button className="pb-btn" disabled={busy} onClick={doPrint}>{busy ? "Preparing…" : "Print or save as PDF"}</button>
+      <button className="pb-btn" disabled={busy} onClick={doPrint}>{busy ? "Preparing…" : "Print"}</button>
       {err && <p className="pb-err">{err}</p>}
       <details className="pb-how" open><summary>How to print {booklet ? "the booklet" : "it"}</summary>
         <ol>{PB_HOW[layout].map((t, i) => <li key={i}>{t}</li>)}</ol>
-        {booklet && <p>No two-sided printing? Choose One page per sheet instead. To keep a copy, choose Save as PDF as the printer, then print the PDF later with the same settings.</p>}
+        {booklet && <p>No two-sided printing? Choose One page per sheet instead.</p>}
         <p>Each print is given its own code, recorded for your school.</p>
       </details>
     </div>
