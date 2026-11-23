@@ -27,8 +27,10 @@ function PublisherMark() {
 }
 function HLMark() {
   const { state } = useHL();
+  /* Only on a pupil's own pages, and never while they work. Staff and parent
+     screens have buttons in that corner, so the seal stays off them. */
   const working = state.route && (state.route.view === "worksheet" || state.route.view === "lesson" || state.route.view === "reader" || state.route.read);
-  return working ? null : <PublisherMark />;
+  return working || state.live || state.role !== "learner" ? null : <PublisherMark />;
 }
 
 function LiveBoot() {
