@@ -52,19 +52,57 @@ function TgField({ g, f }) {
   return <div className="tg-f"><h4>{TG_LABEL[f] || f}</h4><p>{g[f]}</p></div>;
 }
 
+/* Teach: "Teaching now" (books set for this class) first, then every lesson,
+   searchable and filtered by level and strand, as a compact list. Built to
+   hold the whole library (469 books, Levels 1 to 12), not just the showcase. */
 function TTeach({ cls }) {
   const { state } = useHL();
   const [code, setCode] = React.useState(null);
-  const books = TD.BOOKS.filter(b => window.HLTG && window.HLTG[b.id]).sort((a, b) => a.l - b.l);
+  const [q, setQ] = React.useState("");
+  const [lvl, setLvl] = React.useState(() => (!cls.mixed && cls.expected) ? String(cls.expected) : "all");
+  const [strand, setStrand] = React.useState("all");
+  const books = TD.BOOKS.filter(b => window.HLTG && window.HLTG[b.id]).sort((a, b) => a.l - b.l || a.t.localeCompare(b.t));
   if (code) return <TeachLesson code={code} onBack={() => setCode(null)} />;
   const forClass = id => state.assignments.filter(a => a.classId === cls.id && a.ref === id && a.type !== "lesson");
+  const who = id => {
+    const a = forClass(id);
+    if (a.some(x => x.to === "all")) return "Whole class";
+    const names = [...new Set(a.flatMap(x => x.to.map(i => (state.learners[i] || {}).name).filter(Boolean)))];
+    if (!names.length) return "";
+    const first = names.map(n => n.split(" ")[0]);
+    return first.length <= 3 ? first.join(", ") : `${first.slice(0, 2).join(", ")} and ${first.length - 2} others`;
+  };
+  const now = books.filter(b => forClass(b.id).length > 0);
+  const levels = [...new Set(books.map(b => b.l))];
+  const strands = [...new Set(books.map(b => b.s))].sort();
+  const n = x => String(x || "").toLowerCase();
+  const list = books.filter(b => (lvl === "all" || String(b.l) === lvl) && (strand === "all" || b.s === strand)
+    && (!q.trim() || n(b.t).includes(n(q.trim())) || n(b.id).includes(n(q.trim())) || n(b.k).includes(n(q.trim()))));
   return <>
-    <div className="ph-h"><div><h1>Teach</h1><p>Choose a book to teach. Each lesson follows the Haaraya teacher guide, step by step.</p></div></div>
-    <div className="tg-books">{books.map(b => { const a = forClass(b.id); const names = [...new Set(a.flatMap(x => x.to === "all" ? ["whole class"] : x.to.map(id => (state.learners[id] || {}).name).filter(Boolean)))];
-      return <button key={b.id} className="tg-book" onClick={() => setCode(b.id)}>
+    <div className="ph-h"><div><h1>Teach</h1><p>Each lesson follows the Haaraya teacher guide, step by step.</p></div></div>
+    {now.length > 0 && <section className="tg-now">
+      <h2 className="tg-h2">Teaching now <span>{now.length} book{now.length === 1 ? "" : "s"} set for {cls.name}</span></h2>
+      <div className="tg-books">{now.map(b => <button key={b.id} className="tg-book" onClick={() => setCode(b.id)}>
         <div className="tg-cover"><Cover book={b} /></div>
-        <div><LevelTag l={b.l} /><b>{b.t}</b><span>{b.s} · {b.k}</span>{names.length > 0 && <em>For {names.join(", ")}</em>}</div>
-      </button>; })}</div>
+        <div><LevelTag l={b.l} /><b>{b.t}</b><span>{b.s}</span>{who(b.id) && <em>For {who(b.id)}</em>}</div>
+      </button>)}</div>
+    </section>}
+    <section>
+      <h2 className="tg-h2">All lessons <span>{list.length} of {books.length}</span></h2>
+      <div className="filters">
+        <input className="hl-input s" placeholder="Search by title or book code" value={q} onChange={e => setQ(e.target.value)} aria-label="Search lessons" />
+        <select className="hl-select" value={lvl} onChange={e => setLvl(e.target.value)} aria-label="Level"><option value="all">All levels</option>{levels.map(l => <option key={l} value={String(l)}>Level {l}</option>)}</select>
+        <select className="hl-select" value={strand} onChange={e => setStrand(e.target.value)} aria-label="Strand"><option value="all">All strands</option>{strands.map(x => <option key={x}>{x}</option>)}</select>
+        {(q || lvl !== "all" || strand !== "all") && <button className="hl-btn ghost sm" onClick={() => { setQ(""); setLvl("all"); setStrand("all"); }}>Clear</button>}
+      </div>
+      {list.length ? <div className="card tg-list">{list.map(b => <button key={b.id} className="tg-row" onClick={() => setCode(b.id)}>
+        <span className="tg-row-c"><Cover book={b} /></span>
+        <span className="tg-row-t"><b>{b.t}</b><span>{b.k}</span></span>
+        <span className="tg-row-m"><LevelTag l={b.l} /><span>{b.s}</span><span className="tg-code">{b.id}</span></span>
+        <span className="tg-row-w">{who(b.id) ? "For " + who(b.id) : ""}</span>
+        <Icon n="next" s={16} />
+      </button>)}</div> : <div className="empty">No lessons match. Try another word, or clear the filters.</div>}
+    </section>
   </>;
 }
 

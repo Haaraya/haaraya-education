@@ -20,15 +20,17 @@ function TWorksheets({ cls, learners, openAssign, showScores }) {
   const tgt = learners.filter(l => !a || a.to === "all" || a.to.includes(l.id)).sort((x, y) => x.name.localeCompare(y.name));
   const recs = tgt.map(l => [l, hlWsRec(l, code)]);
   const cnt = s => recs.filter(([, r]) => r.status === s).length;
-  const rows = recs.filter(([, r]) => f === "all" || r.status === f);
+  const [q, setQ] = React.useState("");
+  // Open on "To record" whenever there is marking waiting for this worksheet.
+  React.useEffect(() => { setF(recs.some(([, r]) => r.status === "handed_in") ? "handed_in" : "all"); }, [code]);
+  const rows = recs.filter(([l, r]) => (f === "all" || r.status === f) && (!q.trim() || l.name.toLowerCase().includes(q.trim().toLowerCase())));
   const dist = k => RATE_ORDER.map(r => [r, recs.filter(([, x]) => x.ratings && x.ratings[k] === r).length]);
   return <>
     <div className="ph-h"><div><h1>Worksheets</h1><p>{cls.name} · ratings follow the Haaraya teacher guide</p></div>
       <div className="acts"><a className="hl-btn ghost" href={"../Haaraya%20Print.html?book=" + encodeURIComponent(code)} target="_blank" rel="noopener"><Icon n="dl" s={16} />Print book</a><MaterialDownload code={code} kind="worksheet" /><MaterialDownload code={code} kind="guide" /><button className="hl-btn ghost" onClick={() => setGuide(true)}><Icon n="book" s={16} />Teacher guide</button>{openAssign && <button className="hl-btn" onClick={() => openAssign({ type: "worksheet" })}><Icon n="plus" s={16} />Assign a worksheet</button>}</div></div>
     <div className="filters">
-      <select className="hl-select" value={code} onChange={e => setCode(e.target.value)} aria-label="Worksheet">
-        {asg.length > 0 && <optgroup label="Assigned to this class">{asg.map(x => <option key={x.id} value={x.ref}>L{WT.get(x.ref).level} · {WT.get(x.ref).title}{toRecord(x.ref) ? ` · ${toRecord(x.ref)} to record` : ""}</option>)}</optgroup>}
-        <optgroup label="All worksheets">{WT.list().map(x => <option key={x.code} value={x.code}>L{x.level} · {x.title}</option>)}</optgroup></select>
+      <WsPicker code={code} setCode={setCode} asg={asg} toRecord={toRecord} />
+      <input className="hl-input s" placeholder="Search pupils" value={q} onChange={e => setQ(e.target.value)} aria-label="Search pupils" />
       <div className="seg">{[["all", "All", tgt.length], ["handed_in", "To record", cnt("handed_in")], ["reviewed", "Recorded", cnt("reviewed")], ["in_progress", "Working", cnt("in_progress")], ["not_started", "Not started", tgt.length - cnt("handed_in") - cnt("reviewed") - cnt("in_progress")]].map(([k, l, n]) => <button key={k} className={f === k ? "on" : ""} onClick={() => setF(k)}>{l} · {n}</button>)}</div>
     </div>
     <div className="card ws-sum">
@@ -47,6 +49,39 @@ function TWorksheets({ cls, learners, openAssign, showScores }) {
     {open && <WsReview L={state.learners[open]} code={code} onClose={() => setOpen(null)} />}
     {guide && <WsGuide w={w} onClose={() => setGuide(false)} />}
   </>;
+}
+
+/* Worksheet picker: type to find, grouped into "Set for this class" and by level. */
+function WsPicker({ code, setCode, asg, toRecord }) {
+  const [open, setOpen] = React.useState(false);
+  const [q, setQ] = React.useState("");
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    if (!open) return;
+    const off = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const esc = e => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", off); document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("mousedown", off); document.removeEventListener("keydown", esc); };
+  }, [open]);
+  const w = WT.get(code);
+  const t = q.trim().toLowerCase();
+  const hit = x => !t || x.title.toLowerCase().includes(t) || x.code.toLowerCase().includes(t);
+  const set = [...new Set(asg.map(a => a.ref))].map(c => WT.get(c)).filter(Boolean).filter(hit);
+  const byLevel = {}; WT.list().filter(hit).forEach(x => { (byLevel[x.level] = byLevel[x.level] || []).push(x); });
+  const pick = c => { setCode(c); setOpen(false); setQ(""); };
+  const item = x => <button key={x.code} className={"wsp-i" + (x.code === code ? " on" : "")} onClick={() => pick(x.code)}>
+    <span>L{x.level} · {x.title}</span><span className="wsp-c">{x.code}</span>{toRecord(x.code) > 0 && <span className="wsp-n">{toRecord(x.code)} to record</span>}</button>;
+  return <div className="wsp" ref={ref}>
+    <button className="hl-select wsp-b" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-label="Choose a worksheet">L{w.level} · {w.title}{toRecord(code) ? ` · ${toRecord(code)} to record` : ""}</button>
+    {open && <div className="wsp-pop">
+      <input className="hl-input s" autoFocus placeholder="Search worksheets" value={q} onChange={e => setQ(e.target.value)} />
+      <div className="wsp-list">
+        {set.length > 0 && <><div className="wsp-g">Set for this class</div>{set.map(item)}</>}
+        {Object.keys(byLevel).sort((a, b) => a - b).map(lv => <React.Fragment key={lv}><div className="wsp-g">Level {lv}</div>{byLevel[lv].map(item)}</React.Fragment>)}
+        {!set.length && !Object.keys(byLevel).length && <div className="wsp-g">No worksheets match.</div>}
+      </div>
+    </div>}
+  </div>;
 }
 
 function RubricPick({ w, k, val, set, disabled, challenge }) {

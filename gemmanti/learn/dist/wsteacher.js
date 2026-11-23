@@ -59,7 +59,12 @@ function TWorksheets({
   const tgt = learners.filter(l => !a || a.to === "all" || a.to.includes(l.id)).sort((x, y) => x.name.localeCompare(y.name));
   const recs = tgt.map(l => [l, hlWsRec(l, code)]);
   const cnt = s => recs.filter(([, r]) => r.status === s).length;
-  const rows = recs.filter(([, r]) => f === "all" || r.status === f);
+  const [q, setQ] = React.useState("");
+  // Open on "To record" whenever there is marking waiting for this worksheet.
+  React.useEffect(() => {
+    setF(recs.some(([, r]) => r.status === "handed_in") ? "handed_in" : "all");
+  }, [code]);
+  const rows = recs.filter(([l, r]) => (f === "all" || r.status === f) && (!q.trim() || l.name.toLowerCase().includes(q.trim().toLowerCase())));
   const dist = k => RATE_ORDER.map(r => [r, recs.filter(([, x]) => x.ratings && x.ratings[k] === r).length]);
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "ph-h"
@@ -95,22 +100,18 @@ function TWorksheets({
     s: 16
   }), "Assign a worksheet"))), /*#__PURE__*/React.createElement("div", {
     className: "filters"
-  }, /*#__PURE__*/React.createElement("select", {
-    className: "hl-select",
-    value: code,
-    onChange: e => setCode(e.target.value),
-    "aria-label": "Worksheet"
-  }, asg.length > 0 && /*#__PURE__*/React.createElement("optgroup", {
-    label: "Assigned to this class"
-  }, asg.map(x => /*#__PURE__*/React.createElement("option", {
-    key: x.id,
-    value: x.ref
-  }, "L", WT.get(x.ref).level, " \xB7 ", WT.get(x.ref).title, toRecord(x.ref) ? ` · ${toRecord(x.ref)} to record` : ""))), /*#__PURE__*/React.createElement("optgroup", {
-    label: "All worksheets"
-  }, WT.list().map(x => /*#__PURE__*/React.createElement("option", {
-    key: x.code,
-    value: x.code
-  }, "L", x.level, " \xB7 ", x.title)))), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(WsPicker, {
+    code: code,
+    setCode: setCode,
+    asg: asg,
+    toRecord: toRecord
+  }), /*#__PURE__*/React.createElement("input", {
+    className: "hl-input s",
+    placeholder: "Search pupils",
+    value: q,
+    onChange: e => setQ(e.target.value),
+    "aria-label": "Search pupils"
+  }), /*#__PURE__*/React.createElement("div", {
     className: "seg"
   }, [["all", "All", tgt.length], ["handed_in", "To record", cnt("handed_in")], ["reviewed", "Recorded", cnt("reviewed")], ["in_progress", "Working", cnt("in_progress")], ["not_started", "Not started", tgt.length - cnt("handed_in") - cnt("reviewed") - cnt("in_progress")]].map(([k, l, n]) => /*#__PURE__*/React.createElement("button", {
     key: k,
@@ -205,6 +206,82 @@ function TWorksheets({
     w: w,
     onClose: () => setGuide(false)
   }));
+}
+
+/* Worksheet picker: type to find, grouped into "Set for this class" and by level. */
+function WsPicker({
+  code,
+  setCode,
+  asg,
+  toRecord
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [q, setQ] = React.useState("");
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    if (!open) return;
+    const off = e => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    const esc = e => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", off);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", off);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [open]);
+  const w = WT.get(code);
+  const t = q.trim().toLowerCase();
+  const hit = x => !t || x.title.toLowerCase().includes(t) || x.code.toLowerCase().includes(t);
+  const set = [...new Set(asg.map(a => a.ref))].map(c => WT.get(c)).filter(Boolean).filter(hit);
+  const byLevel = {};
+  WT.list().filter(hit).forEach(x => {
+    (byLevel[x.level] = byLevel[x.level] || []).push(x);
+  });
+  const pick = c => {
+    setCode(c);
+    setOpen(false);
+    setQ("");
+  };
+  const item = x => /*#__PURE__*/React.createElement("button", {
+    key: x.code,
+    className: "wsp-i" + (x.code === code ? " on" : ""),
+    onClick: () => pick(x.code)
+  }, /*#__PURE__*/React.createElement("span", null, "L", x.level, " \xB7 ", x.title), /*#__PURE__*/React.createElement("span", {
+    className: "wsp-c"
+  }, x.code), toRecord(x.code) > 0 && /*#__PURE__*/React.createElement("span", {
+    className: "wsp-n"
+  }, toRecord(x.code), " to record"));
+  return /*#__PURE__*/React.createElement("div", {
+    className: "wsp",
+    ref: ref
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "hl-select wsp-b",
+    onClick: () => setOpen(o => !o),
+    "aria-expanded": open,
+    "aria-label": "Choose a worksheet"
+  }, "L", w.level, " \xB7 ", w.title, toRecord(code) ? ` · ${toRecord(code)} to record` : ""), open && /*#__PURE__*/React.createElement("div", {
+    className: "wsp-pop"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "hl-input s",
+    autoFocus: true,
+    placeholder: "Search worksheets",
+    value: q,
+    onChange: e => setQ(e.target.value)
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "wsp-list"
+  }, set.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "wsp-g"
+  }, "Set for this class"), set.map(item)), Object.keys(byLevel).sort((a, b) => a - b).map(lv => /*#__PURE__*/React.createElement(React.Fragment, {
+    key: lv
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "wsp-g"
+  }, "Level ", lv), byLevel[lv].map(item))), !set.length && !Object.keys(byLevel).length && /*#__PURE__*/React.createElement("div", {
+    className: "wsp-g"
+  }, "No worksheets match."))));
 }
 function RubricPick({
   w,

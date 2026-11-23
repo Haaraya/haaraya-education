@@ -879,3 +879,33 @@ a.hl-brand{text-decoration:none;color:inherit}
 /* Worksheet / teacher guide PDF download */
 .md-wrap{position:relative;display:inline-flex}
 .md-msg{position:absolute;top:calc(100% + 6px);right:0;z-index:5;width:max-content;max-width:280px;background:#fff4f0;border:1px solid #f0c4b4;color:#8a2c0d;font-size:13px;font-weight:700;padding:8px 10px;border-radius:10px;box-shadow:0 6px 16px rgba(0,0,0,.08)}
+
+/* Teach: Teaching now + All lessons list */
+.tg-h2{display:flex;align-items:baseline;gap:10px;margin:6px 0 12px;font-size:18px}
+.tg-h2 span{font-size:13px;font-weight:700;color:var(--ink-soft)}
+.tg-now{margin-bottom:26px}
+.tg-list{padding:0;overflow:hidden}
+.tg-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto minmax(0,180px) 18px;gap:14px;align-items:center;width:100%;text-align:left;border:0;border-top:1px solid var(--line);background:#fff;padding:10px 16px;font:inherit;color:var(--ink);cursor:pointer}
+.tg-row:first-child{border-top:0}
+.tg-row:hover{background:var(--sand-2,#faf7f0)}
+.tg-row-c{width:44px;height:58px;border-radius:6px;overflow:hidden;display:block}
+.tg-row-c img,.tg-row-c .cover{width:100%;height:100%;object-fit:cover}
+.tg-row-t{display:grid;gap:2px;min-width:0}.tg-row-t b{font-size:15px}
+.tg-row-t span{font-size:13px;color:var(--ink-mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tg-row-m{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-mid);white-space:nowrap}
+.tg-code{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--ink-soft)}
+.tg-row-w{font-size:13px;font-weight:700;color:var(--forest);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:760px){.tg-row{grid-template-columns:44px minmax(0,1fr) 18px}.tg-row-m,.tg-row-w{display:none}}
+
+/* Worksheet picker */
+.wsp{position:relative}
+.wsp-b{max-width:380px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;padding-right:28px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%235E785E' stroke-width='2'%3E%3Cpath d='m2 4 4 4 4-4'/%3E%3C/svg%3E") no-repeat right 10px center}
+.wsp-pop{position:absolute;z-index:30;top:calc(100% + 6px);left:0;width:min(420px,90vw);background:#fff;border:1px solid var(--line-2);border-radius:12px;box-shadow:0 14px 34px rgba(0,0,0,.14);padding:10px}
+.wsp-pop .hl-input{width:100%;box-sizing:border-box}
+.wsp-list{max-height:340px;overflow:auto;margin-top:8px}
+.wsp-g{font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);padding:10px 8px 4px}
+.wsp-i{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;background:none;padding:8px;border-radius:8px;font:inherit;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer}
+.wsp-i:hover,.wsp-i.on{background:var(--sand-2,#f6f1e6)}
+.wsp-i>span:first-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wsp-c{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--ink-soft)}
+.wsp-n{font-size:12px;font-weight:800;color:#a5521b;white-space:nowrap}

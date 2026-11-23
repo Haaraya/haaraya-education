@@ -143,6 +143,10 @@ function TgField({
     className: "tg-f"
   }, /*#__PURE__*/React.createElement("h4", null, TG_LABEL[f] || f), /*#__PURE__*/React.createElement("p", null, g[f]));
 }
+
+/* Teach: "Teaching now" (books set for this class) first, then every lesson,
+   searchable and filtered by level and strand, as a compact list. Built to
+   hold the whole library (469 books, Levels 1 to 12), not just the showcase. */
 function TTeach({
   cls
 }) {
@@ -150,31 +154,108 @@ function TTeach({
     state
   } = useHL();
   const [code, setCode] = React.useState(null);
-  const books = TD.BOOKS.filter(b => window.HLTG && window.HLTG[b.id]).sort((a, b) => a.l - b.l);
+  const [q, setQ] = React.useState("");
+  const [lvl, setLvl] = React.useState(() => !cls.mixed && cls.expected ? String(cls.expected) : "all");
+  const [strand, setStrand] = React.useState("all");
+  const books = TD.BOOKS.filter(b => window.HLTG && window.HLTG[b.id]).sort((a, b) => a.l - b.l || a.t.localeCompare(b.t));
   if (code) return /*#__PURE__*/React.createElement(TeachLesson, {
     code: code,
     onBack: () => setCode(null)
   });
   const forClass = id => state.assignments.filter(a => a.classId === cls.id && a.ref === id && a.type !== "lesson");
+  const who = id => {
+    const a = forClass(id);
+    if (a.some(x => x.to === "all")) return "Whole class";
+    const names = [...new Set(a.flatMap(x => x.to.map(i => (state.learners[i] || {}).name).filter(Boolean)))];
+    if (!names.length) return "";
+    const first = names.map(n => n.split(" ")[0]);
+    return first.length <= 3 ? first.join(", ") : `${first.slice(0, 2).join(", ")} and ${first.length - 2} others`;
+  };
+  const now = books.filter(b => forClass(b.id).length > 0);
+  const levels = [...new Set(books.map(b => b.l))];
+  const strands = [...new Set(books.map(b => b.s))].sort();
+  const n = x => String(x || "").toLowerCase();
+  const list = books.filter(b => (lvl === "all" || String(b.l) === lvl) && (strand === "all" || b.s === strand) && (!q.trim() || n(b.t).includes(n(q.trim())) || n(b.id).includes(n(q.trim())) || n(b.k).includes(n(q.trim()))));
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "ph-h"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Teach"), /*#__PURE__*/React.createElement("p", null, "Choose a book to teach. Each lesson follows the Haaraya teacher guide, step by step."))), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Teach"), /*#__PURE__*/React.createElement("p", null, "Each lesson follows the Haaraya teacher guide, step by step."))), now.length > 0 && /*#__PURE__*/React.createElement("section", {
+    className: "tg-now"
+  }, /*#__PURE__*/React.createElement("h2", {
+    className: "tg-h2"
+  }, "Teaching now ", /*#__PURE__*/React.createElement("span", null, now.length, " book", now.length === 1 ? "" : "s", " set for ", cls.name)), /*#__PURE__*/React.createElement("div", {
     className: "tg-books"
-  }, books.map(b => {
-    const a = forClass(b.id);
-    const names = [...new Set(a.flatMap(x => x.to === "all" ? ["whole class"] : x.to.map(id => (state.learners[id] || {}).name).filter(Boolean)))];
-    return /*#__PURE__*/React.createElement("button", {
-      key: b.id,
-      className: "tg-book",
-      onClick: () => setCode(b.id)
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "tg-cover"
-    }, /*#__PURE__*/React.createElement(Cover, {
-      book: b
-    })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(LevelTag, {
-      l: b.l
-    }), /*#__PURE__*/React.createElement("b", null, b.t), /*#__PURE__*/React.createElement("span", null, b.s, " \xB7 ", b.k), names.length > 0 && /*#__PURE__*/React.createElement("em", null, "For ", names.join(", "))));
-  })));
+  }, now.map(b => /*#__PURE__*/React.createElement("button", {
+    key: b.id,
+    className: "tg-book",
+    onClick: () => setCode(b.id)
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "tg-cover"
+  }, /*#__PURE__*/React.createElement(Cover, {
+    book: b
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(LevelTag, {
+    l: b.l
+  }), /*#__PURE__*/React.createElement("b", null, b.t), /*#__PURE__*/React.createElement("span", null, b.s), who(b.id) && /*#__PURE__*/React.createElement("em", null, "For ", who(b.id))))))), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("h2", {
+    className: "tg-h2"
+  }, "All lessons ", /*#__PURE__*/React.createElement("span", null, list.length, " of ", books.length)), /*#__PURE__*/React.createElement("div", {
+    className: "filters"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "hl-input s",
+    placeholder: "Search by title or book code",
+    value: q,
+    onChange: e => setQ(e.target.value),
+    "aria-label": "Search lessons"
+  }), /*#__PURE__*/React.createElement("select", {
+    className: "hl-select",
+    value: lvl,
+    onChange: e => setLvl(e.target.value),
+    "aria-label": "Level"
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "all"
+  }, "All levels"), levels.map(l => /*#__PURE__*/React.createElement("option", {
+    key: l,
+    value: String(l)
+  }, "Level ", l))), /*#__PURE__*/React.createElement("select", {
+    className: "hl-select",
+    value: strand,
+    onChange: e => setStrand(e.target.value),
+    "aria-label": "Strand"
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "all"
+  }, "All strands"), strands.map(x => /*#__PURE__*/React.createElement("option", {
+    key: x
+  }, x))), (q || lvl !== "all" || strand !== "all") && /*#__PURE__*/React.createElement("button", {
+    className: "hl-btn ghost sm",
+    onClick: () => {
+      setQ("");
+      setLvl("all");
+      setStrand("all");
+    }
+  }, "Clear")), list.length ? /*#__PURE__*/React.createElement("div", {
+    className: "card tg-list"
+  }, list.map(b => /*#__PURE__*/React.createElement("button", {
+    key: b.id,
+    className: "tg-row",
+    onClick: () => setCode(b.id)
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "tg-row-c"
+  }, /*#__PURE__*/React.createElement(Cover, {
+    book: b
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "tg-row-t"
+  }, /*#__PURE__*/React.createElement("b", null, b.t), /*#__PURE__*/React.createElement("span", null, b.k)), /*#__PURE__*/React.createElement("span", {
+    className: "tg-row-m"
+  }, /*#__PURE__*/React.createElement(LevelTag, {
+    l: b.l
+  }), /*#__PURE__*/React.createElement("span", null, b.s), /*#__PURE__*/React.createElement("span", {
+    className: "tg-code"
+  }, b.id)), /*#__PURE__*/React.createElement("span", {
+    className: "tg-row-w"
+  }, who(b.id) ? "For " + who(b.id) : ""), /*#__PURE__*/React.createElement(Icon, {
+    n: "next",
+    s: 16
+  })))) : /*#__PURE__*/React.createElement("div", {
+    className: "empty"
+  }, "No lessons match. Try another word, or clear the filters.")));
 }
 function TeachLesson({
   code,
