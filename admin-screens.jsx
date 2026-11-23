@@ -829,6 +829,59 @@ function AdminOps({ live }) {
   );
 }
 
+/* Print records: find who printed a copy from its print code (HX-…) or school code. */
+function AdminPrints() {
+  const [q, setQ] = React.useState(""); const [res, setRes] = React.useState(null); const [recent, setRecent] = React.useState(null);
+  const cols = "code,school_code,book_code,paper,created_at,school:schools(name),user:users(full_name,email,role)";
+  const sb = () => window.HaarayaSupabase;
+  React.useEffect(() => {
+    if (!sb()) { setRecent({ error: "The database didn't load." }); return; }
+    sb().from("print_log").select(cols).order("created_at", { ascending: false }).limit(50)
+      .then(r => setRecent(r.error ? { error: r.error.message } : { rows: r.data || [] }));
+  }, []);
+  const find = async e => {
+    e && e.preventDefault();
+    const t = q.trim().toUpperCase().replace(/\s+/g, ""); if (!t || !sb()) return;
+    setRes({ busy: true });
+    const isPrint = /^HX-?/.test(t);
+    const code = isPrint ? (t.startsWith("HX-") ? t : "HX-" + t.slice(2)) : t;
+    let qy = sb().from("print_log").select(cols).order("created_at", { ascending: false }).limit(200);
+    qy = isPrint ? qy.eq("code", code) : qy.eq("school_code", code);
+    const r = await qy;
+    setRes(r.error ? { error: r.error.message } : { rows: r.data || [], term: code, isPrint });
+  };
+  const when = d => new Date(d).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  const Table = ({ rows }) => <table className="adash-table">
+    <thead><tr><th>Print code</th><th>School</th><th>Printed by</th><th>Book</th><th>Paper</th><th>When</th></tr></thead>
+    <tbody>{rows.map(r => <tr key={r.code}>
+      <td><b>{r.code}</b></td>
+      <td>{r.school ? r.school.name : "Haaraya Education"}<div style={{ fontSize: 12, color: "var(--ink-soft)" }}>School code {r.school_code}</div></td>
+      <td>{r.user ? (r.user.full_name || r.user.email) : "—"}<div style={{ fontSize: 12, color: "var(--ink-soft)" }}>{r.user ? `${r.user.email || ""}${r.user.role ? " · " + r.user.role.replace("_", " ") : ""}` : ""}</div></td>
+      <td>{r.book_code}</td><td>{r.paper === "letter" ? "US Letter" : "A4"}</td><td style={{ whiteSpace: "nowrap" }}>{when(r.created_at)}</td>
+    </tr>)}</tbody></table>;
+  return <div>
+    <div className="adash-card" style={{ marginBottom: 16 }}>
+      <h5>Find a printed copy</h5>
+      <p style={{ fontSize: 14, color: "var(--ink-mid)", margin: "4px 0 12px" }}>Every printed book carries a print code (for example HX-7F3K2A) in its footer, along the inner edge and on the back cover, and a school code (for example B791). Type either to see who printed it.</p>
+      <form onSubmit={find} style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="HX-7F3K2A or B791" aria-label="Print code or school code"
+          style={{ flex: "1 1 240px", padding: "10px 14px", borderRadius: 12, border: "1px solid var(--d-line, #ddd)", font: "700 16px var(--font-body, sans-serif)", textTransform: "uppercase" }} />
+        <button className="btn btn-primary" type="submit" disabled={!q.trim() || (res && res.busy)}>{res && res.busy ? "Looking…" : "Look up"}</button>
+      </form>
+      {res && res.error && <p style={{ color: "#B71C1C", fontWeight: 700, marginTop: 12 }}>{res.error}</p>}
+      {res && res.rows && (res.rows.length
+        ? <div style={{ marginTop: 14 }}><p style={{ fontWeight: 800, marginBottom: 8 }}>{res.isPrint ? `Print ${res.term}` : `${res.rows.length} ${res.rows.length === 1 ? "print" : "prints"} by school ${res.term}`}</p><Table rows={res.rows} /></div>
+        : <p style={{ marginTop: 12, fontWeight: 700, color: "var(--ink-mid)" }}>No print found for {res.term}. Check the code and try again.</p>)}
+    </div>
+    <div className="adash-card">
+      <h5>Recent prints</h5>
+      {!recent && <div style={{ padding: 10, color: "var(--ink-soft)" }}>Loading…</div>}
+      {recent && recent.error && <p style={{ color: "#B71C1C" }}>{recent.error}</p>}
+      {recent && recent.rows && (recent.rows.length ? <Table rows={recent.rows} /> : <div style={{ padding: 10, color: "var(--ink-soft)" }}>No books printed yet.</div>)}
+    </div>
+  </div>;
+}
+
 function HaarayaAdminDashScreen({ onNavigate }) {
   const live = !!(window.HaarayaAdminDB && HaarayaAdminDB.ready());
   const { data: ov, loading: ovLoading, error: ovError } = useApi(() => live ? HaarayaAdminDB.overview() : null, [live]);
@@ -858,6 +911,7 @@ function HaarayaAdminDashScreen({ onNavigate }) {
             <a onClick={() => onNavigate("home")}>Home</a>
             <a className={tab === "ops" ? "on" : ""} onClick={() => setTab("ops")}>Operations</a>
             <a className={tab === "content" ? "on" : ""} onClick={() => setTab("content")}>Content</a>
+            <a className={tab === "prints" ? "on" : ""} onClick={() => setTab("prints")}>Print records</a>
             <a onClick={() => onNavigate("library")}>Library</a>
           </nav>
           <a className="nd-gem" href="gemmanti/Gemmanti.html" title="Lessons, worksheets and full reports">Open Gemmanti <span aria-hidden="true">&rarr;</span></a>
@@ -872,6 +926,7 @@ function HaarayaAdminDashScreen({ onNavigate }) {
         </div>
         <div className="dash role-adult" style={{ display: "block", background: "transparent", border: "none", boxShadow: "none", padding: 0, minHeight: 0 }}>
           {tab === "ops" && <AdminOps live={live} />}
+          {tab === "prints" && <AdminPrints />}
           {tab === "content" && <div className="dash-main" style={{ padding: 0 }}>
             <div className="dash-header">
               <div>
