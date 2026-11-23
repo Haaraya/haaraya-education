@@ -65,7 +65,15 @@ function TWorksheets({
     className: "ph-h"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Worksheets"), /*#__PURE__*/React.createElement("p", null, cls.name, " \xB7 ratings follow the Haaraya teacher guide")), /*#__PURE__*/React.createElement("div", {
     className: "acts"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("a", {
+    className: "hl-btn ghost",
+    href: "../Haaraya%20Print.html?book=" + encodeURIComponent(code),
+    target: "_blank",
+    rel: "noopener"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    n: "dl",
+    s: 16
+  }), "Print book"), /*#__PURE__*/React.createElement("button", {
     className: "hl-btn ghost",
     onClick: () => setGuide(true)
   }, /*#__PURE__*/React.createElement(Icon, {

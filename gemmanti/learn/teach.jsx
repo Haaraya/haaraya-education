@@ -97,7 +97,7 @@ function TeachLesson({ code, onBack }) {
   return <>
     <div className="ph-h"><div><button className="back" onClick={onBack}><Icon n="back" />All books</button>
       <h1>{b.t}</h1><p>Level {b.l} · {b.s} · {g.teaching_focus || b.k}</p></div>
-      <div className="acts"><button className="hl-btn ghost" onClick={board}><Icon n="play" s={16} />Show to class</button></div></div>
+      <div className="acts"><a className="hl-btn ghost" href={"../Haaraya%20Print.html?book=" + encodeURIComponent(code)} target="_blank" rel="noopener"><Icon n="dl" s={16} />Print book</a><button className="hl-btn ghost" onClick={board}><Icon n="play" s={16} />Show to class</button></div></div>
     <nav className="tg-steps">{steps.map((s, i) => <button key={s.k} className={i === si ? "on" : i < si ? "done" : ""} onClick={() => setSi(i)}><span>{i + 1}</span>{s.n}</button>)}</nav>
     {S.k !== "read" && <div className="card tg-card">
       <h2>{S.n}</h2>

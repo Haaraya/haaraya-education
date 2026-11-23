@@ -244,7 +244,15 @@ function TeachLesson({
     n: "back"
   }), "All books"), /*#__PURE__*/React.createElement("h1", null, b.t), /*#__PURE__*/React.createElement("p", null, "Level ", b.l, " \xB7 ", b.s, " \xB7 ", g.teaching_focus || b.k)), /*#__PURE__*/React.createElement("div", {
     className: "acts"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("a", {
+    className: "hl-btn ghost",
+    href: "../Haaraya%20Print.html?book=" + encodeURIComponent(code),
+    target: "_blank",
+    rel: "noopener"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    n: "dl",
+    s: 16
+  }), "Print book"), /*#__PURE__*/React.createElement("button", {
     className: "hl-btn ghost",
     onClick: board
   }, /*#__PURE__*/React.createElement(Icon, {

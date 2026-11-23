@@ -1279,6 +1279,11 @@ function ReaderScreen({ bookCode, onNavigate, quizLayout }) {
               <span className="ico" aria-hidden="true">❖</span><span>Passport</span>
             </button>
             <TfrSaveButton code={code} book={b} />
+            {["teacher", "school_admin", "admin"].includes(_role) && (
+              <a className="btn btn-ghost" href={"Haaraya Print.html?book=" + encodeURIComponent(b.book_code || b.code || code)} target="_blank" rel="noopener">
+                <span className="ico" aria-hidden="true">⎙</span><span>Print book</span>
+              </a>
+            )}
             {isReviewer && (
               <button className={"btn " + (reviewMode ? "btn-nav" : "btn-ghost")} type="button"
                 aria-pressed={reviewMode} onClick={() => setReviewMode(m => !m)}>
