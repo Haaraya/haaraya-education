@@ -13,7 +13,6 @@
 const { useState: useStateDG, useEffect: useEffectDG } = React;
 
 const DG_GEM = "gemmanti/Gemmanti.html";
-const DG_PRINT_NOTE = " Printing books is a paid add-on for schools; it is switched on in this demo.";
 const DG_CARDS = {
   teacher: [
     { t: "Your class’s reading", d: "Books finished, stamps and reading checks, pupil by pupil.", go: "teacher", anchor: "td-progress", cta: "See pupil progress" },
@@ -21,14 +20,14 @@ const DG_CARDS = {
     { t: "Who needs support", d: "Pupils who haven’t started yet, or are stuck at a level.", go: "teacher", anchor: "td-support", cta: "See who needs support" },
     { t: "Pupil logins", d: "Each pupil’s username and PIN, with login cards to print.", go: "teacher", anchor: "td-logins", cta: "See pupil logins" },
     { t: "Read a showcase book", d: "One book for each level opens in the demo. Look for the Showcase tag.", go: "library", cta: "Open the library" },
-    { t: "Print a booklet", d: "Open a showcase book and press Print book. Every print carries your school’s code." + DG_PRINT_NOTE, go: "library", cta: "Choose a book" },
+    { t: "Print a booklet", d: "Open a showcase book and press Print book. Every print carries your school’s code.", go: "library", cta: "Choose a book" },
   ],
   school_admin: [
     { t: "Your school", d: "Classes, teachers and pupils at a glance.", go: "school", anchor: "sd-school", cta: "Open the school" },
     { t: "Add a class or a pupil", d: "Use + New class and + Add pupil at the top of your school page.", go: "school", anchor: "sd-school", cta: "Go to your school" },
     { t: "Pupil logins", d: "Usernames and PINs for the whole school, with login cards to print.", go: "school", anchor: "sd-logins", cta: "See pupil logins" },
     { t: "Read a showcase book", d: "One book for each level opens in the demo. Look for the Showcase tag.", go: "library", cta: "Open the library" },
-    { t: "Print a booklet", d: "Open a showcase book and press Print book. Every print carries your school’s code." + DG_PRINT_NOTE, go: "library", cta: "Choose a book" },
+    { t: "Print a booklet", d: "Open a showcase book and press Print book. Every print carries your school’s code.", go: "library", cta: "Choose a book" },
   ],
   parent: [
     { t: "Your children", d: "Amara and Emeka: what they’ve read, their reading checks and their stamps.", go: "parent", cta: "Open the family page" },
