@@ -31,12 +31,13 @@ function TeacherApp() {
   const v = state.route.view;
   const ctx = <><div><b>{me.name}</b><span>Greenfield Primary School</span></div>
     <select value={classId} onChange={e => setClassId(e.target.value)} aria-label="Class">{me.classes.map(id => { const c = state.classes.find(c => c.id === id); return <option key={id} value={id}>{c.name}</option>; })}</select></>;
-  const nav = [["overview", "Class overview", "home"], ["roster", "Learners", "users", attention.length], ["assignments", "Assigned learning", "clip"], ["worksheets", "Worksheets", "sheet", learners.filter(l => Object.values(l.worksheets || {}).some(r => r.status === "handed_in")).length], ["reports", "Reports", "chart"], ["requests", "Content requests", "flag"]];
+  const nav = [["overview", "Class overview", "home"], ["roster", "Learners", "users", attention.length], ["teach", "Teach", "book"], ["assignments", "Assigned learning", "clip"], ["worksheets", "Worksheets", "sheet", learners.filter(l => Object.values(l.worksheets || {}).some(r => r.status === "handed_in")).length], ["reports", "Reports", "chart"], ["requests", "Content requests", "flag"]];
   const props = { cls, learners, attention, openL: setDrawer, openAssign: setAssign };
   return <AdultShell nav={nav} ctx={ctx}>
     {(v === "overview" || !nav.find(n => n[0] === v)) && <TOverview {...props} />}
     {v === "roster" && <TRoster {...props} />}
     {v === "assignments" && <TAssignments {...props} />}
+    {v === "teach" && <TTeach {...props} />}
     {v === "worksheets" && <TWorksheets {...props} />}
     {v === "reports" && <TReports {...props} />}
     {v === "requests" && <TRequests me={me} />}

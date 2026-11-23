@@ -65,7 +65,7 @@ function TeacherApp() {
       value: id
     }, c.name);
   })));
-  const nav = [["overview", "Class overview", "home"], ["roster", "Learners", "users", attention.length], ["assignments", "Assigned learning", "clip"], ["worksheets", "Worksheets", "sheet", learners.filter(l => Object.values(l.worksheets || {}).some(r => r.status === "handed_in")).length], ["reports", "Reports", "chart"], ["requests", "Content requests", "flag"]];
+  const nav = [["overview", "Class overview", "home"], ["roster", "Learners", "users", attention.length], ["teach", "Teach", "book"], ["assignments", "Assigned learning", "clip"], ["worksheets", "Worksheets", "sheet", learners.filter(l => Object.values(l.worksheets || {}).some(r => r.status === "handed_in")).length], ["reports", "Reports", "chart"], ["requests", "Content requests", "flag"]];
   const props = {
     cls,
     learners,
@@ -76,7 +76,7 @@ function TeacherApp() {
   return /*#__PURE__*/React.createElement(AdultShell, {
     nav: nav,
     ctx: ctx
-  }, (v === "overview" || !nav.find(n => n[0] === v)) && /*#__PURE__*/React.createElement(TOverview, props), v === "roster" && /*#__PURE__*/React.createElement(TRoster, props), v === "assignments" && /*#__PURE__*/React.createElement(TAssignments, props), v === "worksheets" && /*#__PURE__*/React.createElement(TWorksheets, props), v === "reports" && /*#__PURE__*/React.createElement(TReports, props), v === "requests" && /*#__PURE__*/React.createElement(TRequests, {
+  }, (v === "overview" || !nav.find(n => n[0] === v)) && /*#__PURE__*/React.createElement(TOverview, props), v === "roster" && /*#__PURE__*/React.createElement(TRoster, props), v === "assignments" && /*#__PURE__*/React.createElement(TAssignments, props), v === "teach" && /*#__PURE__*/React.createElement(TTeach, props), v === "worksheets" && /*#__PURE__*/React.createElement(TWorksheets, props), v === "reports" && /*#__PURE__*/React.createElement(TReports, props), v === "requests" && /*#__PURE__*/React.createElement(TRequests, {
     me: me
   }), drawer && /*#__PURE__*/React.createElement(LearnerDrawer, {
     L: state.learners[drawer],

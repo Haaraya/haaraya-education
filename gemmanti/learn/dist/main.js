@@ -74,4 +74,9 @@ function LiveBoot() {
     }
   }), /*#__PURE__*/React.createElement(PublisherMark, null));
 }
-ReactDOM.createRoot(document.getElementById("root")).render(window.HL_LIVE_ON ? /*#__PURE__*/React.createElement(LiveBoot, null) : /*#__PURE__*/React.createElement(HLProvider, null, /*#__PURE__*/React.createElement(HLApp, null)));
+
+/* ?board=<book code> is the class screen opened by Teach > Show to class. */
+const HL_BOARD = new URLSearchParams(location.search).get("board");
+ReactDOM.createRoot(document.getElementById("root")).render(HL_BOARD ? /*#__PURE__*/React.createElement(BoardApp, {
+  code: HL_BOARD
+}) : window.HL_LIVE_ON ? /*#__PURE__*/React.createElement(LiveBoot, null) : /*#__PURE__*/React.createElement(HLProvider, null, /*#__PURE__*/React.createElement(HLApp, null)));

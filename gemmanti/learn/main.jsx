@@ -44,6 +44,8 @@ function LiveBoot() {
   return <><LiveGate res={res} retry={() => { setRes(null); setN(n + 1); }} /><PublisherMark /></>;
 }
 
+/* ?board=<book code> is the class screen opened by Teach > Show to class. */
+const HL_BOARD = new URLSearchParams(location.search).get("board");
 ReactDOM.createRoot(document.getElementById("root")).render(
-  window.HL_LIVE_ON ? <LiveBoot /> : <HLProvider><HLApp /></HLProvider>
+  HL_BOARD ? <BoardApp code={HL_BOARD} /> : window.HL_LIVE_ON ? <LiveBoot /> : <HLProvider><HLApp /></HLProvider>
 );

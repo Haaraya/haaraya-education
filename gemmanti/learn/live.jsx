@@ -79,7 +79,7 @@ function LiveStaff({ openPupil }) {
   const school = state.schools.find(s => s.id === cls.schoolId);
   const toRecord = learners.filter(l => Object.values(l.worksheets || {}).some(r => r.status === "handed_in")).length;
   const v = state.route.view;
-  const nav = [["worksheets", "Worksheets", "sheet", toRecord], ["pupils", "Pupils", "users"], ["reports", "Reports", "dl"]];
+  const nav = [["teach", "Teach", "book"], ["worksheets", "Worksheets", "sheet", toRecord], ["pupils", "Pupils", "users"], ["reports", "Reports", "dl"]];
   const ctx = <><div><b>{state.me.name}</b><span>{school ? school.name : ""}</span></div>
     {state.classes.length > 1
       ? <select value={cls.id} onChange={e => setClassId(e.target.value)} aria-label="Class">{state.classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
@@ -91,7 +91,8 @@ function LiveStaff({ openPupil }) {
       <button className={"live-switch" + (cls.showLibrary ? " on" : "")} role="switch" aria-checked={!!cls.showLibrary} onClick={() => setClassLibrary(cls.id, !cls.showLibrary)}><i></i></button>
       <span>Library for pupils</span></label>}</>;
   return <AdultShell nav={nav} ctx={ctx}>
-    {v !== "pupils" && v !== "reports" && <TWorksheets key={cls.id} cls={cls} learners={learners} showScores={cls.showScores} />}
+    {v === "teach" && <TTeach cls={cls} />}
+    {v !== "pupils" && v !== "reports" && v !== "teach" && <TWorksheets key={cls.id} cls={cls} learners={learners} showScores={cls.showScores} />}
     {v === "reports" && <LiveReports key={cls.id} cls={cls} school={school} learners={learners} />}
     {v === "pupils" && <LivePupils cls={cls} learners={learners} openPupil={openPupil} openRecords={setDrawer} />}
     {drawer && state.learners[drawer] && <Drawer onClose={() => setDrawer(null)}><div className="live-drawer">

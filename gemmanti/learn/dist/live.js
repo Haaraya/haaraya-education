@@ -192,7 +192,7 @@ function LiveStaff({
   const school = state.schools.find(s => s.id === cls.schoolId);
   const toRecord = learners.filter(l => Object.values(l.worksheets || {}).some(r => r.status === "handed_in")).length;
   const v = state.route.view;
-  const nav = [["worksheets", "Worksheets", "sheet", toRecord], ["pupils", "Pupils", "users"], ["reports", "Reports", "dl"]];
+  const nav = [["teach", "Teach", "book"], ["worksheets", "Worksheets", "sheet", toRecord], ["pupils", "Pupils", "users"], ["reports", "Reports", "dl"]];
   const ctx = /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("b", null, state.me.name), /*#__PURE__*/React.createElement("span", null, school ? school.name : "")), state.classes.length > 1 ? /*#__PURE__*/React.createElement("select", {
     value: cls.id,
     onChange: e => setClassId(e.target.value),
@@ -220,7 +220,9 @@ function LiveStaff({
   return /*#__PURE__*/React.createElement(AdultShell, {
     nav: nav,
     ctx: ctx
-  }, v !== "pupils" && v !== "reports" && /*#__PURE__*/React.createElement(TWorksheets, {
+  }, v === "teach" && /*#__PURE__*/React.createElement(TTeach, {
+    cls: cls
+  }), v !== "pupils" && v !== "reports" && v !== "teach" && /*#__PURE__*/React.createElement(TWorksheets, {
     key: cls.id,
     cls: cls,
     learners: learners,
