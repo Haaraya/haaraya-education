@@ -186,6 +186,7 @@ function TeacherDashScreen({ onNavigate }) {
             <a className="on">Classrooms</a>
             <a onClick={() => go("td-assignments")}>Assignments</a>
             <a onClick={() => go("td-progress")}>Pupil progress</a>
+            <a onClick={() => go("td-logins")}>Pupil logins</a>
             <a onClick={() => onNavigate("library")}>Library</a>
           </nav>
           <a className="nd-gem" href="gemmanti/Gemmanti.html" title="Lessons, worksheets and full reports">Open Gemmanti <span aria-hidden="true">&rarr;</span></a>
@@ -319,6 +320,10 @@ function TeacherDashScreen({ onNavigate }) {
             )}
           </div>
         </div>
+        {classroom && typeof PupilLogins !== "undefined" && (
+          <PupilLogins anchorId="td-logins" place={classroom.name}
+            pupils={(pupils || []).map(s => s.child).filter(Boolean).map(c => ({ id: c.id, name: c.displayName || c.shortName }))} />
+        )}
       </div>
       {assignOpen && classroom && (
         <AssignBookModal
@@ -358,6 +363,7 @@ function SchoolAdminDashScreen({ onNavigate }) {
           <nav className="nd-nav">
             <a onClick={() => onNavigate("home")}>Home</a>
             <a className="on">Overview</a>
+            <a onClick={() => { const el = document.getElementById("sd-logins"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Pupil logins</a>
             <a onClick={() => onNavigate("library")}>Library</a>
           </nav>
           <a className="nd-gem" href="gemmanti/Gemmanti.html" title="Lessons, worksheets and full reports">Open Gemmanti <span aria-hidden="true">&rarr;</span></a>
@@ -451,6 +457,10 @@ function SchoolAdminDashScreen({ onNavigate }) {
             </table>
           </div>
         </div>
+        {typeof PupilLogins !== "undefined" && (
+          <PupilLogins anchorId="sd-logins" place={school.name}
+            pupils={(pupils || []).map(c => ({ id: c.id, name: c.displayName || c.shortName }))} />
+        )}
       </div>
       {modal === "classroom" && (
         <CreateClassroomModal schoolId={school.id} teachers={teachers} onClose={() => setModal(null)} onDone={refresh} />

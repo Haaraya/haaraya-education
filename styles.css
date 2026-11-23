@@ -3379,3 +3379,46 @@ body[data-hero-variant="journey"] .hero-subject .passport-card { display: none; 
 .dgg-shot { display: block; border-radius: 10px; overflow: hidden; box-shadow: 0 10px 24px rgba(0,0,0,.25); border: 2px solid rgba(255,255,255,.85); }
 .dgg-shot img { display: block; width: 100%; height: auto; }
 @media (max-width: 760px) { .dgg { grid-template-columns: 1fr; } .dgg-shot { display: none; } }
+
+/* Pupil logins (teacher and school admin pages) */
+.pl-card { margin-top: 18px; }
+.pl-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.pl-sub { margin: 4px 0 0; font-size: 14px; color: var(--ink-soft, #6b736b); }
+.pl-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.pl-btn { border: 0; border-radius: 999px; padding: 9px 16px; background: var(--forest, #228B22); color: #fff; font: inherit; font-weight: 800; font-size: 14px; cursor: pointer; }
+.pl-btn.ghost { background: #fff; color: var(--forest, #228B22); border: 1.5px solid var(--forest, #228B22); }
+.pl-btn:disabled { opacity: .6; cursor: default; }
+.pl-msg { margin: 12px 0 0; padding: 9px 12px; border-radius: 10px; background: #FFF8E1; border: 1px solid #F0D98A; font-size: 14px; font-weight: 700; color: #4a3b00; }
+.pl-table { margin-top: 12px; }
+.pl-mono { font-family: ui-monospace, Menlo, monospace; font-weight: 700; }
+.pl-none, .pl-empty { color: var(--ink-soft, #6b736b); font-family: var(--font-body); font-weight: 600; }
+.pl-lock { color: #a5521b; font-family: var(--font-body); font-size: 12px; }
+.pl-link { border: 0; background: none; font: inherit; font-weight: 800; color: var(--forest, #228B22); text-decoration: underline; cursor: pointer; padding: 4px; }
+.pl-more { margin-top: 6px; }
+.pl-note { margin: 10px 0 0; font-size: 13px; color: var(--ink-soft, #6b736b); }
+.pl-sheet { position: fixed; inset: 0; z-index: 1000; background: #f3f1ea; overflow: auto; padding: 0 0 40px; }
+.pl-sheet-bar { position: sticky; top: 0; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 12px 24px; background: #fff; border-bottom: 1px solid #e3ddd0; font-size: 14px; }
+.pl-sheet-bar span { flex: 1; color: var(--ink-soft, #6b736b); }
+.pl-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; max-width: 900px; margin: 20px auto; padding: 0 20px; }
+.pl-lc { background: #fff; border: 1.5px dashed #b9b2a2; border-radius: 14px; padding: 14px 16px; display: grid; gap: 10px; break-inside: avoid; page-break-inside: avoid; }
+.pl-lc-top { display: flex; align-items: center; gap: 10px; font: 900 12px var(--font-body, sans-serif); text-transform: uppercase; letter-spacing: .06em; color: var(--forest, #228B22); }
+.pl-lc-top img { height: 26px; }
+.pl-lc-body { display: grid; grid-template-columns: 1fr 96px; gap: 12px; align-items: center; }
+.pl-lc-who b { display: block; font-size: 19px; }
+.pl-lc-who > span { display: block; font-size: 13px; font-weight: 700; color: var(--ink-soft, #6b736b); }
+.pl-lc-who dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 10px 0 0; align-items: baseline; }
+.pl-lc-who dt { font-size: 12px; font-weight: 800; color: var(--ink-soft, #6b736b); text-transform: uppercase; letter-spacing: .05em; }
+.pl-lc-who dd { margin: 0; font: 800 18px ui-monospace, Menlo, monospace; }
+.pl-lc-pin { letter-spacing: .25em; }
+.pl-lc-qr svg { width: 96px; height: 96px; display: block; }
+.pl-lc-how { margin: 0; font-size: 12px; line-height: 1.35; color: #4b564b; }
+@media (max-width: 640px) { .pl-grid { grid-template-columns: 1fr; } }
+@media print {
+  body.pl-printing > *:not(.pl-sheet) { display: none !important; }
+  body.pl-printing .pl-sheet { position: static; background: #fff; padding: 0; overflow: visible; }
+  body.pl-printing .pl-sheet-bar { display: none; }
+  body.pl-printing .pl-grid { max-width: none; margin: 0; padding: 0; gap: 6mm; }
+  body.pl-printing .pl-lc { height: 62mm; box-sizing: border-box; overflow: hidden; }
+  body.pl-printing .pl-lc:nth-child(8n) { break-after: page; page-break-after: always; }
+  @page { size: A4; margin: 10mm; }
+}
