@@ -16,7 +16,6 @@ const DG_GEM = "gemmanti/Gemmanti.html";
 const DG_CARDS = {
   teacher: [
     { t: "Your demo class", d: "Primary 3 · Demo: seven pupils, the books they’ve read and their reading checks.", go: "teacher", cta: "Open the class" },
-    { t: "Gemmanti for teachers", d: "Mark worksheets, see each pupil’s library reading and print pupil login cards.", href: DG_GEM, cta: "Open Gemmanti" },
     { t: "A class at every level", d: "Twelve pupils, Levels 1 to 12, each with a book, a worksheet and a lesson. Try marking Chidi’s and Fatima’s handed-in work.", href: DG_GEM + "?demo=teacher", cta: "See the 12-level class" },
     { t: "Teach a lesson", d: "Step-by-step lesson guides, with Show to class for a projector or TV. Worksheets and teacher guides also download as PDFs.", href: DG_GEM + "?demo=teacher&view=teach", cta: "Open Teach" },
     { t: "Read a showcase book", d: "One book for each level opens in the demo. Look for the Showcase tag.", go: "library", cta: "Open the library" },
@@ -24,7 +23,6 @@ const DG_CARDS = {
   ],
   school_admin: [
     { t: "Your demo school", d: "Haaraya Demo Primary: classes, teachers and pupils at a glance.", go: "school", cta: "Open the school" },
-    { t: "Gemmanti for schools", d: "Worksheets, reading records and printable pupil login cards for every class.", href: DG_GEM, cta: "Open Gemmanti" },
     { t: "A class at every level", d: "Twelve pupils, Levels 1 to 12, each with a book, a worksheet and a lesson.", href: DG_GEM + "?demo=teacher", cta: "See the 12-level class" },
     { t: "Read a showcase book", d: "One book for each level opens in the demo. Look for the Showcase tag.", go: "library", cta: "Open the library" },
     { t: "Print a booklet", d: "Open a showcase book and press Print book. Every print carries your school’s code.", go: "library", cta: "Choose a book" },
@@ -41,6 +39,35 @@ const DG_CARDS = {
     { t: "Gemmanti for pupils", d: "Worksheets and lessons, the way a pupil sees them in class.", href: DG_GEM + "?demo=child", cta: "Try as a pupil" },
   ],
 };
+/* Gemmanti, shown to the demo teacher and demo school admin. */
+const DG_GEM_ROLES = ["teacher", "school_admin"];
+const DG_GEM_POINTS = [
+  ["Teach", "step-by-step lesson guides for every book, with Show to class for a projector or TV."],
+  ["Worksheets", "pupils do them on a tablet, or on paper from a PDF. Gemmanti marks what it can, and the teacher marks written answers with a tap."],
+  ["Know every child", "library reading, worksheet scores and how much help each child needed, pupil by pupil."],
+  ["Reports", "class progress, ready to download."],
+  ["Pupil logins", "each child signs in with a username and a 4-number PIN, from a printable login card."],
+];
+function DemoGemmanti() {
+  return (
+    <div className="dgg">
+      <div className="dgg-copy">
+        <img className="dgg-logo" src="gemmanti/assets/logo-gemmanti.png" alt="Gemmanti" />
+        <h2>Everything a Haaraya teacher needs, in one place</h2>
+        <p className="dgg-lede">Gemmanti is Haaraya’s teaching platform. It sits beside the library and turns every book into a lesson, a worksheet and a record of each child’s progress.</p>
+        <ul>{DG_GEM_POINTS.map(([b, t]) => <li key={b}><b>{b}:</b> {t}</li>)}</ul>
+        <div className="dgg-acts">
+          <a className="dgg-btn" href={DG_GEM}>Open Gemmanti →</a>
+          <a className="dgg-btn ghost" href={DG_GEM + "?demo=teacher"}>See a class at every level</a>
+        </div>
+      </div>
+      <a className="dgg-shot" href={DG_GEM + "?demo=teacher"} aria-label="See a class at every level in Gemmanti">
+        <img src="assets/gemmanti-overview.webp" alt="Gemmanti class overview: a class with one pupil at each level, assigned work and worksheets waiting to be marked" loading="lazy" />
+      </a>
+    </div>
+  );
+}
+
 const DG_DASH = ["teacher", "school", "parent", "child", "admin"];
 const DG_HOME = { teacher: "teacher", school_admin: "school", parent: "parent", child: "child" };
 
@@ -93,6 +120,7 @@ function DemoGuide({ role, screen, onNavigate }) {
         {!full && <button type="button" className="dg-link" onClick={() => { hide(false); onNavigate(screen === "home" ? "home" : (DG_HOME[role] || "home")); }}>Demo guide</button>}
         {full && <button type="button" className="dg-link" onClick={() => hide(true)}>Got it</button>}
       </div>
+      {full && DG_GEM_ROLES.includes(role) && <div className="dg-cards"><DemoGemmanti /></div>}
       {full && (
         <div className="dg-cards">
           <h2 className="dg-title">Try these</h2>
