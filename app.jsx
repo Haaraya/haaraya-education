@@ -106,16 +106,17 @@ const ROLE_HOME = {
 
 const ROLE_ORDER = ["visitor", "child", "parent", "teacher", "school_admin", "admin"];
 
-/* Demo accounts are REAL Supabase logins (seeded by
+/* Every demo account opens on Home.
+   Demo accounts are REAL Supabase logins (seeded by
    supabase/demo_accounts_seed.sql), so a demo shows exactly what the live
    webapp shows. The child view has no account of its own — children read under
    the parent session, so it signs in the demo parent and opens the child screen. */
 const DEMO_PASSWORD = "HaarayaDemo1!";
 const DEMO_LOGINS = {
-  child:        { email: "demo.parent@haaraya-demo.com",  dest: "child",   label: "Demo Reader",       sub: "Child view · reads under the family account" },
-  parent:       { email: "demo.parent@haaraya-demo.com",  dest: "parent",  label: "Demo Parent",       sub: "Family plan · 2 children" },
-  teacher:      { email: "demo.teacher@haaraya-demo.com", dest: "teacher", label: "Demo Teacher",      sub: "Primary 3 · 7 pupils" },
-  school_admin: { email: "demo.school@haaraya-demo.com",  dest: "school",  label: "Demo School Admin", sub: "Haaraya Demo Primary" },
+  child:        { email: "demo.parent@haaraya-demo.com",  dest: "home",    label: "Demo Reader",       sub: "Child view · reads under the family account" },
+  parent:       { email: "demo.parent@haaraya-demo.com",  dest: "home",    label: "Demo Parent",       sub: "Family plan · 2 children" },
+  teacher:      { email: "demo.teacher@haaraya-demo.com", dest: "home",    label: "Demo Teacher",      sub: "Primary 3 · 7 pupils" },
+  school_admin: { email: "demo.school@haaraya-demo.com",  dest: "home",    label: "Demo School Admin", sub: "Haaraya Demo Primary" },
 };
 const DEMO_COLOR = { child: "#E65100", parent: "#1565C0", teacher: "#8E24AA", school_admin: "#00838F" };
 
