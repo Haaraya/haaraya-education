@@ -33,11 +33,10 @@ body[data-paper="letter"][data-layout="booklet"] { --pb-w: 279.4mm; --pb-h: 215.
 .pb-half { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.5mm; }
 .pb-half.is-blank { background: #fff; }
 .pb-frame { position: relative !important; inset: auto !important; width: auto !important; display: block !important; height: auto !important; min-height: 0 !important; background: none !important; z-index: auto !important; overflow: visible !important; }
-.pb-frame .book { width: var(--pb-bw) !important; height: var(--pb-bh) !important; max-width: none; border-radius: 0 !important; box-shadow: none !important; animation: none !important; outline: 0.2mm solid #e6e0d4; }
+.pb-frame .book { width: var(--pb-bw) !important; height: var(--pb-bh) !important; max-width: none; border-radius: 0 !important; box-shadow: none !important; animation: none !important; outline: 0 !important; }
 .pb-frame .book::after { display: none; }
 .pb-pfoot { width: var(--pb-bw); display: flex; justify-content: space-between; font: 700 6.3pt/1 Nunito, sans-serif; color: #8c8473; letter-spacing: .04em; }
 .pb-fold { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-90deg); white-space: nowrap; font: 700 5.5pt Nunito, sans-serif; letter-spacing: .1em; color: #b3ab9b; }
-.pb-sheet.is-booklet::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; border-left: 0.2mm dashed #e3ddd0; }
 .pb-foot { width: calc(100% - 16mm); margin: 0 0 3mm; font: 600 6.5pt/1.3 Nunito, sans-serif; color: #6b6355; text-align: center; }
 .pb-edge { position: absolute; left: 3mm; top: 50%; transform: translate(-50%, -50%) rotate(-90deg); white-space: nowrap; font: 700 6pt Nunito, sans-serif; letter-spacing: .08em; color: #8c8473; }
 .pb-pic-mark { position: absolute; z-index: 3; font: 700 5pt/1 Nunito, sans-serif; letter-spacing: .06em; color: #5c513f; opacity: .72; pointer-events: none; }
@@ -48,8 +47,6 @@ body[data-paper="letter"][data-layout="booklet"] { --pb-w: 279.4mm; --pb-h: 215.
   .pb-bar { display: none !important; }
   .pb-pages { padding: 0; gap: 0; display: block; }
   .pb-sheet { box-shadow: none; page-break-after: always; break-after: page; margin: 0 auto; }
-  .pb-sheet.is-booklet::after { border-left-color: #eee9de; }
-  .pb-frame .book { outline: 0; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 @media screen and (max-width: 1200px) { .pb-pages { zoom: .6; } }
