@@ -40,7 +40,7 @@ function TWorksheets({ cls, learners, openAssign, showScores }) {
         <td><button className="who linkish" onClick={() => setOpen(l.id)}><Avatar name={l.name} size="sm" />{l.name}</button></td>
         <td><WsStatus s={r.status} /></td>
         {WT.SECS.map(s => <td key={s.k} className="c"><RateChip r={r.ratings && r.ratings[s.k]} /></td>)}
-        <td className="c"><HelpChip h={r.help} /></td>{showScores && <td className="c num">{hlScoreText(hlWsScore(r))}</td>}
+        <td className="c"><HelpChip h={r.help} /></td>{showScores && <td className="c num">{hlScoreText(hlWsScore(r, code))}</td>}
         <td className="c"><button className={"hl-btn sm " + (r.status === "handed_in" ? "" : "ghost")} onClick={() => setOpen(l.id)}>{r.status === "handed_in" ? "Record" : r.status === "reviewed" ? "Open" : "Record"}</button></td></tr>)}
         {!rows.length && <tr><td colSpan={showScores ? 9 : 8}><div className="empty" style={{ border: 0 }}>No learners here.</div></td></tr>}</tbody></table></div>
       <p className="ws-legend">WF Word Focus · RIA Read It Again · TAI Think About It · SWYK Show What You Know · NY Not Yet · D Developing · S Secure · B Beyond · – not observed · A absent · blank not yet recorded · Help: M Modelled, P Prompted, I Independent</p></div>
@@ -68,12 +68,17 @@ function WsReview({ L, code, onClose }) {
   const [keys, setKeys] = React.useState(true);
   const set = (k, v) => setRt(Object.assign({}, rt, { [k]: v }));
   const recorded = Object.keys(window.HL_AUDIO).some(k => k.startsWith(`${L.id}|${code}|`));
-  return <Drawer onClose={onClose}><div className="ws-rev">
+  const marks = rt.marks || {};
+  const markCtx = { marks, edit: true, setMark: (key, v) => { const m = { ...marks }; if (v == null) delete m[key]; else m[key] = v; setRt(Object.assign({}, rt, { marks: m })); } };
+  const sc = hlWsScore({ ...rec, ratings: rt, status: rec.status === "not_started" ? "in_progress" : rec.status }, code);
+  return <Drawer onClose={onClose}><WsMarkCtx.Provider value={markCtx}><div className="ws-rev">
     <div className="ws-rev-h"><Avatar name={L.name} size="lg" /><div style={{ flex: 1 }}><h2>{L.name}</h2><p>{w.title} · L{w.level} · <WsStatus s={rec.status} />{rec.handedAt || rec.at ? ` · ${rec.status === "reviewed" ? "recorded " + (rec.reviewedAt || "") : "handed in " + (rec.handedAt || rec.at)}` : ""}</p></div><button className="x-btn" onClick={onClose} aria-label="Close"><Icon n="x" /></button></div>
     <div className="note">Record only what you observed. Rate from the sheet, except Read It Again, which you rate only after hearing this child read alone. An answer given together by a group is not evidence for any one child. Ticks and crosses are a first check of the closed items — your judgement decides.</div>
+    <div className="ws-score-bar"><div><span className="eyebrow">Score</span><b>{sc && sc.max ? `${hlHalf(sc.pts)} / ${sc.max}` : "—"}</b>{sc && sc.max ? <em>{sc.pct}%</em> : null}</div>
+      <p>{sc && sc.toMark ? `${sc.toMark} written ${sc.toMark === 1 ? "answer" : "answers"} still to mark. Use Right, Partly or Not yet beside each one.` : "Every answer is marked. Right counts 1, Partly ½, Not yet 0."}</p></div>
     <label className="ws-tog"><input type="checkbox" checked={keys} onChange={e => setKeys(e.target.checked)} />Show answers from the guide</label>
     {rec.status === "not_started" && <div className="empty">{L.name.split(" ")[0]} has not opened this worksheet. You can still record what you observed in a guided session.</div>}
-    {WT.SECS.map(s => { const sg = WT.suggest(w, s.k, rec.resp || {});
+    {WT.SECS.map(s => { const sg = WT.suggest(w, s.k, rec.resp || {}, marks);
       return <section className="ws-rev-s" key={s.k}>
         <div className="ws-rev-sh"><h3>{s.i}. {s.n}</h3><span className="ws-crit">Success criterion: {w.g.crit[s.k]}</span></div>
         <div className="ws-rev-work">
@@ -84,7 +89,7 @@ function WsReview({ L, code, onClose }) {
         </div>
         <div className="ws-rate">
           {s.k === "ra" ? <label className="ws-tog strong"><input type="checkbox" checked={heard} onChange={e => setHeard(e.target.checked)} />I heard {L.name.split(" ")[0]} read this alone{recorded ? " (or listened to the recording)" : ""}</label>
-            : sg.r ? <div className="ws-sugg"><span>Suggested from the closed items: <RateChip r={sg.r} sm /> <b>{WT.RATINGS[sg.r]}</b> — {sg.note}</span>{rt[s.k] !== sg.r && <button className="hl-btn quiet sm" onClick={() => set(s.k, sg.r)}>Use</button>}</div>
+            : sg.r ? <div className="ws-sugg"><span>Suggested from the marks: <RateChip r={sg.r} sm /> <b>{WT.RATINGS[sg.r]}</b> — {sg.note}</span>{rt[s.k] !== sg.r && <button className="hl-btn quiet sm" onClick={() => set(s.k, sg.r)}>Use</button>}</div>
             : <div className="ws-sugg"><span>{sg.note}</span></div>}
           <RubricPick w={w} k={s.k} val={rt[s.k]} set={v => set(s.k, v)} disabled={s.k === "ra" && !heard} challenge={!!sg.challenge} />
           {(rt[s.k] === "NY" || rt[s.k] === "D") && <div className="ws-next"><b>If a child struggles</b><span>{w.g.next[s.k]}</span></div>}
@@ -101,8 +106,8 @@ function WsReview({ L, code, onClose }) {
         : <div className="ws-rev-sh"><h3>A note for {L.name.split(" ")[0]}</h3><span className="ws-crit">Shown to the child and their family. Describe the work, never the child.</span></div>}
       <textarea className="hl-input" rows={3} value={note} onChange={e => setNote(e.target.value)} placeholder={window.HL_LIVE_ON ? "e.g. Sorted every sun and rain word. Needed a prompt to let her voice drop when it goes dark." : "e.g. You sorted every sun and rain word. Next time, let your voice drop when it goes dark."}></textarea>
     </section>
-    <div className="ws-rev-f"><button className="hl-btn ghost" onClick={onClose}>Cancel</button><button className="hl-btn" onClick={() => { const clean = {}; Object.keys(rt).forEach(k => { if (rt[k]) clean[k] = rt[k]; }); wsReview(L.id, code, { ratings: clean, help, note }); onClose(); }}><Icon n="check" s={16} />Save record</button></div>
-  </div></Drawer>;
+    <div className="ws-rev-f"><button className="hl-btn ghost" onClick={onClose}>Cancel</button><button className="hl-btn" onClick={() => { const clean = {}; Object.keys(rt).forEach(k => { if (rt[k]) clean[k] = rt[k]; }); if (sc) clean.score = { got: sc.pts, total: sc.max, toMark: sc.toMark || 0 }; wsReview(L.id, code, { ratings: clean, help, note }); onClose(); }}><Icon n="check" s={16} />Save record</button></div>
+  </div></WsMarkCtx.Provider></Drawer>;
 }
 
 function WsGuide({ w, onClose }) {

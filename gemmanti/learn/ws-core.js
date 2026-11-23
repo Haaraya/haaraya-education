@@ -57,21 +57,34 @@ function check(it,r){
 function unanswered(w,k,resp){return secItems(w,k).filter(function(it){return !it.challenge&&it.t!=="text"&&check(it,(resp||{})[it.id]).units.some(function(x){return x.blank;});});}
 function secItems(w,k){return k==="sw"?w.sw.concat(w.ch?[w.ch]:[]):(w[k]||[]);}
 /* Suggest a rating from the closed items only. Teacher always confirms. */
-function suggest(w,k,resp){
+/* Answer marks. Each part of an answer is worth 1: right 1, partly right 1/2, not yet or empty 0.
+   Written answers count once the teacher marks them. Challenges are optional and never counted. */
+/* Written parts (typed or drawn) can be marked by the teacher; her mark replaces the automatic check. */
+var WRITTEN={write:1,fields:1,table:1,draw:1,fill:1};
+function markOf(it,x,i,marks){if(x.blank)return 0;var m=marks&&marks[it.id+":"+i];if(WRITTEN[it.t]&&m!=null)return m;if(x.ok===null)return null;if(x.ok)return 1;return x.got>0?0.5:0;}
+function marksScore(w,resp,marks){
+ var got=0,total=0,toMark=0;
+ ["wf","ta","sw"].forEach(function(k){secItems(w,k).forEach(function(it){if(it.challenge||it.t==="text")return;
+  check(it,(resp||{})[it.id]).units.forEach(function(x,i){var m=markOf(it,x,i,marks);if(m==null){toMark++;return;}got+=m;total+=1;});});});
+ return {got:got,total:total,toMark:toMark,pct:total?Math.round(got/total*100):null};
+}
+function suggest(w,k,resp,marks){
  if(k==="ra")return {r:null,note:"Rate only after hearing this child read alone."};
  var items=secItems(w,k).filter(function(it){return !it.challenge&&it.t!=="text";});
  var units=[],open=false,any=false;
- items.forEach(function(it){var c=check(it,resp[it.id]);units=units.concat(c.units.filter(function(x){return x.ok!==null;}));open=open||c.open;any=any||c.answered;});
+ items.forEach(function(it){var c=check(it,resp[it.id]);
+  c.units.forEach(function(x,i){var m=markOf(it,x,i,marks);if(m==null){open=true;return;}units.push({ok:m===1,book:x.book});});
+  any=any||c.answered;});
  if(!any)return {r:null,note:"Nothing answered yet."};
  var bk=units.filter(function(x){return x.book;}),nw=units.filter(function(x){return !x.book;});
  var ok=function(a){return a.every(function(x){return x.ok;});},none=function(a){return a.every(function(x){return !x.ok;});};
  var r,note;
- if(!units.length){r=null;note="All answers here are open: judge them against the guide.";}
+ if(!units.length){r=null;note="Mark the written answers with Right, Partly or Not yet, and a rating will be suggested.";}
  else if(ok(units)){r="S";note="Every checkable item is right.";}
  else if(none(units)){r="NY";note="No checkable item is right yet.";}
  else if(bk.length&&ok(bk)&&!ok(nw)){r="D";note="Book items right, new items not yet: the skill has not yet transferred.";}
  else{r="D";note=units.filter(function(x){return x.ok;}).length+" of "+units.length+" checkable items right.";}
- if(open&&units.length)note+=" Read the written answers before confirming.";
+ if(open&&units.length)note+=" Some written answers are not marked yet.";
  var ch=w.ch&&k==="sw"?check(w.ch,resp.ch):null;
  return {r:r,note:note,challenge:ch&&ch.answered};
 }
@@ -112,6 +125,6 @@ function pages(code){
   .catch(function(e){delete pageCache[code];throw e;});
  return pageCache[code];
 }
-window.HLWS={WS:WS,list:list,get:function(c){return WS[c];},SECS:SECS,RATINGS:RATINGS,HELP:HELP,BOOK_PAGES:BOOKS,check:check,unanswered:unanswered,suggest:suggest,secItems:secItems,simulate:simulate,coverUrl:coverUrl,picUrl:picUrl,pages:pages,norm:norm};
+window.HLWS={WS:WS,list:list,get:function(c){return WS[c];},SECS:SECS,RATINGS:RATINGS,HELP:HELP,BOOK_PAGES:BOOKS,check:check,unanswered:unanswered,marksScore:marksScore,WRITTEN:WRITTEN,suggest:suggest,secItems:secItems,simulate:simulate,coverUrl:coverUrl,picUrl:picUrl,pages:pages,norm:norm};
 window.HL_AUDIO=window.HL_AUDIO||{};
 })();

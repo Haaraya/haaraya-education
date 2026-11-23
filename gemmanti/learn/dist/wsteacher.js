@@ -169,7 +169,7 @@ function TWorksheets({
     h: r.help
   })), showScores && /*#__PURE__*/React.createElement("td", {
     className: "c num"
-  }, hlScoreText(hlWsScore(r))), /*#__PURE__*/React.createElement("td", {
+  }, hlScoreText(hlWsScore(r, code))), /*#__PURE__*/React.createElement("td", {
     className: "c"
   }, /*#__PURE__*/React.createElement("button", {
     className: "hl-btn sm " + (r.status === "handed_in" ? "" : "ghost"),
@@ -255,8 +255,29 @@ function WsReview({
     [k]: v
   }));
   const recorded = Object.keys(window.HL_AUDIO).some(k => k.startsWith(`${L.id}|${code}|`));
+  const marks = rt.marks || {};
+  const markCtx = {
+    marks,
+    edit: true,
+    setMark: (key, v) => {
+      const m = {
+        ...marks
+      };
+      if (v == null) delete m[key];else m[key] = v;
+      setRt(Object.assign({}, rt, {
+        marks: m
+      }));
+    }
+  };
+  const sc = hlWsScore({
+    ...rec,
+    ratings: rt,
+    status: rec.status === "not_started" ? "in_progress" : rec.status
+  }, code);
   return /*#__PURE__*/React.createElement(Drawer, {
     onClose: onClose
+  }, /*#__PURE__*/React.createElement(WsMarkCtx.Provider, {
+    value: markCtx
   }, /*#__PURE__*/React.createElement("div", {
     className: "ws-rev"
   }, /*#__PURE__*/React.createElement("div", {
@@ -278,7 +299,11 @@ function WsReview({
     n: "x"
   }))), /*#__PURE__*/React.createElement("div", {
     className: "note"
-  }, "Record only what you observed. Rate from the sheet, except Read It Again, which you rate only after hearing this child read alone. An answer given together by a group is not evidence for any one child. Ticks and crosses are a first check of the closed items \u2014 your judgement decides."), /*#__PURE__*/React.createElement("label", {
+  }, "Record only what you observed. Rate from the sheet, except Read It Again, which you rate only after hearing this child read alone. An answer given together by a group is not evidence for any one child. Ticks and crosses are a first check of the closed items \u2014 your judgement decides."), /*#__PURE__*/React.createElement("div", {
+    className: "ws-score-bar"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "eyebrow"
+  }, "Score"), /*#__PURE__*/React.createElement("b", null, sc && sc.max ? `${hlHalf(sc.pts)} / ${sc.max}` : "—"), sc && sc.max ? /*#__PURE__*/React.createElement("em", null, sc.pct, "%") : null), /*#__PURE__*/React.createElement("p", null, sc && sc.toMark ? `${sc.toMark} written ${sc.toMark === 1 ? "answer" : "answers"} still to mark. Use Right, Partly or Not yet beside each one.` : "Every answer is marked. Right counts 1, Partly ½, Not yet 0.")), /*#__PURE__*/React.createElement("label", {
     className: "ws-tog"
   }, /*#__PURE__*/React.createElement("input", {
     type: "checkbox",
@@ -287,7 +312,7 @@ function WsReview({
   }), "Show answers from the guide"), rec.status === "not_started" && /*#__PURE__*/React.createElement("div", {
     className: "empty"
   }, L.name.split(" ")[0], " has not opened this worksheet. You can still record what you observed in a guided session."), WT.SECS.map(s => {
-    const sg = WT.suggest(w, s.k, rec.resp || {});
+    const sg = WT.suggest(w, s.k, rec.resp || {}, marks);
     return /*#__PURE__*/React.createElement("section", {
       className: "ws-rev-s",
       key: s.k
@@ -328,7 +353,7 @@ function WsReview({
       onChange: e => setHeard(e.target.checked)
     }), "I heard ", L.name.split(" ")[0], " read this alone", recorded ? " (or listened to the recording)" : "") : sg.r ? /*#__PURE__*/React.createElement("div", {
       className: "ws-sugg"
-    }, /*#__PURE__*/React.createElement("span", null, "Suggested from the closed items: ", /*#__PURE__*/React.createElement(RateChip, {
+    }, /*#__PURE__*/React.createElement("span", null, "Suggested from the marks: ", /*#__PURE__*/React.createElement(RateChip, {
       r: sg.r,
       sm: true
     }), " ", /*#__PURE__*/React.createElement("b", null, WT.RATINGS[sg.r]), " \u2014 ", sg.note), rt[s.k] !== sg.r && /*#__PURE__*/React.createElement("button", {
@@ -391,6 +416,11 @@ function WsReview({
       Object.keys(rt).forEach(k => {
         if (rt[k]) clean[k] = rt[k];
       });
+      if (sc) clean.score = {
+        got: sc.pts,
+        total: sc.max,
+        toMark: sc.toMark || 0
+      };
       wsReview(L.id, code, {
         ratings: clean,
         help,
@@ -401,7 +431,7 @@ function WsReview({
   }, /*#__PURE__*/React.createElement(Icon, {
     n: "check",
     s: 16
-  }), "Save record"))));
+  }), "Save record")))));
 }
 function WsGuide({
   w,

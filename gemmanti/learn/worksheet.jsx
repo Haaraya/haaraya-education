@@ -1,8 +1,18 @@
 /* Gemmanti — interactive worksheet player (child) + shared item renderers (teacher review reuses them). */
 const WSX = window.HLWS;
 const wsCls = (...a) => a.filter(Boolean).join(" ");
+/* Teacher review: marks for written answers (key = item id + ":" + part). */
+const WsMarkCtx = React.createContext(null);
+const WS_MARKS = [[1, "Right", "✓"], [0.5, "Partly", "½"], [0, "Not yet", "✗"]];
 function WsMark({ u }) {
+  const mc = React.useContext(WsMarkCtx);
   if (!u) return null;
+  if (u.written && !u.blank && mc && u.key && (mc.edit || mc.marks[u.key] != null || u.ok === null)) {
+    const own = mc.marks[u.key]; const cur = own != null ? own : u.ok === null ? null : u.ok ? 1 : 0;
+    if (mc.edit) return <span className="ws-markset" role="group" aria-label="Mark this answer">{WS_MARKS.map(([v, l, g]) => <button key={l} type="button" className={"m" + (cur === v ? " on" : "") + (v === 1 ? " r" : v === 0 ? " n" : " p")} title={l} aria-pressed={cur === v} onClick={() => mc.setMark(u.key, own === v ? null : v)}>{g}<span>{l}</span></button>)}</span>;
+    if (cur == null) return <span className="ws-mk open" title="Teacher judgement" aria-label="Teacher judgement">?</span>;
+    return <span className={"ws-mk " + (cur === 1 ? "ok" : cur === 0 ? "no" : "part")} title={cur === 1 ? "Right" : cur === 0 ? "Not yet" : "Partly"}>{cur === 1 ? <Icon n="check" s={13} w={3} /> : cur === 0 ? <Icon n="x" s={13} w={3} /> : "½"}</span>;
+  }
   if (u.blank) return <span className="ws-mk blank" title="Not answered" aria-label="Not answered">–</span>;
   if (!u.ok && u.need > 1 && u.got > 0) { const t = `${u.got} of ${u.need} found`; return <span className="ws-mk part" title={t + (u.extra ? `, ${u.extra} extra` : "")} aria-label={t}>{u.got}/{u.need}</span>; }
   const t = u.ok === null ? "Teacher judgement" : u.ok ? "Right" : "Not yet";
@@ -246,13 +256,14 @@ function wsAnswered(w, k, rec) {
   if (k === "ra") return (rec.reads || []).some(Boolean);
   return WSX.secItems(w, k).filter(it => !it.challenge && it.t !== "text").some(it => WSX.check(it, rec.resp[it.id]).answered);
 }
+function wsKeyed(it, fb) { const wr = !!WSX.WRITTEN[it.t]; fb.units = fb.units.map((u, i) => ({ ...u, key: it.id + ":" + i, written: wr })); return fb; }
 function WorksheetSection({ w, k, L, rec, ro, setResp, onReads, teacher, showFb, showKey, need }) {
   if (k === "ra") return <ReadAgain w={w} L={L} rec={rec} ro={ro} setResp={setResp} onReads={onReads} teacher={teacher} />;
   let qn = 0;
   return <WsCodeCtx.Provider value={w.code}>{WSX.secItems(w, k).map(it => { if (k === "ta" && it.t !== "text") qn++;
     return <WsItem key={it.id} it={it} n={k === "ta" && it.t !== "text" ? qn : null} v={rec.resp[it.id]} set={x => setResp(it.id, x)} ro={ro} teacher={teacher} showKey={showKey}
       need={!!need && need.includes(it.id) && !WSX.unanswered(w, k, rec.resp).every(x => x.id !== it.id)}
-      fb={showFb && it.t !== "text" ? WSX.check(it, rec.resp[it.id]) : null} />; })}</WsCodeCtx.Provider>;
+      fb={showFb && it.t !== "text" ? wsKeyed(it, WSX.check(it, rec.resp[it.id])) : null} />; })}</WsCodeCtx.Provider>;
 }
 
 function WorksheetPlayer({ L, code }) {
@@ -316,4 +327,4 @@ function WorksheetPlayer({ L, code }) {
       {ask.groups.some(g => withTeacher(g.k)) && <p className="note" style={{ marginTop: 10 }}>If your teacher said to leave a part, that is fine.</p>}</Modal>}
   </div>;
 }
-Object.assign(window, { WorksheetPlayer, WorksheetSection, WsItem, WsKey, WsMark, ReadAgain, wsAnswered, Pic });
+Object.assign(window, { WsMarkCtx, WorksheetPlayer, WorksheetSection, WsItem, WsKey, WsMark, ReadAgain, wsAnswered, Pic });

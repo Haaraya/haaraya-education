@@ -1,10 +1,47 @@
 /* Gemmanti — interactive worksheet player (child) + shared item renderers (teacher review reuses them). */
 const WSX = window.HLWS;
 const wsCls = (...a) => a.filter(Boolean).join(" ");
+/* Teacher review: marks for written answers (key = item id + ":" + part). */
+const WsMarkCtx = React.createContext(null);
+const WS_MARKS = [[1, "Right", "✓"], [0.5, "Partly", "½"], [0, "Not yet", "✗"]];
 function WsMark({
   u
 }) {
+  const mc = React.useContext(WsMarkCtx);
   if (!u) return null;
+  if (u.written && !u.blank && mc && u.key && (mc.edit || mc.marks[u.key] != null || u.ok === null)) {
+    const own = mc.marks[u.key];
+    const cur = own != null ? own : u.ok === null ? null : u.ok ? 1 : 0;
+    if (mc.edit) return /*#__PURE__*/React.createElement("span", {
+      className: "ws-markset",
+      role: "group",
+      "aria-label": "Mark this answer"
+    }, WS_MARKS.map(([v, l, g]) => /*#__PURE__*/React.createElement("button", {
+      key: l,
+      type: "button",
+      className: "m" + (cur === v ? " on" : "") + (v === 1 ? " r" : v === 0 ? " n" : " p"),
+      title: l,
+      "aria-pressed": cur === v,
+      onClick: () => mc.setMark(u.key, own === v ? null : v)
+    }, g, /*#__PURE__*/React.createElement("span", null, l))));
+    if (cur == null) return /*#__PURE__*/React.createElement("span", {
+      className: "ws-mk open",
+      title: "Teacher judgement",
+      "aria-label": "Teacher judgement"
+    }, "?");
+    return /*#__PURE__*/React.createElement("span", {
+      className: "ws-mk " + (cur === 1 ? "ok" : cur === 0 ? "no" : "part"),
+      title: cur === 1 ? "Right" : cur === 0 ? "Not yet" : "Partly"
+    }, cur === 1 ? /*#__PURE__*/React.createElement(Icon, {
+      n: "check",
+      s: 13,
+      w: 3
+    }) : cur === 0 ? /*#__PURE__*/React.createElement(Icon, {
+      n: "x",
+      s: 13,
+      w: 3
+    }) : "½");
+  }
   if (u.blank) return /*#__PURE__*/React.createElement("span", {
     className: "ws-mk blank",
     title: "Not answered",
@@ -930,6 +967,15 @@ function wsAnswered(w, k, rec) {
   if (k === "ra") return (rec.reads || []).some(Boolean);
   return WSX.secItems(w, k).filter(it => !it.challenge && it.t !== "text").some(it => WSX.check(it, rec.resp[it.id]).answered);
 }
+function wsKeyed(it, fb) {
+  const wr = !!WSX.WRITTEN[it.t];
+  fb.units = fb.units.map((u, i) => ({
+    ...u,
+    key: it.id + ":" + i,
+    written: wr
+  }));
+  return fb;
+}
 function WorksheetSection({
   w,
   k,
@@ -967,7 +1013,7 @@ function WorksheetSection({
       teacher: teacher,
       showKey: showKey,
       need: !!need && need.includes(it.id) && !WSX.unanswered(w, k, rec.resp).every(x => x.id !== it.id),
-      fb: showFb && it.t !== "text" ? WSX.check(it, rec.resp[it.id]) : null
+      fb: showFb && it.t !== "text" ? wsKeyed(it, WSX.check(it, rec.resp[it.id])) : null
     });
   }));
 }
@@ -1188,6 +1234,7 @@ function WorksheetPlayer({
   }, "If your teacher said to leave a part, that is fine.")));
 }
 Object.assign(window, {
+  WsMarkCtx,
   WorksheetPlayer,
   WorksheetSection,
   WsItem,

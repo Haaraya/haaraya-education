@@ -169,12 +169,15 @@ const useHL = () => React.useContext(HLStore);
    out, so a child is never marked down for something nobody saw. Help is not
    part of the score. Returns null when nothing has been rated. */
 const HL_POINTS = { NY: 0, D: 1, S: 2, B: 2 };
-function hlWsScore(rec) {
-  const r = (rec && rec.ratings) || {}; let pts = 0, max = 0, star = false;
-  Object.keys(r).forEach(k => { const v = r[k]; if (v in HL_POINTS) { pts += HL_POINTS[v]; max += 2; if (v === "B") star = true; } });
-  return max ? { pts, max, pct: Math.round(pts / max * 100), star } : null;
+/* The worksheet score counts answers: right 1, partly right 1/2, not yet 0 (see HLWS.marksScore). */
+function hlWsScore(rec, code) {
+  const w = code && window.HLWS.get(code); const r = (rec && rec.ratings) || {};
+  if (!w || !rec || rec.status === "not_started") return null;
+  const m = window.HLWS.marksScore(w, rec.resp || {}, r.marks || {});
+  return m.total || m.toMark ? { pts: m.got, max: m.total, pct: m.pct, toMark: m.toMark, star: Object.values(r).includes("B") } : null;
 }
-const hlScoreText = sc => sc ? `${sc.pts}/${sc.max} · ${sc.pct}%${sc.star ? " ★" : ""}` : "—";
+const hlHalf = n => (Math.floor(n) || (n % 1 ? "" : "0")) + (n % 1 ? "½" : "");
+const hlScoreText = sc => !sc ? "—" : (sc.max ? `${hlHalf(sc.pts)}/${sc.max} · ${sc.pct}%` : "") + (sc.toMark ? `${sc.max ? " · " : ""}${sc.toMark} to mark` : "") + (sc.star ? " ★" : "");
 
 /* Derived selectors */
 const hlBook = id => D.BOOKS.find(b => b.id === id);
@@ -204,4 +207,4 @@ function hlAssignStatus(L, a) {
   if (a.type === "book") { const r = L.reading[a.ref]; return L.booksDone.includes(a.ref) ? "complete" : r ? "in_progress" : "not_started"; }
   return "in_progress";
 }
-Object.assign(window, { hlWsScore, hlScoreText, HLProvider, useHL, hlBook, hlWsRec, hlClassLearners, hlLessonRec, hlBestAttempt, hlLastAttempt, hlAvgScore, hlFlags, hlAssignedFor, hlAssignStatus });
+Object.assign(window, { hlWsScore, hlScoreText, hlHalf, HLProvider, useHL, hlBook, hlWsRec, hlClassLearners, hlLessonRec, hlBestAttempt, hlLastAttempt, hlAvgScore, hlFlags, hlAssignedFor, hlAssignStatus });

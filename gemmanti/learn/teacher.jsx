@@ -38,7 +38,7 @@ function TeacherApp() {
     {v === "roster" && <TRoster {...props} />}
     {v === "assignments" && <TAssignments {...props} />}
     {v === "teach" && <TTeach {...props} />}
-    {v === "worksheets" && <TWorksheets {...props} />}
+    {v === "worksheets" && <TWorksheets {...props} showScores={cls.showScores !== false} />}
     {v === "reports" && <TReports {...props} />}
     {v === "requests" && <TRequests me={me} />}
     {drawer && <LearnerDrawer L={state.learners[drawer]} cls={cls} onClose={() => setDrawer(null)} onAssign={id => { setDrawer(null); setAssign({ to: [id] }); }} />}

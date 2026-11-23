@@ -42,9 +42,17 @@ const RATING: Record<string, string> = { NY: "Not Yet", D: "Developing", S: "Sec
 const HELP: Record<string, string> = { modelled: "Modelled", prompted: "Prompted", independent: "Independent" };
 const POINTS: Record<string, number> = { NY: 0, D: 1, S: 2, B: 2 };
 
-function score(r: Record<string, string>) {
-  let pts = 0, max = 0, star = false;
-  for (const v of Object.values(r || {})) if (v in POINTS) { pts += POINTS[v]; max += 2; if (v === "B") star = true; }
+// The score counts answers (right 1, partly 1/2, not yet 0). Gemmanti saves it with the
+// teacher's record as ratings.score; older records fall back to the section ratings.
+function score(r: Record<string, any>) {
+  const star = Object.values(r || {}).includes("B");
+  const sc = r && r.score;
+  if (sc && sc.total) {
+    const half = (n: number) => `${Math.floor(n) || (n % 1 ? "" : "0")}${n % 1 ? "½" : ""}`;
+    return `${half(sc.got)}/${sc.total} · ${Math.round((sc.got / sc.total) * 100)}%${star ? " ★" : ""}`;
+  }
+  let pts = 0, max = 0;
+  for (const v of Object.values(r || {})) if (typeof v === "string" && v in POINTS) { pts += POINTS[v]; max += 2; }
   return max ? `${pts}/${max} · ${Math.round((pts / max) * 100)}%${star ? " ★" : ""}` : "—";
 }
 const esc = (s: unknown) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
@@ -69,7 +77,7 @@ function render(child: any, cls: any, school: any, reviews: any[], cat: Cat, wit
       }</tbody></table>`
     : `<p style="color:#666">No worksheets recorded yet.</p>`;
   const key = `<p style="font-size:12px;color:#555;line-height:1.5"><b>What the words mean.</b> Not Yet: cannot do it yet. Developing: partly right, or not yet reliable. Secure: does it accurately. Beyond: uses it in something new. Not observed: the teacher did not see enough of this part to judge.</p>
-<p style="font-size:12px;color:#555;line-height:1.5"><b>Help</b> shows the most help ${esc(first)} needed: Modelled (the teacher showed how), Prompted (a hint), or Independent (no help).${withScores ? " The score counts Not Yet as 0, Developing as 1, and Secure or Beyond as 2 for each part rated. ★ marks work beyond the book." : ""}</p>`;
+<p style="font-size:12px;color:#555;line-height:1.5"><b>Help</b> shows the most help ${esc(first)} needed: Modelled (the teacher showed how), Prompted (a hint), or Independent (no help).${withScores ? " The score counts every answer: right 1, partly right ½, not yet 0. ★ marks work beyond the book." : ""}</p>`;
   const html = `<!doctype html><html><body style="margin:0;background:#f6f4ee;font-family:Arial,Helvetica,sans-serif;color:#1d2a22">
 <div style="max-width:720px;margin:0 auto;padding:24px 16px"><div style="background:#fff;border-radius:10px;padding:24px">
 <div style="font-size:11px;font-weight:bold;letter-spacing:.08em;text-transform:uppercase;color:#0f5a3c">Haaraya Literacy · Worksheet report</div>

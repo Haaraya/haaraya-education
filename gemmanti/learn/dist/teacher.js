@@ -1,3 +1,4 @@
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 const TD = window.HL_DATA;
 function AdultShell({
   nav,
@@ -76,7 +77,9 @@ function TeacherApp() {
   return /*#__PURE__*/React.createElement(AdultShell, {
     nav: nav,
     ctx: ctx
-  }, (v === "overview" || !nav.find(n => n[0] === v)) && /*#__PURE__*/React.createElement(TOverview, props), v === "roster" && /*#__PURE__*/React.createElement(TRoster, props), v === "assignments" && /*#__PURE__*/React.createElement(TAssignments, props), v === "teach" && /*#__PURE__*/React.createElement(TTeach, props), v === "worksheets" && /*#__PURE__*/React.createElement(TWorksheets, props), v === "reports" && /*#__PURE__*/React.createElement(TReports, props), v === "requests" && /*#__PURE__*/React.createElement(TRequests, {
+  }, (v === "overview" || !nav.find(n => n[0] === v)) && /*#__PURE__*/React.createElement(TOverview, props), v === "roster" && /*#__PURE__*/React.createElement(TRoster, props), v === "assignments" && /*#__PURE__*/React.createElement(TAssignments, props), v === "teach" && /*#__PURE__*/React.createElement(TTeach, props), v === "worksheets" && /*#__PURE__*/React.createElement(TWorksheets, _extends({}, props, {
+    showScores: cls.showScores !== false
+  })), v === "reports" && /*#__PURE__*/React.createElement(TReports, props), v === "requests" && /*#__PURE__*/React.createElement(TRequests, {
     me: me
   }), drawer && /*#__PURE__*/React.createElement(LearnerDrawer, {
     L: state.learners[drawer],

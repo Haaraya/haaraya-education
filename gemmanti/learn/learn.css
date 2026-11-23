@@ -813,3 +813,15 @@ a.hl-brand{text-decoration:none;color:inherit}
 .ws-pic.missed,.ws-word.missed{border-style:dashed;border-color:var(--yellow-dk);position:relative}
 .ws-pic.missed::after,.ws-word.missed::after{content:"Missed";position:absolute;top:-9px;right:6px;padding:1px 7px;border-radius:99px;background:var(--yellow-dk);color:#fff;font:900 10px var(--ui);letter-spacing:.04em}
 .ws-mk.part{width:auto;min-width:34px;padding:0 7px;border-radius:99px;background:var(--amber-bg,#FFF1CC);color:var(--amber,#8A5A00);border:1px solid var(--yellow-dk);font-size:12px}
+/* Teacher marks for written answers, and the running score */
+.ws-markset{display:inline-flex;gap:6px;flex:none;align-self:center}
+.ws-markset .m{display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:4px 10px;border:1.5px solid var(--line-2);border-radius:99px;background:#fff;font:900 14px var(--ui);color:var(--ink-mid);cursor:pointer}
+.ws-markset .m span{font-size:12px;font-weight:800}
+.ws-markset .m.r.on{background:var(--forest);border-color:var(--forest);color:#fff}
+.ws-markset .m.p.on{background:#FFF1CC;border-color:var(--yellow-dk);color:#8A5A00}
+.ws-markset .m.n.on{background:var(--warn);border-color:var(--warn);color:#fff}
+.ws-row.top:has(.ws-markset),.ws-field:has(.ws-markset){align-items:center}
+.ws-score-bar{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin:0 0 14px;padding:14px 18px;border-radius:14px;background:var(--g-lt);border:1px solid var(--line)}
+.ws-score-bar>div{display:flex;align-items:baseline;gap:10px}.ws-score-bar b{font-size:26px;font-weight:900}.ws-score-bar em{font-style:normal;font-weight:800;color:var(--forest-dk)}
+.ws-score-bar p{flex:1;min-width:220px;font-size:14px;font-weight:600;color:var(--ink-mid)}
+@media (max-width:720px){.ws-markset .m span{display:none}}

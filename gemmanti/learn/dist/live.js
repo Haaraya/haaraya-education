@@ -492,12 +492,12 @@ function LiveReport({
       key: k
     }, r.ratings && r.ratings[k] ? HLWS.RATINGS[r.ratings[k]] : "—")), /*#__PURE__*/React.createElement("td", null, r.help ? HLWS.HELP[r.help] : "—"), cls.showScores && /*#__PURE__*/React.createElement("td", {
       className: "num"
-    }, hlScoreText(hlWsScore(r))));
+    }, hlScoreText(hlWsScore(r, c))));
   }))) : /*#__PURE__*/React.createElement("p", {
     className: "rep-none"
   }, "No worksheets recorded yet."), /*#__PURE__*/React.createElement("footer", {
     className: "rep-f"
-  }, /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", null, "What the words mean."), " Not Yet: cannot do it yet. Developing: partly right, or not yet reliable. Secure: does it accurately. Beyond: uses it in something new. Not observed: the teacher did not see enough of this part to judge."), /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", null, "Help"), " shows the most help your child needed: Modelled (the teacher showed how), Prompted (a hint), or Independent (no help).", cls.showScores ? " The score counts Not Yet as 0, Developing as 1, and Secure or Beyond as 2 for each part rated. ★ marks work beyond the book." : "")));
+  }, /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", null, "What the words mean."), " Not Yet: cannot do it yet. Developing: partly right, or not yet reliable. Secure: does it accurately. Beyond: uses it in something new. Not observed: the teacher did not see enough of this part to judge."), /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", null, "Help"), " shows the most help your child needed: Modelled (the teacher showed how), Prompted (a hint), or Independent (no help).", cls.showScores ? " The score counts every answer: right 1, partly right ½, not yet 0. ★ marks work beyond the book." : "")));
 }
 
 /* ---------- pupil (on a teacher's device) ---------- */
