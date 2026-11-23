@@ -1,7 +1,10 @@
 /* Haaraya — Print a book. Screen preview and print layout. */
 body { margin: 0; background: #e9e5dc; font-family: Nunito, system-ui, sans-serif; color: #1f2a1f; }
-body[data-paper="a4"] { --pb-w: 210mm; --pb-h: 297mm; }
-body[data-paper="letter"] { --pb-w: 215.9mm; --pb-h: 279.4mm; }
+/* Sheet and book-page sizes for each paper and layout. The book page keeps the 148:210 shape. */
+body[data-paper="a4"][data-layout="single"]     { --pb-w: 210mm;   --pb-h: 297mm;   --pb-bw: 180mm; --pb-bh: 255.4mm; }
+body[data-paper="letter"][data-layout="single"] { --pb-w: 215.9mm; --pb-h: 279.4mm; --pb-bw: 180mm; --pb-bh: 255.4mm; }
+body[data-paper="a4"][data-layout="booklet"]     { --pb-w: 297mm;   --pb-h: 210mm;   --pb-bw: 134mm; --pb-bh: 190.1mm; }
+body[data-paper="letter"][data-layout="booklet"] { --pb-w: 279.4mm; --pb-h: 215.9mm; --pb-bw: 126mm; --pb-bh: 178.8mm; }
 
 .pb-msg { max-width: 520px; margin: 12vh auto; padding: 32px; background: #fff; border-radius: 18px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.08); }
 .pb-msg h1 { font-size: 26px; margin: 0 0 10px; }
@@ -18,24 +21,35 @@ body[data-paper="letter"] { --pb-w: 215.9mm; --pb-h: 279.4mm; }
 .pb-err { flex-basis: 100%; margin: 0; color: #b3261e; font-weight: 800; }
 .pb-note { flex-basis: 100%; margin: 0; font-size: 13px; font-weight: 600; color: #6b736b; }
 
+.pb-how { flex-basis: 100%; font-size: 14px; color: #3d473d; }
+.pb-how summary { cursor: pointer; font-weight: 800; color: #1b6e1b; }
+.pb-how ol { margin: 8px 0 6px 20px; padding: 0; display: grid; gap: 3px; font-weight: 600; }
+.pb-how p { margin: 6px 0 0; font-weight: 600; color: #6b736b; }
+
 .pb-pages { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 24px 12px 60px; }
-.pb-wrap { display: contents; }
 .pb-sheet { position: relative; width: var(--pb-w); height: var(--pb-h); background: #fff; box-shadow: 0 6px 20px rgba(0,0,0,.12); display: flex; flex-direction: column; align-items: center; overflow: hidden; }
-.pb-frame { position: relative !important; inset: auto !important; width: auto !important; margin-top: 8mm; display: block !important; height: auto !important; min-height: 0 !important; background: none !important; z-index: auto !important; overflow: visible !important; }
-.pb-frame .book { width: 180mm !important; height: 255.4mm !important; max-width: none; border-radius: 0 !important; box-shadow: none !important; animation: none !important; outline: 0.2mm solid #e6e0d4; }
+.pb-row { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; position: relative; }
+.pb-sheet.is-booklet .pb-half { width: 50%; }
+.pb-half { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.5mm; }
+.pb-half.is-blank { background: #fff; }
+.pb-frame { position: relative !important; inset: auto !important; width: auto !important; display: block !important; height: auto !important; min-height: 0 !important; background: none !important; z-index: auto !important; overflow: visible !important; }
+.pb-frame .book { width: var(--pb-bw) !important; height: var(--pb-bh) !important; max-width: none; border-radius: 0 !important; box-shadow: none !important; animation: none !important; outline: 0.2mm solid #e6e0d4; }
 .pb-frame .book::after { display: none; }
-.pb-foot { width: 180mm; margin-top: auto; margin-bottom: 4.5mm; display: flex; justify-content: space-between; gap: 6mm; font: 600 7.2pt/1.3 Nunito, sans-serif; color: #6b6355; }
-.pb-foot b { font-weight: 800; }
-.pb-edge { position: absolute; left: 3.2mm; top: 50%; transform: translate(-50%, -50%) rotate(-90deg); transform-origin: center; white-space: nowrap; font: 700 6.5pt Nunito, sans-serif; letter-spacing: .08em; color: #8c8473; }
-.pb-pic-mark { position: absolute; z-index: 3; font: 700 5.2pt/1 Nunito, sans-serif; letter-spacing: .06em; color: #5c513f; opacity: .72; pointer-events: none; }
-.pb-back-code { position: absolute; left: 0; right: 0; bottom: 1.6%; text-align: center; font: 700 7pt Nunito, sans-serif; letter-spacing: .04em; color: #5c513f; }
+.pb-pfoot { width: var(--pb-bw); display: flex; justify-content: space-between; font: 700 6.3pt/1 Nunito, sans-serif; color: #8c8473; letter-spacing: .04em; }
+.pb-fold { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-90deg); white-space: nowrap; font: 700 5.5pt Nunito, sans-serif; letter-spacing: .1em; color: #b3ab9b; }
+.pb-sheet.is-booklet::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; border-left: 0.2mm dashed #e3ddd0; }
+.pb-foot { width: calc(100% - 16mm); margin: 0 0 3mm; font: 600 6.5pt/1.3 Nunito, sans-serif; color: #6b6355; text-align: center; }
+.pb-edge { position: absolute; left: 3mm; top: 50%; transform: translate(-50%, -50%) rotate(-90deg); white-space: nowrap; font: 700 6pt Nunito, sans-serif; letter-spacing: .08em; color: #8c8473; }
+.pb-pic-mark { position: absolute; z-index: 3; font: 700 5pt/1 Nunito, sans-serif; letter-spacing: .06em; color: #5c513f; opacity: .72; pointer-events: none; }
+.pb-back-code { position: absolute; left: 0; right: 0; bottom: 1.6%; text-align: center; font: 700 6.5pt Nunito, sans-serif; letter-spacing: .04em; color: #5c513f; }
 
 @media print {
   body { background: #fff; }
   .pb-bar { display: none !important; }
   .pb-pages { padding: 0; gap: 0; display: block; }
   .pb-sheet { box-shadow: none; page-break-after: always; break-after: page; margin: 0 auto; }
+  .pb-sheet.is-booklet::after { border-left-color: #eee9de; }
   .pb-frame .book { outline: 0; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
-@media screen and (max-width: 860px) { .pb-pages { zoom: .55; } }
+@media screen and (max-width: 1200px) { .pb-pages { zoom: .6; } }

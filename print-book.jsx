@@ -1,8 +1,10 @@
 /* ============================================================================
    Haaraya — Print a book (school staff, Print add-on).
    Lays out one book from the main library, using the main reader's own pages:
-   front cover, About this book, every story page, back cover. One book page
-   per sheet, A4 or US Letter. The teacher prints, or chooses Save as PDF.
+   front cover, About this book, every story page, back cover. Default is a
+   folded booklet (two pages per side, both sides, imposed so the stack folds
+   and staples into a book); one page per sheet is the alternative. A4 or US
+   Letter. The teacher prints, or chooses Save as PDF.
 
    Every print is traceable. issue_print_code() (Supabase) checks the person is
    a teacher or school admin at a school with the 'print' add-on, records the
@@ -19,16 +21,6 @@ const PB_PAPER = { a4: { label: "A4", css: "A4 portrait" }, letter: { label: "US
 const pbBook = () => new URLSearchParams(location.search).get("book") || "";
 const pbToday = () => new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 const pbLevel = b => { const m = String((b && b.level) || "").match(/\d+/); return m ? Number(m[0]) : 1; };
-
-function PbSheet({ children, mark, n, back }) {
-  return <section className={"pb-sheet" + (back ? " is-back" : "")}>
-    {mark && <div className="pb-edge" aria-hidden="true">{mark.code} · {mark.school_code} · Haaraya Education</div>}
-    <div className="tfr pb-frame"><article className="book">{children}</article></div>
-    <footer className="pb-foot">{mark
-      ? <span>Printed for {mark.school_name} · {mark.date} · {mark.code} · © Author Finisher Nigeria Ltd. For use by this school only. Not for resale or copying.</span>
-      : <span>Preview · the print code is added when you press Print</span>}<b>{n}</b></footer>
-  </section>;
-}
 
 /* Draws the small mark into the picture of the chosen story page. */
 function PbPictureMark({ mark, sheetRef }) {
@@ -54,13 +46,52 @@ function PbPictureMark({ mark, sheetRef }) {
   return <span className="pb-pic-mark" style={{ right: pos.right, bottom: pos.bottom }} aria-hidden="true">{mark.school_code}{mark.code.replace("HX-", "")}</span>;
 }
 
-function PbStorySheet({ page, pkg, mark, n, hidden }) {
+/* One book page, at the size set by the paper and layout (CSS variables). */
+function PbPage({ children, mark, n, blank, picMark }) {
   const ref = useRefPB(null);
-  return <div ref={ref} className="pb-wrap"><PbSheet mark={mark} n={n}>
-    <TfrPage page={page} local={!!pkg._local} level={(pkg.book || {}).level} />
-    {hidden && mark && <PbPictureMark mark={mark} sheetRef={ref} />}
-  </PbSheet></div>;
+  if (blank) return <div className="pb-half is-blank" />;
+  return <div className="pb-half" ref={ref}>
+    <div className="tfr pb-frame"><article className="book">{children}{picMark && mark && <PbPictureMark mark={mark} sheetRef={ref} />}</article></div>
+    <div className="pb-pfoot"><span>{mark ? `${mark.code} · ${mark.school_code}` : ""}</span><b>{n}</b></div>
+  </div>;
 }
+function PbFootLine({ mark }) {
+  return <footer className="pb-foot">{mark
+    ? <span>Printed for {mark.school_name} · {mark.date} · {mark.code} · © Author Finisher Nigeria Ltd. For use by this school only. Not for resale or copying.</span>
+    : <span>Preview · the print code is added when you press Print</span>}</footer>;
+}
+/* A printed side of paper: one page (single) or two pages with the fold between (booklet). */
+function PbSide({ left, right, single, mark }) {
+  return <section className={"pb-sheet " + (single ? "is-single" : "is-booklet")}>
+    {mark && <div className="pb-edge" aria-hidden="true">{mark.code} · {mark.school_code} · Haaraya Education</div>}
+    <div className="pb-row">{left}{!single && <div className="pb-fold" aria-hidden="true">{mark ? `${mark.code} · ${mark.school_code}` : ""}</div>}{!single && right}</div>
+    <PbFootLine mark={mark} />
+  </section>;
+}
+
+/* Booklet order. Pages 1..N (N a multiple of 4). Sheet i, front: N-2i | 2i+1; back: 2i+2 | N-2i-1. */
+function pbImpose(N) {
+  const sides = [];
+  for (let i = 0; i < N / 4; i++) {
+    sides.push([N - 2 * i, 2 * i + 1]);
+    sides.push([2 * i + 2, N - 2 * i - 1]);
+  }
+  return sides;
+}
+
+const PB_HOW = {
+  booklet: ["Press Print or save as PDF.",
+    "In the print box, set Layout to Landscape and Paper size to the one you chose here.",
+    "Turn on Print on both sides (two-sided), and choose Flip on short edge. It may be under More settings or Printer properties.",
+    "Turn off Headers and footers. Leave Scale at Default (100%).",
+    "Print. Keep the sheets in the order they come out.",
+    "Fold the whole stack in half along the middle, with the front cover on the outside.",
+    "Staple twice along the fold, about a quarter of the way in from each end."],
+  single: ["Press Print or save as PDF.",
+    "In the print box, set Layout to Portrait and Paper size to the one you chose here.",
+    "Turn off Headers and footers. Leave Scale at Default (100%).",
+    "Print, then staple the pages at the top left corner."]
+};
 
 function PrintBookApp() {
   const code = pbBook();
@@ -69,6 +100,7 @@ function PrintBookApp() {
   const [err, setErr] = useStatePB("");
   const [paper, setPaper] = useStatePB(() => { try { return localStorage.getItem("haaraya:print-paper") || "a4"; } catch (e) { return "a4"; } });
   const [mark, setMark] = useStatePB(null); const [busy, setBusy] = useStatePB(false);
+  const [layout, setLayout] = useStatePB(() => { try { return localStorage.getItem("haaraya:print-layout") || "booklet"; } catch (e) { return "booklet"; } });
 
   useEffectPB(() => {
     (async () => {
@@ -86,10 +118,11 @@ function PrintBookApp() {
     }).catch(e => setErr((e && e.message) || "This book could not load."));
   }, [allowed, code]);
   useEffectPB(() => {
-    const el = document.getElementById("print-page-size"); if (el) el.textContent = `@page { size: ${PB_PAPER[paper].css}; margin: 0; }`;
-    document.body.dataset.paper = paper;
-    try { localStorage.setItem("haaraya:print-paper", paper); } catch (e) { /* ignore */ }
-  }, [paper]);
+    const size = (paper === "a4" ? "A4" : "letter") + (layout === "booklet" ? " landscape" : " portrait");
+    const el = document.getElementById("print-page-size"); if (el) el.textContent = `@page { size: ${size}; margin: 0; }`;
+    document.body.dataset.paper = paper; document.body.dataset.layout = layout;
+    try { localStorage.setItem("haaraya:print-paper", paper); localStorage.setItem("haaraya:print-layout", layout); } catch (e) { /* ignore */ }
+  }, [paper, layout]);
   useEffectPB(() => { if (pkg) document.title = `Print · ${(pkg.book || {}).title || code} · Haaraya`; }, [pkg]);
 
   const waitForPictures = () => Promise.all([...document.querySelectorAll(".pb-sheet img")].map(i => i.complete ? null : new Promise(r => { i.onload = i.onerror = r; })));
@@ -116,20 +149,34 @@ function PrintBookApp() {
   const b = pkg.book || {};
   const pages = (pkg.pages || []).slice().sort((x, y) => (x.page_number || 0) - (y.page_number || 0));
   const hiddenAt = Math.min(Math.max(1, pbLevel(b)), pages.length) - 1;
-  let n = 0;
+  /* Reading order. In a booklet, blank pages go just before the back cover (inside back cover). */
+  const seq = [{ k: "cover", el: <TfrCover pkg={pkg} /> }];
+  if (about) seq.push({ k: "about", el: <TfrAbout pkg={pkg} about={about} /> });
+  pages.forEach((p, i) => seq.push({ k: "p" + (p.page_number || i), el: <TfrPage page={p} local={!!pkg._local} level={b.level} />, pic: i === hiddenAt }));
+  const backEl = <><TfrBack pkg={pkg} />{mark && <div className="pb-back-code">Print copy {mark.code} · School {mark.school_code} · {mark.date}</div>}</>;
+  const booklet = layout === "booklet";
+  const N = booklet ? Math.ceil((seq.length + 1) / 4) * 4 : seq.length + 1;
+  while (booklet && seq.length < N - 1) seq.push({ k: "blank" + seq.length, blank: true });
+  seq.push({ k: "back", el: backEl });
+  const pageEl = num => { const x = seq[num - 1]; return <PbPage key={x.k} n={x.blank ? null : num} mark={mark} blank={x.blank} picMark={x.pic}>{x.el}</PbPage>; };
+  const sheets = booklet ? N / 4 : N;
   return <>
     <div className="pb-bar">
-      <div className="pb-bar-t"><b>{b.title || code}</b><span>{b.book_code || code} · {pages.length + 2 + (about ? 1 : 0)} pages</span></div>
+      <div className="pb-bar-t"><b>{b.title || code}</b><span>{b.book_code || code} · {N} pages · {sheets} {sheets === 1 ? "sheet" : "sheets"} of paper{booklet ? ", printed on both sides" : ""}</span></div>
+      <div className="pb-paper" role="group" aria-label="Layout">{[["booklet", "Folded booklet"], ["single", "One page per sheet"]].map(([k, l]) => <button key={k} className={layout === k ? "on" : ""} onClick={() => { setLayout(k); setMark(null); }}>{l}</button>)}</div>
       <div className="pb-paper" role="group" aria-label="Paper size">{Object.entries(PB_PAPER).map(([k, v]) => <button key={k} className={paper === k ? "on" : ""} onClick={() => { setPaper(k); setMark(null); }}>{v.label}</button>)}</div>
       <button className="pb-btn" disabled={busy} onClick={doPrint}>{busy ? "Preparing…" : "Print or save as PDF"}</button>
       {err && <p className="pb-err">{err}</p>}
-      <p className="pb-note">Each print is given its own code, recorded for your school. In the print box, choose your printer, or Save as PDF. Turn off "Headers and footers" for a clean page.</p>
+      <details className="pb-how" open><summary>How to print {booklet ? "the booklet" : "it"}</summary>
+        <ol>{PB_HOW[layout].map((t, i) => <li key={i}>{t}</li>)}</ol>
+        {booklet && <p>No two-sided printing? Choose One page per sheet instead. To keep a copy, choose Save as PDF as the printer, then print the PDF later with the same settings.</p>}
+        <p>Each print is given its own code, recorded for your school.</p>
+      </details>
     </div>
     <main className="pb-pages">
-      <PbSheet mark={mark} n={++n}><TfrCover pkg={pkg} /></PbSheet>
-      {about && <PbSheet mark={mark} n={++n}><TfrAbout pkg={pkg} about={about} /></PbSheet>}
-      {pages.map((p, i) => <PbStorySheet key={p.page_number || i} page={p} pkg={pkg} mark={mark} n={++n} hidden={i === hiddenAt} />)}
-      <PbSheet mark={mark} n={++n} back><TfrBack pkg={pkg} />{mark && <div className="pb-back-code">Print copy {mark.code} · School {mark.school_code} · {mark.date}</div>}</PbSheet>
+      {booklet
+        ? pbImpose(N).map(([l, r], i) => <PbSide key={i} mark={mark} left={pageEl(l)} right={pageEl(r)} />)
+        : seq.map((x, i) => <PbSide key={x.k} single mark={mark} left={pageEl(i + 1)} />)}
     </main>
   </>;
 }
