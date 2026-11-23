@@ -41,28 +41,24 @@ const DG_CARDS = {
 };
 /* Gemmanti, shown to the demo teacher and demo school admin. */
 const DG_GEM_ROLES = ["teacher", "school_admin"];
-const DG_GEM_POINTS = [
-  ["Teach", "step-by-step lesson guides for every book, with Show to class for a projector or TV."],
-  ["Worksheets", "pupils do them on a tablet, or on paper from a PDF. Gemmanti marks what it can, and the teacher marks written answers with a tap."],
-  ["Know every child", "library reading, worksheet scores and how much help each child needed, pupil by pupil."],
-  ["Reports", "class progress, ready to download."],
-  ["Pupil logins", "each child signs in with a username and a 4-number PIN, from a printable login card."],
-];
+const DG_GEM_POINTS = ["Lesson guides and Show to class", "Worksheets on tablet or paper", "Every child’s progress", "Reports to download", "Pupil logins and cards"];
 function DemoGemmanti() {
   return (
     <div className="dgg">
       <div className="dgg-copy">
-        <img className="dgg-logo" src="gemmanti/assets/logo-gemmanti.png" alt="Gemmanti" />
-        <h2>Everything a Haaraya teacher needs, in one place</h2>
-        <p className="dgg-lede">Gemmanti is Haaraya’s teaching platform. It sits beside the library and turns every book into a lesson, a worksheet and a record of each child’s progress.</p>
-        <ul>{DG_GEM_POINTS.map(([b, t]) => <li key={b}><b>{b}:</b> {t}</li>)}</ul>
+        <div className="dgg-top">
+          <img className="dgg-logo" src="gemmanti/assets/logo-gemmanti.png" alt="Gemmanti" />
+          <h2>Everything a Haaraya teacher needs, in one place</h2>
+        </div>
+        <p className="dgg-lede">Gemmanti turns every Haaraya book into a lesson, a worksheet and a record of each child’s progress.</p>
+        <ul>{DG_GEM_POINTS.map(t => <li key={t}>{t}</li>)}</ul>
         <div className="dgg-acts">
           <a className="dgg-btn" href={DG_GEM}>Open Gemmanti →</a>
           <a className="dgg-btn ghost" href={DG_GEM + "?demo=teacher"}>See a class at every level</a>
         </div>
       </div>
       <a className="dgg-shot" href={DG_GEM + "?demo=teacher"} aria-label="See a class at every level in Gemmanti">
-        <img src="assets/gemmanti-overview.webp" alt="Gemmanti class overview: a class with one pupil at each level, assigned work and worksheets waiting to be marked" loading="lazy" />
+        <img src="assets/gemmanti-overview.webp" alt="Gemmanti class overview" loading="lazy" />
       </a>
     </div>
   );
