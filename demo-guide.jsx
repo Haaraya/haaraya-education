@@ -13,19 +13,22 @@
 const { useState: useStateDG, useEffect: useEffectDG } = React;
 
 const DG_GEM = "gemmanti/Gemmanti.html";
+const DG_PRINT_NOTE = " Printing books is a paid add-on for schools; it is switched on in this demo.";
 const DG_CARDS = {
   teacher: [
-    { t: "Your demo class", d: "Primary 3 · Demo: seven pupils, the books they’ve read and their reading checks.", go: "teacher", cta: "Open the class" },
-    { t: "A class at every level", d: "Twelve pupils, Levels 1 to 12, each with a book, a worksheet and a lesson. Try marking Chidi’s and Fatima’s handed-in work.", href: DG_GEM + "?demo=teacher", cta: "See the 12-level class" },
-    { t: "Teach a lesson", d: "Step-by-step lesson guides, with Show to class for a projector or TV. Worksheets and teacher guides also download as PDFs.", href: DG_GEM + "?demo=teacher&view=teach", cta: "Open Teach" },
+    { t: "Your class’s reading", d: "Books finished, stamps and reading checks, pupil by pupil.", go: "teacher", anchor: "td-progress", cta: "See pupil progress" },
+    { t: "Set a book", d: "Set a book for the whole class or chosen pupils, with a due date.", go: "teacher", anchor: "td-assignments", cta: "Go to assignments" },
+    { t: "Who needs support", d: "Pupils who haven’t started yet, or are stuck at a level.", go: "teacher", anchor: "td-support", cta: "See who needs support" },
+    { t: "Pupil logins", d: "Each pupil’s username and PIN, with login cards to print.", go: "teacher", anchor: "td-logins", cta: "See pupil logins" },
     { t: "Read a showcase book", d: "One book for each level opens in the demo. Look for the Showcase tag.", go: "library", cta: "Open the library" },
-    { t: "Print a booklet", d: "Open a showcase book and press Print book. Every print carries your school’s code.", go: "library", cta: "Choose a book" },
+    { t: "Print a booklet", d: "Open a showcase book and press Print book. Every print carries your school’s code." + DG_PRINT_NOTE, go: "library", cta: "Choose a book" },
   ],
   school_admin: [
-    { t: "Your demo school", d: "Haaraya Demo Primary: classes, teachers and pupils at a glance.", go: "school", cta: "Open the school" },
-    { t: "A class at every level", d: "Twelve pupils, Levels 1 to 12, each with a book, a worksheet and a lesson.", href: DG_GEM + "?demo=teacher", cta: "See the 12-level class" },
+    { t: "Your school", d: "Classes, teachers and pupils at a glance.", go: "school", anchor: "sd-school", cta: "Open the school" },
+    { t: "Add a class or a pupil", d: "Use + New class and + Add pupil at the top of your school page.", go: "school", anchor: "sd-school", cta: "Go to your school" },
+    { t: "Pupil logins", d: "Usernames and PINs for the whole school, with login cards to print.", go: "school", anchor: "sd-logins", cta: "See pupil logins" },
     { t: "Read a showcase book", d: "One book for each level opens in the demo. Look for the Showcase tag.", go: "library", cta: "Open the library" },
-    { t: "Print a booklet", d: "Open a showcase book and press Print book. Every print carries your school’s code.", go: "library", cta: "Choose a book" },
+    { t: "Print a booklet", d: "Open a showcase book and press Print book. Every print carries your school’s code." + DG_PRINT_NOTE, go: "library", cta: "Choose a book" },
   ],
   parent: [
     { t: "Your children", d: "Amara and Emeka: what they’ve read, their reading checks and their stamps.", go: "parent", cta: "Open the family page" },
@@ -36,7 +39,6 @@ const DG_CARDS = {
     { t: "Read a book", d: "Pick a book with the Showcase tag. Read it, then answer the reading check.", go: "library", cta: "Open the library" },
     { t: "Your passport", d: "Every book you finish earns a stamp in your reading passport.", go: "passport", cta: "Open my passport" },
     { t: "Your reading journey", d: "See the books you’ve read and the next ones waiting for you.", go: "child", cta: "Open my journey" },
-    { t: "Gemmanti for pupils", d: "Worksheets and lessons, the way a pupil sees them in class.", href: DG_GEM + "?demo=child", cta: "Try as a pupil" },
   ],
 };
 /* Gemmanti, shown to the demo teacher and demo school admin. */
@@ -105,7 +107,20 @@ function DemoGuide({ role, screen, onNavigate }) {
   if (!demo || !cards || screen === "reader" || screen === "odyssey-reader") return null;
   const hide = v => { setHidden(v); try { localStorage.setItem(dgKey(role), v ? "1" : "0"); } catch (e) { /* ignore */ } };
   const full = !hidden && (screen === "home" || screen === DG_HOME[role]);
-  const open = c => { if (c.href) window.location.href = c.href; else onNavigate(c.go); };
+  // Go to the screen, then scroll to the card's part of it once it has loaded.
+  const open = c => {
+    if (c.href) { window.location.href = c.href; return; }
+    if (c.go !== screen) onNavigate(c.go);
+    if (!c.anchor) return;
+    let tries = 0;
+    const find = () => {
+      const el = document.getElementById(c.anchor);
+      // Scroll, then once more after the page settles (lists above may still be loading).
+      if (el) { el.scrollIntoView({ block: "start" }); setTimeout(() => el.scrollIntoView({ block: "start" }), 700); }
+      else if (++tries < 40) setTimeout(find, 250);
+    };
+    setTimeout(find, 100);
+  };
   if (dash && !slot) return null;
 
   const body = (

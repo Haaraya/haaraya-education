@@ -247,7 +247,7 @@ function TeacherDashScreen({ onNavigate }) {
                     </div>
                   </div>
 
-                  <div className="adash-card">
+                  <div className="adash-card" id="td-support" style={{ scrollMarginTop: 24 }}>
                     <h5>Children needing support</h5>
                     {(alerts || []).length === 0 && (
                       <div style={{ padding: 14, fontSize: 14, color: "var(--ink-mid)" }}>
@@ -377,7 +377,7 @@ function SchoolAdminDashScreen({ onNavigate }) {
         </div>
         <div className="dash role-adult" style={{ display: "block", background: "transparent", border: "none", boxShadow: "none", padding: 0, minHeight: 0 }}>
           <div className="dash-main" style={{ padding: 0 }}>
-            <div className="dash-header">
+            <div className="dash-header" id="sd-school" style={{ scrollMarginTop: 24 }}>
               <div>
                 <h3>{school.name}</h3>
                 <div className="sub">{school.type} · {school.city}, {school.country} · {subscription ? `${subscription.plan} plan` : "No subscription"}</div>
