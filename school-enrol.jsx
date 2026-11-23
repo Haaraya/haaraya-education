@@ -104,6 +104,11 @@ function AddPupilModal({ schoolId, classrooms, onClose, onDone }) {
         if (r.error) emailFailed = true;
       } catch (e) { emailFailed = true; }
     }
+    // Every school pupil gets their own login (username + PIN) for their login card.
+    // A failure here never undoes the enrolment; Gemmanti's Login cards page makes it later.
+    if (res && res.ok && res.child && res.child.id) {
+      try { await window.HaarayaSupabase.functions.invoke("pupil-accounts", { body: { action: "ensure", child_ids: [res.child.id] } }); } catch (e) { /* made later */ }
+    }
     setBusy(false);
     if (res && res.ok) {
       if (emailFailed) {

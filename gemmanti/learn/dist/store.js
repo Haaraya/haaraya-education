@@ -405,6 +405,29 @@ function HLProvider({
       });
       return v;
     },
+    /* Pupil logins: create any missing ones, or give one pupil a new PIN. */
+    ensureLogins: async ids => {
+      const list = await HLLive.ensureLogins(ids);
+      up(s => list.forEach(l => {
+        if (l.username && s.learners[l.child_id]) s.learners[l.child_id].login = {
+          username: l.username,
+          pin: l.pin,
+          locked: false
+        };
+      }));
+      return list;
+    },
+    resetPin: async lid => {
+      const l = await HLLive.resetPin(lid);
+      if (l) up(s => {
+        if (s.learners[lid]) s.learners[lid].login = {
+          username: l.username,
+          pin: l.pin,
+          locked: false
+        };
+      });
+      return l;
+    },
     toggleCollection: (orgId, colId) => up(s => {
       const a = s.orgCollections[orgId];
       const i = a.indexOf(colId);

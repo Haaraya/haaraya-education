@@ -148,7 +148,63 @@ function inferRoleFromEmail(em) {
   return "parent";
 }
 
-function SignInPanel({ open, currentRole, onChoose, onClose }) {
+/* School pupils sign in with the username and 4-digit PIN on their login card.
+   The pupil-signin Edge Function checks them and returns a session. */
+function PupilSignIn({ prefill, onChoose }) {
+  const [user, setUser] = useStateApp(prefill || "");
+  const [pin, setPin] = useStateApp("");
+  const [error, setError] = useStateApp("");
+  const [busy, setBusy] = useStateApp(false);
+  const press = d => { if (busy) return; setError(""); setPin(p => d === "del" ? p.slice(0, -1) : (p + d).slice(0, 4)); };
+  const go = async e => {
+    e && e.preventDefault();
+    const u = user.trim().toLowerCase();
+    if (!u) { setError("Type the username from your login card."); return; }
+    if (pin.length !== 4) { setError("Type your 4-number PIN."); return; }
+    setBusy(true); setError("");
+    try {
+      const sb = window.HaarayaSupabase;
+      const { data, error: fe } = await sb.functions.invoke("pupil-signin", { body: { username: u, pin } });
+      if (fe || !data || !data.access_token) {
+        let msg = "That username and PIN don't match. Check your login card and try again.";
+        try { const b = fe && fe.context && await fe.context.json(); if (b && b.error) msg = b.error; } catch (e2) { /* keep default */ }
+        throw new Error((data && data.error) || msg);
+      }
+      const s = await sb.auth.setSession({ access_token: data.access_token, refresh_token: data.refresh_token });
+      if (s.error) throw s.error;
+      const profileRow = window.HaarayaAuth ? await window.HaarayaAuth.getProfile(true) : null;
+      if (!profileRow) throw new Error("Signed in, but your reading record couldn't load. Please try again.");
+      onChoose(profileRow.role, profileRow, "child");
+    } catch (err) {
+      setBusy(false); setPin("");
+      setError((err && err.message) || "Couldn't sign in just now. Please try again.");
+    }
+  };
+  return (
+    <form className="signin-form pupil-form" onSubmit={go} noValidate>
+      <label className="signin-field">
+        <span className="signin-flabel">Username</span>
+        <input value={user} autoFocus={!prefill} autoCapitalize="none" autoCorrect="off" spellCheck={false}
+          onChange={e => { setUser(e.target.value); if (error) setError(""); }} placeholder="e.g. amara.obi" />
+      </label>
+      <div className="signin-field">
+        <span className="signin-flabel">PIN</span>
+        <div className="pupil-dots" aria-label={`${pin.length} of 4 numbers typed`}>{[0, 1, 2, 3].map(i => <i key={i} className={i < pin.length ? "on" : ""} />)}</div>
+        <div className="pupil-pad">{["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"].map((d, i) => d === ""
+          ? <span key={i} />
+          : <button key={i} type="button" onClick={() => press(d)} aria-label={d === "del" ? "Delete" : d}>{d === "del" ? "⌫" : d}</button>)}</div>
+      </div>
+      {error && <div className="signin-error" role="alert">{error}</div>}
+      <button type="submit" className={"signin-submit" + (busy ? " busy" : "")} disabled={busy}>
+        {busy && <span className="signin-spinner" aria-hidden="true" />}{busy ? "Signing in…" : "Start reading"}
+      </button>
+      <p className="pupil-help">Your username and PIN are on the login card from your teacher. A grown-up can help.</p>
+    </form>
+  );
+}
+
+function SignInPanel({ open, currentRole, onChoose, onClose, pupilPrefill }) {
+  const [mode, setMode] = useStateApp("adult");
   const [email, setEmail] = useStateApp("");
   const [password, setPassword] = useStateApp("");
   const [showPw, setShowPw] = useStateApp(false);
@@ -159,6 +215,7 @@ function SignInPanel({ open, currentRole, onChoose, onClose }) {
   useEffectApp(() => {
     if (!open) return;
     setEmail(""); setPassword(""); setShowPw(false); setShowDemo(false); setError(""); setBusy(false);
+    setMode(pupilPrefill != null ? "pupil" : "adult");
     const onKey = (e) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -230,6 +287,12 @@ function SignInPanel({ open, currentRole, onChoose, onClose }) {
           <p>Pick up your reader's journey right where you left off.</p>
         </div>
 
+        <div className="signin-tabs" role="tablist">
+          <button type="button" role="tab" aria-selected={mode === "adult"} className={mode === "adult" ? "on" : ""} onClick={() => setMode("adult")}>Teacher or parent</button>
+          <button type="button" role="tab" aria-selected={mode === "pupil"} className={mode === "pupil" ? "on" : ""} onClick={() => setMode("pupil")}>I'm a pupil</button>
+        </div>
+        {mode === "pupil" && <PupilSignIn prefill={pupilPrefill || ""} onChoose={onChoose} />}
+        {mode === "adult" && <>
         <form className="signin-form" onSubmit={submit} noValidate>
           <label className="signin-field">
             <span className="signin-flabel">Email</span>
@@ -314,6 +377,7 @@ function SignInPanel({ open, currentRole, onChoose, onClose }) {
         <div className="signin-foot">
           New to Haaraya? <a href="Haaraya Registration.html">Create an account</a>
         </div>
+        </>}
       </div>
     </div>
   );
@@ -365,6 +429,13 @@ function App() {
   const [session, setSession] = useStateApp(() => (window.HaarayaSession ? window.HaarayaSession.get() : { role: "visitor" }));
   const role = session.role;
   const [signInOpen, setSignInOpen] = useStateApp(false);
+  /* Login cards' QR codes open ?pupil=<username>: the pupil sign-in, username filled in. */
+  const [pupilPrefill, setPupilPrefill] = useStateApp(() => { try { return new URLSearchParams(window.location.search).get("pupil"); } catch (e) { return null; } });
+  useEffectApp(() => {
+    if (pupilPrefill == null) return;
+    setSignInOpen(true);
+    try { history.replaceState(null, "", window.location.pathname + window.location.hash); } catch (e) { /* ignore */ }
+  }, []);
   const [toast, setToast] = useStateApp("");
 
   // Keep React state in sync if the session changes anywhere (e.g. Tweaks switcher)
@@ -676,7 +747,8 @@ function App() {
         open={signInOpen}
         currentRole={role}
         onChoose={applyRole}
-        onClose={() => setSignInOpen(false)}
+        pupilPrefill={pupilPrefill}
+        onClose={() => { setSignInOpen(false); setPupilPrefill(null); }}
       />
       <AccessToast message={toast} onDone={() => setToast("")} />
 

@@ -825,3 +825,33 @@ a.hl-brand{text-decoration:none;color:inherit}
 .ws-score-bar>div{display:flex;align-items:baseline;gap:10px}.ws-score-bar b{font-size:26px;font-weight:900}.ws-score-bar em{font-style:normal;font-weight:800;color:var(--forest-dk)}
 .ws-score-bar p{flex:1;min-width:220px;font-size:14px;font-weight:600;color:var(--ink-mid)}
 @media (max-width:720px){.ws-markset .m span{display:none}}
+
+/* Library reading and pupil logins (live) */
+.lib-none{color:var(--ink-soft);font-size:13px;font-weight:700}
+.lib-line{display:grid;gap:2px;font-size:13px;line-height:1.3;max-width:260px}
+.lib-line b{font-weight:900}.lib-line span{color:var(--ink-mid)}
+.lib-rec{margin:4px 0 18px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.lib-rec h3{margin:0 0 8px;font-size:16px}
+.lib-rec .tbl{margin-top:8px}
+.lib-now{margin:0 0 6px}
+.login-line{margin:0 0 10px;font-size:15px}.login-line b{font-family:ui-monospace,Menlo,monospace;font-size:16px}
+.login-locked{color:#a5521b;font-weight:800}
+.lc-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:14px}
+.lc-card{border:1.5px dashed var(--line-2);border-radius:14px;padding:14px 16px;background:#fff;break-inside:avoid;page-break-inside:avoid;display:grid;gap:10px}
+.lc-top{display:flex;align-items:center;gap:10px;font:900 12px var(--ui);text-transform:uppercase;letter-spacing:.06em;color:var(--forest)}
+.lc-top img{height:24px}
+.lc-body{display:grid;grid-template-columns:1fr 96px;gap:12px;align-items:center}
+.lc-who b{display:block;font-size:19px}.lc-who>span{display:block;font-size:13px;font-weight:700;color:var(--ink-soft)}
+.lc-who dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:10px 0 0;align-items:baseline}
+.lc-who dt{font-size:12px;font-weight:800;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em}
+.lc-who dd{margin:0;font:800 18px ui-monospace,Menlo,monospace}
+.lc-pin{letter-spacing:.25em}
+.lc-qr svg{width:96px;height:96px;display:block}
+.lc-how{margin:0;font-size:12px;line-height:1.35;color:var(--ink-mid)}
+@media (max-width:700px){.lc-grid{grid-template-columns:1fr}}
+@media print{
+  @page{size:A4;margin:10mm}
+  .lc-grid{grid-template-columns:repeat(2,1fr);gap:6mm}
+  .lc-card{height:62mm;box-sizing:border-box;overflow:hidden}
+  .lc-card:nth-child(8n){break-after:page;page-break-after:always}
+}

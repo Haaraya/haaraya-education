@@ -97,26 +97,118 @@ function LiveStaff({ openPupil }) {
     {v === "pupils" && <LivePupils cls={cls} learners={learners} openPupil={openPupil} openRecords={setDrawer} />}
     {drawer && state.learners[drawer] && <Drawer onClose={() => setDrawer(null)}><div className="live-drawer">
       <div className="ws-rev-h"><Avatar name={state.learners[drawer].name} size="lg" /><div><h2>{state.learners[drawer].name}</h2><p>{cls.name}</p></div></div>
+      <LibReading L={state.learners[drawer]} />
+      <PupilLogin L={state.learners[drawer]} />
       <WsRecordList L={state.learners[drawer]} />
     </div></Drawer>}
   </AdultShell>;
 }
 
 function LivePupils({ cls, learners, openPupil, openRecords }) {
+  const [cards, setCards] = React.useState(false);
   const list = learners.slice().sort((a, b) => a.name.localeCompare(b.name));
   const count = (l, s) => Object.values(l.worksheets || {}).filter(r => r.status === s).length;
+  if (cards) return <LoginCards cls={cls} list={list} back={() => setCards(false)} />;
   return <>
-    <div className="ph-h"><div><h1>Pupils</h1><p>{cls.name} · {list.length} pupil{list.length === 1 ? "" : "s"}</p></div></div>
+    <div className="ph-h"><div><h1>Pupils</h1><p>{cls.name} · {list.length} pupil{list.length === 1 ? "" : "s"}</p></div>
+      {list.length > 0 && <div className="acts"><button className="hl-btn" onClick={() => setCards(true)}><Icon n="key" s={16} />Login cards</button></div>}</div>
     {!list.length ? <div className="empty">No pupils in this class yet. Add them on your Haaraya school page.</div> :
     <div className="card" style={{ padding: 0 }}><div className="tbl-wrap"><table className="tbl">
-      <thead><tr><th>Pupil</th><th>Family email</th><th className="c">Working</th><th className="c">To record</th><th className="c">Recorded</th><th></th></tr></thead>
+      <thead><tr><th>Pupil</th><th>Library reading</th><th>Family email</th><th className="c">Working</th><th className="c">To record</th><th className="c">Recorded</th><th></th></tr></thead>
       <tbody>{list.map(l => <tr key={l.id}>
         <td><button className="who linkish" onClick={() => openRecords(l.id)}><Avatar name={l.name} size="sm" />{l.name}</button></td>
+        <td><LibLine L={l} /></td>
         <td><FamilyEmail L={l} /></td>
         <td className="c">{count(l, "in_progress")}</td><td className="c">{count(l, "handed_in")}</td><td className="c">{count(l, "reviewed")}</td>
         <td className="c"><button className="hl-btn sm" onClick={() => openPupil(l.id)}>Open as pupil</button></td></tr>)}</tbody>
     </table></div></div>}
   </>;
+}
+
+/* One line of main-library reading for the pupils table. */
+function LibLine({ L }) {
+  const b = L.lib || { done: [], now: null };
+  if (!b.done.length && !b.now) return <span className="lib-none">Not started</span>;
+  return <span className="lib-line"><b>{b.done.length} finished</b>{b.now && <span>Reading <i>{b.now.title}</i>{b.now.page ? `, page ${b.now.page}` : ""}</span>}</span>;
+}
+
+/* Reading in the main Haaraya library, for the pupil's record drawer. */
+function LibReading({ L }) {
+  const b = L.lib || { done: [], now: null, checks: {} };
+  const check = code => { const c = b.checks[code]; return c && c.total ? `${c.score}/${c.total}` : "—"; };
+  const date = t => t ? new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "";
+  return <section className="lib-rec">
+    <h3>Library reading</h3>
+    {!b.done.length && !b.now && <p className="ws-hint">No books read in the Haaraya library yet. Reading shows here once {L.name.split(" ")[0]} signs in with their own login.</p>}
+    {b.now && <p className="lib-now">Reading now: <b>{b.now.title}</b> · Level {b.now.level}{b.now.page ? ` · page ${b.now.page}` : ""}</p>}
+    {b.done.length > 0 && <table className="tbl"><thead><tr><th>Finished</th><th className="c">Level</th><th className="c">Reading check</th><th className="c">Date</th></tr></thead>
+      <tbody>{b.done.map(x => <tr key={x.code}><td>{x.title}</td><td className="c">{x.level || "—"}</td><td className="c">{check(x.code)}</td><td className="c">{date(x.when)}</td></tr>)}</tbody></table>}
+  </section>;
+}
+
+/* The pupil's own login, with Reset PIN. */
+function PupilLogin({ L }) {
+  const { ensureLogins, resetPin, toast } = useHL();
+  const [busy, setBusy] = React.useState(false);
+  const run = async fn => { setBusy(true); try { await fn(); } catch (e) { console.warn(e); toast(e.message || "Couldn’t do that. Try again."); } setBusy(false); };
+  const lg = L.login;
+  return <section className="lib-rec">
+    <h3>Pupil login</h3>
+    {lg ? <>
+      <p className="login-line">Username <b>{lg.username}</b> · PIN <b>{lg.pin}</b>{lg.locked && <span className="login-locked"> · locked after too many tries</span>}</p>
+      <button className="hl-btn ghost sm" disabled={busy} onClick={() => run(async () => { await resetPin(L.id); toast("New PIN made. Give " + L.name.split(" ")[0] + " a new login card."); })}>{busy ? "Working…" : "Reset PIN"}</button>
+    </> : <>
+      <p className="ws-hint">No login yet.</p>
+      <button className="hl-btn sm" disabled={busy} onClick={() => run(async () => { await ensureLogins([L.id]); toast("Login made"); })}>{busy ? "Working…" : "Make login"}</button>
+    </>}
+  </section>;
+}
+
+/* Printable login cards: 8 per A4 sheet. The QR code opens the pupil sign-in
+   with the username filled in; the pupil (or a grown-up) types the PIN. */
+function LoginCards({ cls, list, back }) {
+  const { ensureLogins, toast } = useHL();
+  const [busy, setBusy] = React.useState(false);
+  const missing = list.filter(l => !l.login);
+  const make = async () => {
+    setBusy(true);
+    try {
+      const res = await ensureLogins(missing.map(l => l.id));
+      const bad = res.filter(r => r.error).length;
+      toast(bad ? `Made ${res.length - bad} logins. ${bad} couldn’t be made.` : `Made ${res.length} login${res.length === 1 ? "" : "s"}`);
+    } catch (e) { console.warn(e); toast(e.message || "Couldn’t make logins. Try again."); }
+    setBusy(false);
+  };
+  const ready = list.filter(l => l.login);
+  return <>
+    <div className="ph-h no-print"><div><h1>Login cards</h1><p>{cls.name} · cut out one card for each pupil</p></div>
+      <div className="acts">
+        <button className="hl-btn ghost" onClick={back}><Icon n="back" s={16} />Pupils</button>
+        {ready.length > 0 && <button className="hl-btn" onClick={() => window.print()}><Icon n="dl" s={16} />Print cards</button>}</div></div>
+    {missing.length > 0 && <div className="card mail-panel no-print">
+      <p><b>{missing.length === list.length ? "No pupil in this class has a login yet." : `${missing.map(l => l.name.split(" ")[0]).join(", ")} ${missing.length === 1 ? "has" : "have"} no login yet.`}</b> Each pupil gets a username and a 4-number PIN.</p>
+      <div className="live-acts"><button className="hl-btn" disabled={busy} onClick={make}>{busy ? "Making logins…" : `Make ${missing.length} login${missing.length === 1 ? "" : "s"}`}</button></div>
+    </div>}
+    <p className="ws-hint no-print">Keep the cards safe: anyone with a card can read as that pupil. If a card is lost, open the pupil and choose Reset PIN.</p>
+    <div className="lc-grid">{ready.map(l => <LoginCard key={l.id} L={l} cls={cls} />)}</div>
+  </>;
+}
+function lcLink(username) {
+  try { return new URL("../Haaraya%20Home.html?pupil=" + encodeURIComponent(username), location.href).href; } catch (e) { return ""; }
+}
+function LoginCard({ L, cls }) {
+  const qr = React.useMemo(() => {
+    try { const q = qrcode(0, "M"); q.addData(lcLink(L.login.username)); q.make(); return q.createSvgTag({ cellSize: 3, margin: 0, scalable: true }); } catch (e) { return ""; }
+  }, [L.login.username]);
+  return <div className="lc-card">
+    <div className="lc-top"><img src="../assets/logo-haaraya-literacy.png" alt="Haaraya Literacy" /><span>Pupil login</span></div>
+    <div className="lc-body">
+      <div className="lc-who"><b>{L.name}</b><span>{cls.name}</span>
+        <dl><dt>Username</dt><dd>{L.login.username}</dd><dt>PIN</dt><dd className="lc-pin">{L.login.pin}</dd></dl></div>
+      {qr && <div className="lc-qr" dangerouslySetInnerHTML={{ __html: qr }} />}
+    </div>
+    <p className="lc-how">Scan the code, or go to Haaraya and tap <b>Sign in</b>, then <b>I’m a pupil</b>. Type your username and PIN.</p>
+  </div>;
 }
 
 /* One family email per school pupil, used to send reports. */

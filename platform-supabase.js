@@ -210,7 +210,10 @@
     if (!client || !p) return [];
     try {
       var lm = await maps();
-      var res = await client.from("children").select("*").eq("parent_user_id", p.id);
+      // A school pupil's own login is linked to their child record, not as a parent.
+      var res = p.role === "pupil"
+        ? await client.from("children").select("*").eq("pupil_user_id", p.id)
+        : await client.from("children").select("*").eq("parent_user_id", p.id);
       if (res.error) throw res.error;
       return (res.data || []).map(function (r) { return childShape(r, lm); });
     } catch (e) {
@@ -329,6 +332,14 @@
   async function getSubscriptionForParent() {
     var client = sb(); var p = await profile();
     if (!client || !p) return null;
+    // A school pupil reads under their school's plan.
+    if (p.role === "pupil") {
+      try {
+        var pr = await client.rpc("pupil_school_access");
+        var a = pr && !pr.error ? pr.data : null;
+        return a ? { plan: "school", status: clean(a.status), trialEndsAt: a.trial_ends_at || null, ownerUserId: null } : null;
+      } catch (e0) { return null; }
+    }
     try {
       var res = await client.from("subscriptions").select("*").eq("owner_user_id", p.id).limit(1).maybeSingle();
       if (res.error) throw res.error;

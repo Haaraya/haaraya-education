@@ -3332,3 +3332,15 @@ body[data-hero-variant="journey"] .hero-subject .passport-card { display: none; 
 /* Scholarship counts: their own quiet line, not a run-on with the sentence. */
 .plan-strip-count{display:flex;align-items:center;gap:.5rem;margin-top:.2rem;font-size:.78rem;font-weight:700;letter-spacing:.02em;color:var(--ink-soft,#6b6357)}
 .plan-strip-dot{opacity:.5}
+
+/* Sign-in: Teacher or parent / I'm a pupil tabs, and the pupil PIN pad */
+.signin-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin: 0 0 16px; background: var(--sand, #f1ece2); border-radius: 999px; }
+.signin-tabs button { border: 0; background: transparent; padding: 10px 12px; border-radius: 999px; font: 800 14px var(--font-body, Nunito, sans-serif); color: var(--ink-mid, #4b564b); cursor: pointer; }
+.signin-tabs button.on { background: #fff; color: var(--forest, #1b6e1b); box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.pupil-dots { display: flex; gap: 14px; justify-content: center; margin: 4px 0 12px; }
+.pupil-dots i { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--forest, #1b6e1b); }
+.pupil-dots i.on { background: var(--forest, #1b6e1b); }
+.pupil-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 300px; margin: 0 auto; }
+.pupil-pad button { min-height: 56px; border-radius: 16px; border: 1px solid var(--line, #e3ddd0); background: #fff; font: 900 24px var(--font-body, Nunito, sans-serif); color: var(--ink, #1f2a1f); cursor: pointer; }
+.pupil-pad button:active { background: var(--sand, #f1ece2); }
+.pupil-help { margin: 0; text-align: center; font-size: 13px; font-weight: 600; color: var(--ink-soft, #6b736b); }

@@ -101,6 +101,8 @@
     parent: "parent", teacher: "teacher",
     school_admin: "school_admin", haaraya_admin: "admin", admin: "admin", staff: "admin",
     reviewer: "reviewer",
+    // A school pupil with their own login (username + PIN) reads as a child.
+    pupil: "child",
   };
 
   let current = load();
@@ -185,6 +187,9 @@
         userId: null, childId: null, schoolId: null,
         color: base.color,
       };
+      // A pupil reads only as themselves: drop any child chosen earlier in this tab
+      // (a shared class tablet), so reading resolves to their own record.
+      if (p.role === "pupil") { try { sessionStorage.removeItem(CHILD_KEY); sessionStorage.removeItem(CHILD_NAME_KEY); } catch (e) { /* ignore */ } }
       save(current.role);
       window.dispatchEvent(new CustomEvent("haaraya:session", { detail: current }));
       return current;

@@ -246,7 +246,11 @@ function LiveStaff({
   }, /*#__PURE__*/React.createElement(Avatar, {
     name: state.learners[drawer].name,
     size: "lg"
-  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", null, state.learners[drawer].name), /*#__PURE__*/React.createElement("p", null, cls.name))), /*#__PURE__*/React.createElement(WsRecordList, {
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", null, state.learners[drawer].name), /*#__PURE__*/React.createElement("p", null, cls.name))), /*#__PURE__*/React.createElement(LibReading, {
+    L: state.learners[drawer]
+  }), /*#__PURE__*/React.createElement(PupilLogin, {
+    L: state.learners[drawer]
+  }), /*#__PURE__*/React.createElement(WsRecordList, {
     L: state.learners[drawer]
   }))));
 }
@@ -256,11 +260,25 @@ function LivePupils({
   openPupil,
   openRecords
 }) {
+  const [cards, setCards] = React.useState(false);
   const list = learners.slice().sort((a, b) => a.name.localeCompare(b.name));
   const count = (l, s) => Object.values(l.worksheets || {}).filter(r => r.status === s).length;
+  if (cards) return /*#__PURE__*/React.createElement(LoginCards, {
+    cls: cls,
+    list: list,
+    back: () => setCards(false)
+  });
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "ph-h"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Pupils"), /*#__PURE__*/React.createElement("p", null, cls.name, " \xB7 ", list.length, " pupil", list.length === 1 ? "" : "s"))), !list.length ? /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Pupils"), /*#__PURE__*/React.createElement("p", null, cls.name, " \xB7 ", list.length, " pupil", list.length === 1 ? "" : "s")), list.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "acts"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "hl-btn",
+    onClick: () => setCards(true)
+  }, /*#__PURE__*/React.createElement(Icon, {
+    n: "key",
+    s: 16
+  }), "Login cards"))), !list.length ? /*#__PURE__*/React.createElement("div", {
     className: "empty"
   }, "No pupils in this class yet. Add them on your Haaraya school page.") : /*#__PURE__*/React.createElement("div", {
     className: "card",
@@ -271,7 +289,7 @@ function LivePupils({
     className: "tbl-wrap"
   }, /*#__PURE__*/React.createElement("table", {
     className: "tbl"
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Pupil"), /*#__PURE__*/React.createElement("th", null, "Family email"), /*#__PURE__*/React.createElement("th", {
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Pupil"), /*#__PURE__*/React.createElement("th", null, "Library reading"), /*#__PURE__*/React.createElement("th", null, "Family email"), /*#__PURE__*/React.createElement("th", {
     className: "c"
   }, "Working"), /*#__PURE__*/React.createElement("th", {
     className: "c"
@@ -285,7 +303,9 @@ function LivePupils({
   }, /*#__PURE__*/React.createElement(Avatar, {
     name: l.name,
     size: "sm"
-  }), l.name)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(FamilyEmail, {
+  }), l.name)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(LibLine, {
+    L: l
+  })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(FamilyEmail, {
     L: l
   })), /*#__PURE__*/React.createElement("td", {
     className: "c"
@@ -299,6 +319,218 @@ function LivePupils({
     className: "hl-btn sm",
     onClick: () => openPupil(l.id)
   }, "Open as pupil")))))))));
+}
+
+/* One line of main-library reading for the pupils table. */
+function LibLine({
+  L
+}) {
+  const b = L.lib || {
+    done: [],
+    now: null
+  };
+  if (!b.done.length && !b.now) return /*#__PURE__*/React.createElement("span", {
+    className: "lib-none"
+  }, "Not started");
+  return /*#__PURE__*/React.createElement("span", {
+    className: "lib-line"
+  }, /*#__PURE__*/React.createElement("b", null, b.done.length, " finished"), b.now && /*#__PURE__*/React.createElement("span", null, "Reading ", /*#__PURE__*/React.createElement("i", null, b.now.title), b.now.page ? `, page ${b.now.page}` : ""));
+}
+
+/* Reading in the main Haaraya library, for the pupil's record drawer. */
+function LibReading({
+  L
+}) {
+  const b = L.lib || {
+    done: [],
+    now: null,
+    checks: {}
+  };
+  const check = code => {
+    const c = b.checks[code];
+    return c && c.total ? `${c.score}/${c.total}` : "—";
+  };
+  const date = t => t ? new Date(t).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short"
+  }) : "";
+  return /*#__PURE__*/React.createElement("section", {
+    className: "lib-rec"
+  }, /*#__PURE__*/React.createElement("h3", null, "Library reading"), !b.done.length && !b.now && /*#__PURE__*/React.createElement("p", {
+    className: "ws-hint"
+  }, "No books read in the Haaraya library yet. Reading shows here once ", L.name.split(" ")[0], " signs in with their own login."), b.now && /*#__PURE__*/React.createElement("p", {
+    className: "lib-now"
+  }, "Reading now: ", /*#__PURE__*/React.createElement("b", null, b.now.title), " \xB7 Level ", b.now.level, b.now.page ? ` · page ${b.now.page}` : ""), b.done.length > 0 && /*#__PURE__*/React.createElement("table", {
+    className: "tbl"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Finished"), /*#__PURE__*/React.createElement("th", {
+    className: "c"
+  }, "Level"), /*#__PURE__*/React.createElement("th", {
+    className: "c"
+  }, "Reading check"), /*#__PURE__*/React.createElement("th", {
+    className: "c"
+  }, "Date"))), /*#__PURE__*/React.createElement("tbody", null, b.done.map(x => /*#__PURE__*/React.createElement("tr", {
+    key: x.code
+  }, /*#__PURE__*/React.createElement("td", null, x.title), /*#__PURE__*/React.createElement("td", {
+    className: "c"
+  }, x.level || "—"), /*#__PURE__*/React.createElement("td", {
+    className: "c"
+  }, check(x.code)), /*#__PURE__*/React.createElement("td", {
+    className: "c"
+  }, date(x.when)))))));
+}
+
+/* The pupil's own login, with Reset PIN. */
+function PupilLogin({
+  L
+}) {
+  const {
+    ensureLogins,
+    resetPin,
+    toast
+  } = useHL();
+  const [busy, setBusy] = React.useState(false);
+  const run = async fn => {
+    setBusy(true);
+    try {
+      await fn();
+    } catch (e) {
+      console.warn(e);
+      toast(e.message || "Couldn’t do that. Try again.");
+    }
+    setBusy(false);
+  };
+  const lg = L.login;
+  return /*#__PURE__*/React.createElement("section", {
+    className: "lib-rec"
+  }, /*#__PURE__*/React.createElement("h3", null, "Pupil login"), lg ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
+    className: "login-line"
+  }, "Username ", /*#__PURE__*/React.createElement("b", null, lg.username), " \xB7 PIN ", /*#__PURE__*/React.createElement("b", null, lg.pin), lg.locked && /*#__PURE__*/React.createElement("span", {
+    className: "login-locked"
+  }, " \xB7 locked after too many tries")), /*#__PURE__*/React.createElement("button", {
+    className: "hl-btn ghost sm",
+    disabled: busy,
+    onClick: () => run(async () => {
+      await resetPin(L.id);
+      toast("New PIN made. Give " + L.name.split(" ")[0] + " a new login card.");
+    })
+  }, busy ? "Working…" : "Reset PIN")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
+    className: "ws-hint"
+  }, "No login yet."), /*#__PURE__*/React.createElement("button", {
+    className: "hl-btn sm",
+    disabled: busy,
+    onClick: () => run(async () => {
+      await ensureLogins([L.id]);
+      toast("Login made");
+    })
+  }, busy ? "Working…" : "Make login")));
+}
+
+/* Printable login cards: 8 per A4 sheet. The QR code opens the pupil sign-in
+   with the username filled in; the pupil (or a grown-up) types the PIN. */
+function LoginCards({
+  cls,
+  list,
+  back
+}) {
+  const {
+    ensureLogins,
+    toast
+  } = useHL();
+  const [busy, setBusy] = React.useState(false);
+  const missing = list.filter(l => !l.login);
+  const make = async () => {
+    setBusy(true);
+    try {
+      const res = await ensureLogins(missing.map(l => l.id));
+      const bad = res.filter(r => r.error).length;
+      toast(bad ? `Made ${res.length - bad} logins. ${bad} couldn’t be made.` : `Made ${res.length} login${res.length === 1 ? "" : "s"}`);
+    } catch (e) {
+      console.warn(e);
+      toast(e.message || "Couldn’t make logins. Try again.");
+    }
+    setBusy(false);
+  };
+  const ready = list.filter(l => l.login);
+  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "ph-h no-print"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Login cards"), /*#__PURE__*/React.createElement("p", null, cls.name, " \xB7 cut out one card for each pupil")), /*#__PURE__*/React.createElement("div", {
+    className: "acts"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "hl-btn ghost",
+    onClick: back
+  }, /*#__PURE__*/React.createElement(Icon, {
+    n: "back",
+    s: 16
+  }), "Pupils"), ready.length > 0 && /*#__PURE__*/React.createElement("button", {
+    className: "hl-btn",
+    onClick: () => window.print()
+  }, /*#__PURE__*/React.createElement(Icon, {
+    n: "dl",
+    s: 16
+  }), "Print cards"))), missing.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "card mail-panel no-print"
+  }, /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", null, missing.length === list.length ? "No pupil in this class has a login yet." : `${missing.map(l => l.name.split(" ")[0]).join(", ")} ${missing.length === 1 ? "has" : "have"} no login yet.`), " Each pupil gets a username and a 4-number PIN."), /*#__PURE__*/React.createElement("div", {
+    className: "live-acts"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "hl-btn",
+    disabled: busy,
+    onClick: make
+  }, busy ? "Making logins…" : `Make ${missing.length} login${missing.length === 1 ? "" : "s"}`))), /*#__PURE__*/React.createElement("p", {
+    className: "ws-hint no-print"
+  }, "Keep the cards safe: anyone with a card can read as that pupil. If a card is lost, open the pupil and choose Reset PIN."), /*#__PURE__*/React.createElement("div", {
+    className: "lc-grid"
+  }, ready.map(l => /*#__PURE__*/React.createElement(LoginCard, {
+    key: l.id,
+    L: l,
+    cls: cls
+  }))));
+}
+function lcLink(username) {
+  try {
+    return new URL("../Haaraya%20Home.html?pupil=" + encodeURIComponent(username), location.href).href;
+  } catch (e) {
+    return "";
+  }
+}
+function LoginCard({
+  L,
+  cls
+}) {
+  const qr = React.useMemo(() => {
+    try {
+      const q = qrcode(0, "M");
+      q.addData(lcLink(L.login.username));
+      q.make();
+      return q.createSvgTag({
+        cellSize: 3,
+        margin: 0,
+        scalable: true
+      });
+    } catch (e) {
+      return "";
+    }
+  }, [L.login.username]);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "lc-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "lc-top"
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "../assets/logo-haaraya-literacy.png",
+    alt: "Haaraya Literacy"
+  }), /*#__PURE__*/React.createElement("span", null, "Pupil login")), /*#__PURE__*/React.createElement("div", {
+    className: "lc-body"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "lc-who"
+  }, /*#__PURE__*/React.createElement("b", null, L.name), /*#__PURE__*/React.createElement("span", null, cls.name), /*#__PURE__*/React.createElement("dl", null, /*#__PURE__*/React.createElement("dt", null, "Username"), /*#__PURE__*/React.createElement("dd", null, L.login.username), /*#__PURE__*/React.createElement("dt", null, "PIN"), /*#__PURE__*/React.createElement("dd", {
+    className: "lc-pin"
+  }, L.login.pin))), qr && /*#__PURE__*/React.createElement("div", {
+    className: "lc-qr",
+    dangerouslySetInnerHTML: {
+      __html: qr
+    }
+  })), /*#__PURE__*/React.createElement("p", {
+    className: "lc-how"
+  }, "Scan the code, or go to Haaraya and tap ", /*#__PURE__*/React.createElement("b", null, "Sign in"), ", then ", /*#__PURE__*/React.createElement("b", null, "I\u2019m a pupil"), ". Type your username and PIN."));
 }
 
 /* One family email per school pupil, used to send reports. */

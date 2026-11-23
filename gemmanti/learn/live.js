@@ -156,6 +156,7 @@
     s.learners = await buildPeople(Object.keys(classOf), classOf, true);
     var kidIds = Object.keys(s.learners);
     if (kidIds.length) {
+      await Promise.all([libraryReading(kidIds, s.learners), pupilLogins(kidIds, s.learners)]);
       var con = await sb().from("school_pupil_contacts").select("child_id,family_email").in("child_id", kidIds);
       if (!con.error) con.data.forEach(function (c) { if (s.learners[c.child_id]) s.learners[c.child_id].familyEmail = c.family_email || ""; });
     }
@@ -194,6 +195,51 @@
     else state = await loadStaff(me, who.role);
     return { state: state };
   }
+
+  /* Reading done in the main Haaraya library, under the pupil's own login.
+     Same tables the website saves to: reading_progress and reading_check_results. */
+  async function libraryReading(childIds, learners) {
+    try {
+      var all = await Promise.all([
+        sb().from("reading_progress").select("child_id,status,current_page,completed_at,updated_at,times_read,book:books(book_code,title,level)").in("child_id", childIds),
+        sb().from("reading_check_results").select("child_id,book_code,passed,score,total,created_at").in("child_id", childIds).order("created_at", { ascending: false })
+      ]);
+      var rp = all[0].error ? [] : all[0].data || [], rc = all[1].error ? [] : all[1].data || [];
+      childIds.forEach(function (id) { if (learners[id]) learners[id].lib = { done: [], now: null, checks: {}, last: 0 }; });
+      rp.forEach(function (r) {
+        var L = learners[r.child_id]; if (!L || !r.book) return;
+        var lvl = parseInt(String(r.book.level || "").replace(/\D+/g, ""), 10) || 0;
+        var b = { code: r.book.book_code, title: r.book.title || r.book.book_code, level: lvl, page: r.current_page || 0,
+          when: Date.parse(r.completed_at || r.updated_at || "") || 0, times: r.times_read || 0 };
+        L.lib.last = Math.max(L.lib.last, Date.parse(r.updated_at || "") || 0);
+        if (r.status === "completed" || r.completed_at) L.lib.done.push(b);
+        else if (!L.lib.now || b.when > L.lib.now.when) L.lib.now = b;
+      });
+      rc.forEach(function (r) {
+        var L = learners[r.child_id]; if (!L || L.lib.checks[r.book_code]) return;   // newest first
+        L.lib.checks[r.book_code] = { passed: !!r.passed, score: r.score, total: r.total };
+      });
+      childIds.forEach(function (id) { var L = learners[id]; if (L && L.lib) L.lib.done.sort(function (a, b) { return b.when - a.when; }); });
+    } catch (e) { console.warn("[Gemmanti] library reading", e); }
+  }
+
+  /* Pupil logins (username + PIN), readable by the pupil's teacher and school admin. */
+  async function pupilLogins(childIds, learners) {
+    var r = await sb().from("pupil_logins").select("child_id,username,pin,locked_until").in("child_id", childIds);
+    if (r.error) return;
+    r.data.forEach(function (x) { if (learners[x.child_id]) learners[x.child_id].login = { username: x.username, pin: x.pin, locked: !!(x.locked_until && Date.parse(x.locked_until) > Date.now()) }; });
+  }
+  async function pupilAccounts(body) {
+    var r = await sb().functions.invoke("pupil-accounts", { body: body });
+    if (r.error) {
+      var msg = r.error.message;
+      try { var j = r.error.context && await r.error.context.json(); if (j && j.error) msg = j.error; } catch (e) {}
+      throw new Error(msg);
+    }
+    return (r.data && r.data.logins) || [];
+  }
+  function ensureLogins(childIds) { return pupilAccounts({ action: "ensure", child_ids: childIds }); }
+  async function resetPin(childId) { var l = await pupilAccounts({ action: "reset", child_id: childId }); return l[0] || null; }
 
   /* ---------- writes ---------- */
   async function saveWork(childId, code, rec, handingIn) {
@@ -282,5 +328,5 @@
 
   async function signOut() { try { await window.HaarayaAuth.signOut(); } catch (e) {} }
 
-  window.HLLive = { demo: DEMO, load: load, saveWork: saveWork, saveReview: saveReview, setGemmanti: setGemmanti, setShowScores: setShowScores, setShowLibrary: setShowLibrary, books: books, setFamilyEmail: setFamilyEmail, emailReports: emailReports, signOut: signOut };
+  window.HLLive = { demo: DEMO, load: load, saveWork: saveWork, saveReview: saveReview, setGemmanti: setGemmanti, setShowScores: setShowScores, setShowLibrary: setShowLibrary, books: books, setFamilyEmail: setFamilyEmail, emailReports: emailReports, ensureLogins: ensureLogins, resetPin: resetPin, signOut: signOut };
 })();
