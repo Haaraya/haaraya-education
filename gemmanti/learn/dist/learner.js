@@ -1076,7 +1076,7 @@ function GDemoGuide() {
     className: "gdg-pill"
   }, "Demo"), /*#__PURE__*/React.createElement("span", {
     className: "gdg-note"
-  }, "Everything here is invented: the school, the teachers, the pupils and their scores. Switch who you are with the button at the top right."), full ? /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("b", null, "Demo school."), " The pupils, teachers and results are examples, so try anything. Use the button at the top right to see it as a teacher, pupil or parent."), full ? /*#__PURE__*/React.createElement("button", {
     className: "gdg-link",
     onClick: () => hide(true)
   }, "Got it") : cards.length > 0 && /*#__PURE__*/React.createElement("button", {

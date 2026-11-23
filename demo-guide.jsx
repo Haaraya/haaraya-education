@@ -116,7 +116,7 @@ function DemoGuide({ role, screen, onNavigate }) {
     <section className={"dg" + (full ? " dg--full" : "")} aria-label="Demo guide">
       <div className="dg-bar">
         <span className="dg-pill">Demo</span>
-        <span className="dg-note">This is a demonstration. The school, pupils, classes and scores are invented. One book at each level opens here.</span>
+        <span className="dg-note"><b>Demo school.</b> The pupils, teachers and results are examples, so try anything. One book at each level opens in the demo.</span>
         {!full && <button type="button" className="dg-link" onClick={() => { hide(false); onNavigate(screen === "home" ? "home" : (DG_HOME[role] || "home")); }}>Demo guide</button>}
         {full && <button type="button" className="dg-link" onClick={() => hide(true)}>Got it</button>}
       </div>

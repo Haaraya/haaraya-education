@@ -365,7 +365,7 @@ function GDemoGuide() {
   return <section className={"gdg" + (full ? " gdg--full" : "")} aria-label="Demo guide">
     <div className="gdg-bar">
       <span className="gdg-pill">Demo</span>
-      <span className="gdg-note">Everything here is invented: the school, the teachers, the pupils and their scores. Switch who you are with the button at the top right.</span>
+      <span className="gdg-note"><b>Demo school.</b> The pupils, teachers and results are examples, so try anything. Use the button at the top right to see it as a teacher, pupil or parent.</span>
       {full ? <button className="gdg-link" onClick={() => hide(true)}>Got it</button>
         : cards.length > 0 && <button className="gdg-link" onClick={() => { hide(false); open((GDG_LANDING[state.role] || [])[0]); }}>Demo guide</button>}
     </div>
