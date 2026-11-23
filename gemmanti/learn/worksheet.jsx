@@ -4,6 +4,7 @@ const wsCls = (...a) => a.filter(Boolean).join(" ");
 function WsMark({ u }) {
   if (!u) return null;
   if (u.blank) return <span className="ws-mk blank" title="Not answered" aria-label="Not answered">–</span>;
+  if (!u.ok && u.need > 1 && u.got > 0) { const t = `${u.got} of ${u.need} found`; return <span className="ws-mk part" title={t + (u.extra ? `, ${u.extra} extra` : "")} aria-label={t}>{u.got}/{u.need}</span>; }
   const t = u.ok === null ? "Teacher judgement" : u.ok ? "Right" : "Not yet";
   return <span className={"ws-mk " + (u.ok === null ? "open" : u.ok ? "ok" : "no")} title={t} aria-label={t}>{u.ok === null ? "?" : <Icon n={u.ok ? "check" : "x"} s={13} w={3} />}</span>;
 }
@@ -15,11 +16,11 @@ function WsArt({ id, code }) {
   if (!id || broken) return <span className="ws-pic-art" aria-hidden="true"></span>;
   return <span className="ws-pic-art has-img" aria-hidden="true"><img src={WSX.picUrl(code, id)} alt="" loading="lazy" onError={() => setBroken(true)} /></span>;
 }
-function Pic({ label, on, good, bad, onClick, ro, small }) {
+function Pic({ label, on, good, bad, missed, onClick, ro, small }) {
   const code = React.useContext(WsCodeCtx);
   const tap = onClick && !ro;
   const El = tap ? "button" : "div";
-  return <El className={wsCls("ws-pic", on && "on", good && "good", bad && "bad", small && "sm")} onClick={tap ? onClick : undefined} aria-pressed={tap ? !!on : undefined}>
+  return <El className={wsCls("ws-pic", on && "on", good && "good", bad && "bad", missed && "missed", small && "sm")} onClick={tap ? onClick : undefined} aria-pressed={tap ? !!on : undefined}>
     <WsArt id={wsPicId(code, label)} code={code} /><span className="ws-pic-l">{label}</span></El>;
 }
 /* One drawing shown above a line, for questions where the child compares things in the same picture. */
@@ -29,20 +30,27 @@ function WsRef({ id }) {
   if (broken) return null;
   return <div className="ws-ref"><img src={WSX.picUrl(code, id)} alt="" loading="lazy" onError={() => setBroken(true)} /></div>;
 }
-function WordChip({ label, on, good, bad, onClick, ro }) {
-  return <button className={wsCls("ws-word", on && "on", good && "good", bad && "bad")} onClick={ro ? undefined : onClick} disabled={ro && !on && !good} aria-pressed={!!on}>{label}</button>;
+/* A second touch on the same choice within half a second is ignored, so an accidental
+   double tap on a tablet never unticks what the child chose. */
+function useTapGuard() {
+  const last = React.useRef({ k: null, t: 0 });
+  return (k, fn) => { const now = Date.now(); if (last.current.k === k && now - last.current.t < 500) return; last.current = { k, t: now }; fn(); };
+}
+function WordChip({ label, on, good, bad, missed, onClick, ro }) {
+  return <button className={wsCls("ws-word", on && "on", good && "good", bad && "bad", missed && "missed")} onClick={ro ? undefined : onClick} disabled={ro && !on && !good} aria-pressed={!!on}>{label}</button>;
 }
 const BookTag = ({ i }) => <span className={"ws-tag" + (i === 0 ? " frombook" : "")}>{i === 0 ? "From our book" : "New"}</span>;
 
 function ItemPick({ it, v, set, ro, fb }) {
   const val = v || it.lines.map(() => []);
-  const tap = (li, oi) => { const n = it.lines.map((_, k) => (val[k] || []).slice()); const cur = n[li]; n[li] = it.single ? [oi] : cur.includes(oi) ? cur.filter(x => x !== oi) : [...cur, oi]; set(n); };
+  const guard = useTapGuard();
+  const tap = (li, oi) => guard(li + ":" + oi, () => { const n = it.lines.map((_, k) => (val[k] || []).slice()); const cur = n[li]; n[li] = it.single ? [oi] : cur.includes(oi) ? cur.filter(x => x !== oi) : [...cur, oi]; set(n); });
   const P = it.pic ? Pic : WordChip;
   return <div className="ws-lines">{it.lines.map((L, li) => <div className="ws-line" key={li}>
     <BookTag i={li} />
     <div className={L.ref ? "ws-refline" : undefined}>{L.ref && <WsRef id={L.ref} />}
     <div className={it.pic ? "ws-pics" : "ws-words"}>{L.o.map((o, oi) => { const on = (val[li] || []).includes(oi); const good = L.a.includes(oi);
-      return <P key={oi} label={o} on={on} good={fb && good} bad={fb && on && !good} onClick={() => tap(li, oi)} ro={ro} />; })}</div></div>
+      return <P key={oi} label={o} on={on} good={fb && good} bad={fb && on && !good} missed={fb && good && !on && (val[li] || []).length > 0} onClick={() => tap(li, oi)} ro={ro} />; })}</div></div>
     {fb && <WsMark u={fb.units[li]} />}
   </div>)}</div>;
 }
@@ -114,8 +122,8 @@ function ItemYesNo({ it, v, set, ro, fb }) {
     {fb && <WsMark u={fb.units[i]} />}</div>)}</div>;
 }
 function ItemChoose({ it, v, set, ro, fb }) {
-  const P = it.pic ? Pic : WordChip;
-  return <div className="ws-row"><div className={it.pic ? "ws-pics" : "ws-words"}>{it.o.map((o, i) => <P key={i} label={o} on={v === i} good={fb && it.a === i} bad={fb && v === i && it.a !== i} ro={ro} onClick={() => set(v === i ? null : i)} />)}</div>{fb && <WsMark u={fb.units[0]} />}</div>;
+  const P = it.pic ? Pic : WordChip; const guard = useTapGuard();
+  return <div className="ws-row"><div className={it.pic ? "ws-pics" : "ws-words"}>{it.o.map((o, i) => <P key={i} label={o} on={v === i} good={fb && it.a === i} bad={fb && v === i && it.a !== i} ro={ro} onClick={() => guard(i, () => set(v === i ? null : i))} />)}</div>{fb && <WsMark u={fb.units[0]} />}</div>;
 }
 function ItemWrite({ it, v, set, ro, fb }) {
   return <div>{it.lead && <p className="ws-lead">{it.lead}</p>}

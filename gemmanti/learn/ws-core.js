@@ -30,7 +30,8 @@ function check(it,r){
  function u(ok,book,label,blank){U.push({ok:(blank&&ok!==null)?false:ok,blank:!!blank,book:!!book,label:label||""});}
  var isBook=function(i,first){return it.book?it.book.indexOf(i)>=0:i===(first||0);};
  switch(it.t){
-  case "pick": it.lines.forEach(function(L,i){var v=(r&&r[i])||[];if(v.length)ans=true;u(sortKey(v)===sortKey(L.a),isBook(i),"Line "+(i+1),!v.length);});break;
+  case "pick": it.lines.forEach(function(L,i){var v=(r&&r[i])||[];if(v.length)ans=true;u(sortKey(v)===sortKey(L.a),isBook(i),"Line "+(i+1),!v.length);
+    var x=U[U.length-1];x.need=L.a.length;x.got=v.filter(function(n){return L.a.indexOf(n)>=0;}).length;x.extra=v.length-x.got;});break;
   case "match": it.left.forEach(function(l,i){var v=r&&r[i];if(v!=null)ans=true;u(v===it.a[i],isBook(i),l,v==null);});break;
   case "fill": var first=it.blanks.findIndex(function(b){return !b.fixed;});
    it.blanks.forEach(function(b,i){if(b.fixed)return;var v=r&&r[i];if(filled(v))ans=true;

@@ -808,3 +808,8 @@ a.hl-brand{text-decoration:none;color:inherit}
 .board-cover{height:90vh;aspect-ratio:3/4}.board-cover .hl-cover{height:100%;width:100%}
 .board-wait{font:700 24px var(--ui);color:var(--ink-soft)}
 .board-n{position:fixed;right:20px;bottom:14px;font:800 16px var(--ui);color:var(--ink-soft)}
+
+/* Teacher review: a right answer the child did not tap, and a partly right line */
+.ws-pic.missed,.ws-word.missed{border-style:dashed;border-color:var(--yellow-dk);position:relative}
+.ws-pic.missed::after,.ws-word.missed::after{content:"Missed";position:absolute;top:-9px;right:6px;padding:1px 7px;border-radius:99px;background:var(--yellow-dk);color:#fff;font:900 10px var(--ui);letter-spacing:.04em}
+.ws-mk.part{width:auto;min-width:34px;padding:0 7px;border-radius:99px;background:var(--amber-bg,#FFF1CC);color:var(--amber,#8A5A00);border:1px solid var(--yellow-dk);font-size:12px}

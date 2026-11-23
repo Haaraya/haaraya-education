@@ -62,26 +62,53 @@ function HLProvider({
   const latest = React.useRef(state);
   latest.current = state;
   const queue = React.useRef({});
+  /* Each save reads the latest record when it runs. A failed save is tried once more,
+     and anything waiting is sent at once if the page is hidden or closed, so no tap is lost. */
+  const run = (k, retry) => {
+    const q = queue.current[k];
+    if (!q) return;
+    clearTimeout(q.t);
+    delete queue.current[k];
+    const L = latest.current.learners[q.lid];
+    const rec = L && L.worksheets && L.worksheets[q.code];
+    if (!rec) return;
+    const p = q.kind === "review" ? HLLive.saveReview(q.lid, q.code, rec) : HLLive.saveWork(q.lid, q.code, rec, !!q.handIn);
+    p.then(() => {
+      if (q.kind === "review") toast("Record saved");else if (q.handIn) toast("Handed in");
+    }).catch(e => {
+      console.warn("Gemmanti save failed", e);
+      if (!retry && !queue.current[k]) {
+        queue.current[k] = {
+          ...q
+        };
+        queue.current[k].t = setTimeout(() => run(k, true), 2000);
+      } else toast("Couldn’t save. Check your connection and try again.");
+    });
+  };
   const save = (kind, lid, code, handIn) => {
     if (!latest.current.live || !window.HLLive) return;
     const k = kind + "|" + lid + "|" + code;
-    const q = queue.current[k] || (queue.current[k] = {});
+    const q = queue.current[k] || (queue.current[k] = {
+      kind,
+      lid,
+      code
+    });
     if (handIn) q.handIn = true;
     clearTimeout(q.t);
-    q.t = setTimeout(() => {
-      delete queue.current[k];
-      const L = latest.current.learners[lid];
-      const rec = L && L.worksheets && L.worksheets[code];
-      if (!rec) return;
-      const p = kind === "review" ? HLLive.saveReview(lid, code, rec) : HLLive.saveWork(lid, code, rec, !!q.handIn);
-      p.then(() => {
-        if (kind === "review") toast("Record saved");else if (q.handIn) toast("Handed in");
-      }).catch(e => {
-        console.warn("Gemmanti save failed", e);
-        toast("Couldn’t save. Check your connection and try again.");
-      });
-    }, kind === "work" && !handIn ? 800 : 60);
+    q.t = setTimeout(() => run(k), kind === "work" && !handIn ? 300 : 60);
   };
+  React.useEffect(() => {
+    const flush = () => Object.keys(queue.current).forEach(k => run(k));
+    const vis = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", vis);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", vis);
+    };
+  }, []);
   const up = fn => setState(s => {
     const n = JSON.parse(JSON.stringify(s));
     fn(n);

@@ -10,6 +10,14 @@ function WsMark({
     title: "Not answered",
     "aria-label": "Not answered"
   }, "\u2013");
+  if (!u.ok && u.need > 1 && u.got > 0) {
+    const t = `${u.got} of ${u.need} found`;
+    return /*#__PURE__*/React.createElement("span", {
+      className: "ws-mk part",
+      title: t + (u.extra ? `, ${u.extra} extra` : ""),
+      "aria-label": t
+    }, u.got, "/", u.need);
+  }
   const t = u.ok === null ? "Teacher judgement" : u.ok ? "Right" : "Not yet";
   return /*#__PURE__*/React.createElement("span", {
     className: "ws-mk " + (u.ok === null ? "open" : u.ok ? "ok" : "no"),
@@ -50,6 +58,7 @@ function Pic({
   on,
   good,
   bad,
+  missed,
   onClick,
   ro,
   small
@@ -58,7 +67,7 @@ function Pic({
   const tap = onClick && !ro;
   const El = tap ? "button" : "div";
   return /*#__PURE__*/React.createElement(El, {
-    className: wsCls("ws-pic", on && "on", good && "good", bad && "bad", small && "sm"),
+    className: wsCls("ws-pic", on && "on", good && "good", bad && "bad", missed && "missed", small && "sm"),
     onClick: tap ? onClick : undefined,
     "aria-pressed": tap ? !!on : undefined
   }, /*#__PURE__*/React.createElement(WsArt, {
@@ -84,16 +93,34 @@ function WsRef({
     onError: () => setBroken(true)
   }));
 }
+/* A second touch on the same choice within half a second is ignored, so an accidental
+   double tap on a tablet never unticks what the child chose. */
+function useTapGuard() {
+  const last = React.useRef({
+    k: null,
+    t: 0
+  });
+  return (k, fn) => {
+    const now = Date.now();
+    if (last.current.k === k && now - last.current.t < 500) return;
+    last.current = {
+      k,
+      t: now
+    };
+    fn();
+  };
+}
 function WordChip({
   label,
   on,
   good,
   bad,
+  missed,
   onClick,
   ro
 }) {
   return /*#__PURE__*/React.createElement("button", {
-    className: wsCls("ws-word", on && "on", good && "good", bad && "bad"),
+    className: wsCls("ws-word", on && "on", good && "good", bad && "bad", missed && "missed"),
     onClick: ro ? undefined : onClick,
     disabled: ro && !on && !good,
     "aria-pressed": !!on
@@ -112,12 +139,13 @@ function ItemPick({
   fb
 }) {
   const val = v || it.lines.map(() => []);
-  const tap = (li, oi) => {
+  const guard = useTapGuard();
+  const tap = (li, oi) => guard(li + ":" + oi, () => {
     const n = it.lines.map((_, k) => (val[k] || []).slice());
     const cur = n[li];
     n[li] = it.single ? [oi] : cur.includes(oi) ? cur.filter(x => x !== oi) : [...cur, oi];
     set(n);
-  };
+  });
   const P = it.pic ? Pic : WordChip;
   return /*#__PURE__*/React.createElement("div", {
     className: "ws-lines"
@@ -141,6 +169,7 @@ function ItemPick({
       on: on,
       good: fb && good,
       bad: fb && on && !good,
+      missed: fb && good && !on && (val[li] || []).length > 0,
       onClick: () => tap(li, oi),
       ro: ro
     });
@@ -400,6 +429,7 @@ function ItemChoose({
   fb
 }) {
   const P = it.pic ? Pic : WordChip;
+  const guard = useTapGuard();
   return /*#__PURE__*/React.createElement("div", {
     className: "ws-row"
   }, /*#__PURE__*/React.createElement("div", {
@@ -411,7 +441,7 @@ function ItemChoose({
     good: fb && it.a === i,
     bad: fb && v === i && it.a !== i,
     ro: ro,
-    onClick: () => set(v === i ? null : i)
+    onClick: () => guard(i, () => set(v === i ? null : i))
   }))), fb && /*#__PURE__*/React.createElement(WsMark, {
     u: fb.units[0]
   }));
