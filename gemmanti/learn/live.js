@@ -294,7 +294,8 @@
     if (/^(assets\/|thumbnails\/)/.test(raw)) return "../" + raw;
     if (raw.indexOf("/storage/v1/object/public/") === 0) return SUPA + raw;
     raw = raw.replace(/^\/+/, "").replace(/^book-assets\//, "").replace(/\.png$/i, ".webp");
-    return SUPA + "/storage/v1/object/public/book-assets/" + encodeURI(raw);
+    var u = SUPA + "/storage/v1/object/public/book-assets/" + encodeURI(raw);
+    return window.haarayaArtUrl ? window.haarayaArtUrl(u) : u;
   }
   var bookList = null;
   function books() {

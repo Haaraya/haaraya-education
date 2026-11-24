@@ -40,7 +40,8 @@
     // All Supabase book assets were flattened to .webp (pngs deleted for quota).
     clean = clean.replace(/\.png$/i, ".webp");
     clean = encodeURI(clean).replace(/#/g, "%23");
-    return SUPABASE_URL + "/storage/v1/object/public/" + STORAGE_BUCKET + "/" + clean;
+    const url = SUPABASE_URL + "/storage/v1/object/public/" + STORAGE_BUCKET + "/" + clean;
+    return window.haarayaArtUrl ? window.haarayaArtUrl(url) : url;
   }
 
   function normalizeBookPackage(data) {

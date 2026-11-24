@@ -112,7 +112,8 @@ function simulate(w,rnd,skill){
  return resp;
 }
 function picUrl(code,id){return SUPA+"/storage/v1/object/public/book-assets/worksheets/"+code+"/"+id+".webp";}
-function coverUrl(code){return SUPA+"/storage/v1/object/public/book-assets/books/"+code+"/"+code+"_FC.webp";}
+function artV(u){return window.haarayaArtUrl?window.haarayaArtUrl(u):u;}
+function coverUrl(code){return artV(SUPA+"/storage/v1/object/public/book-assets/books/"+code+"/"+code+"_FC.webp");}
 var pageCache={};
 function pages(code){
  if(pageCache[code])return pageCache[code];
@@ -120,7 +121,7 @@ function pages(code){
   .then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
   .then(function(j){if(Array.isArray(j))j=j[0];if(j&&j.get_book_package)j=j.get_book_package;if(j&&j.data&&j.data.book)j=j.data;
    return (j.pages||[]).sort(function(a,b){return a.page_number-b.page_number;}).map(function(p){
-    var img=p.image_path?SUPA+"/storage/v1/object/public/book-assets/"+encodeURI(String(p.image_path).replace(/^\/+/,"").replace(/^book-assets\//,"").replace(/\.png$/i,".webp")):"";
+    var img=p.image_path?artV(SUPA+"/storage/v1/object/public/book-assets/"+encodeURI(String(p.image_path).replace(/^\/+/,"").replace(/^book-assets\//,"").replace(/\.png$/i,".webp"))):"";
     return {n:p.page_number,img:img,text:p.display_text||p.page_text||""};});})
   .catch(function(e){delete pageCache[code];throw e;});
  return pageCache[code];
