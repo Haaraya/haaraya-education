@@ -82,7 +82,11 @@ function publicBookAssetUrl(path: string | null | undefined) {
     return value;
   }
 
+  // Book pictures are stored as .webp only (the old .png copies were deleted).
   return BOOK_ASSET_BASE + value
+    .replace(/^\/+/, "")
+    .replace(/^book-assets\//, "")
+    .replace(/\.png$/i, ".webp")
     .split("/")
     .map((part) => encodeURIComponent(part))
     .join("/");
